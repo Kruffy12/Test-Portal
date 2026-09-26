@@ -3,9 +3,15 @@
 // Network-first strategy for fast security updates
 // ─────────────────────────────────────────────────────────────────────────────
 
-const CACHE_DATE = '2026-09-25p'; // ← change this to today's date on each deploy
+const CACHE_DATE = '2026-09-26b'; // ← change this to today's date on each deploy
 const CACHE_NAME = 'servicell-' + CACHE_DATE;
-const BASE = '/Staff-Portal';
+const BASE = (function () {
+    try {
+        return new URL('./', self.location.href).pathname.replace(/\/$/, '') || '';
+    } catch (_) {
+        return '/Staff-Portal';
+    }
+})();
 
 // Files to pre-cache on install (shell only — keeps it lean)
 const PRECACHE_URLS = [
@@ -25,7 +31,9 @@ const PRECACHE_URLS = [
     BASE + '/css/splash.css',
     BASE + '/css/perf.css',
     BASE + '/css/staff-banner.css',
+    BASE + '/css/v5-shell.css',
     BASE + '/js/staff-banner.js',
+    BASE + '/js/v5-shell.js',
     BASE + '/js/components.js',
     BASE + '/js/auth-guard.js',
     BASE + '/js/theme-init.js',

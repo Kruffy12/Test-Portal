@@ -266,13 +266,13 @@
   }
 
   #sc-app-update-card {
-    bottom: var(--scb-stack-offset, 0px);
+    bottom: calc(var(--scb-stack-offset, 0px) + var(--sc-v5-tabbar-offset, 0px));
     z-index: calc(var(--z-nav, 1000) + 5);
   }
 
-  /* Mobile: update anchors bottom; team notice stacks above it, then drops into its slot when update hides */
+  /* Mobile: update anchors above the tab bar; team notice stacks above it */
   #staff-broadcast-card {
-    bottom: calc(var(--scb-stack-offset, 0px) + var(--sc-notice-stack-above-broadcast, 0px));
+    bottom: calc(var(--scb-stack-offset, 0px) + var(--sc-notice-stack-above-broadcast, 0px) + var(--sc-v5-tabbar-offset, 0px));
     z-index: calc(var(--z-nav, 1000) + 4);
     transition:
       opacity 0.28s ease,

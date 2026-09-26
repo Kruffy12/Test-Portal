@@ -33,7 +33,7 @@ window.getUserRole = getUserRole;
 
 const SC_PREF_KEYS = [
     'scTheme', 'scCompact', 'scHaptics', 'scNotif', 'scNotifSound',
-    'scNotifSoundType', 'scAutoPrintReceipt', 'appVersion'
+    'scNotifSoundType', 'scAutoPrintReceipt', 'appVersion', 'scSidebarCollapsed'
 ];
 
 function escH(s) {
@@ -142,6 +142,14 @@ const ComponentLoader = {
         const current = window.location.pathname.split('/').pop() || 'index.html';
         const visible = NAV_LINKS.filter(l => l.roles.includes(role));
 
+        if (typeof SCV5 !== 'undefined' && SCV5.renderShell) {
+            SCV5.renderShell(placeholder, { username: username, role: role, current: current, visible: visible });
+            this.attachNavListeners();
+            if (typeof initDataIcons === 'function') initDataIcons(placeholder);
+            if (username && typeof loadStaffBanner === 'function') loadStaffBanner();
+            return;
+        }
+
         const linksHTML = visible.map(l => {
             const active = current === l.href ? 'active' : '';
             return `<a href="${l.href}" class="nav-btn ${active}">${l.label}</a>`;
@@ -242,6 +250,8 @@ const ComponentLoader = {
     },
 
     attachNavListeners() {
+        if (this._navBound) return;
+        this._navBound = true;
         const hamburger = document.getElementById('hamburger');
         const mobilePanel = document.getElementById('mobilePanel');
 
@@ -588,7 +598,7 @@ window.InAppNotif = InAppNotif;
     const style = document.createElement('style');
     style.textContent = [
         '@media (max-width: 768px) {',
-        '  #sc-offline-banner { top: auto !important; bottom: 0 !important; left: 0 !important; right: 0 !important;',
+        '  #sc-offline-banner { top: auto !important; bottom: var(--sc-v5-tabbar-offset, 0px) !important; left: 0 !important; right: 0 !important;',
         '    transform: translateY(100%) !important; padding-bottom: calc(8px + env(safe-area-inset-bottom)) !important; }',
         '  #sc-offline-banner.sc-visible { transform: translateY(0) !important; }',
         '}'
@@ -649,8 +659,20 @@ window.isOffline = () => !navigator.onLine;
 (function () {
     if (!('serviceWorker' in navigator)) return;
 
-    const SW_PATH = '/Staff-Portal/sw.js';
-    const SW_SCOPE = '/Staff-Portal/';
+    function scPortalMount() {
+        try {
+            const tag = document.querySelector('script[src*="components.js"]');
+            if (tag && tag.src) {
+                return new URL(tag.src, location.href).pathname.replace(/\/js\/components\.js.*$/, '') || '';
+            }
+        } catch (_) {}
+        const segs = location.pathname.split('/').filter(Boolean);
+        if (segs.length && !/\.html?$/i.test(segs[0])) return '/' + segs[0];
+        return '';
+    }
+    const SC_MOUNT = scPortalMount();
+    const SW_PATH = SC_MOUNT + '/sw.js';
+    const SW_SCOPE = SC_MOUNT + '/';
     let registrationRef = null;
     let pendingWorker = null;
     const UPDATE_DISMISS_MS = 14000;

@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="css/variables.css">
     <link rel="stylesheet" href="css/perf.css">
     <link rel="stylesheet" href="css/nav.css">
+    <link rel="stylesheet" href="css/v5-shell.css">
     <link rel="stylesheet" href="css/footer.css">
     <link rel="stylesheet" href="css/splash.css">
 
@@ -748,6 +749,25 @@
             </div>
         </div>
 
+        <div class="sc-v5-hero-actions" id="scV5HeroActions" data-tour="home-quick-actions">
+            <a href="sales.html" class="sc-v5-hero-btn primary" data-role="cashier,manager">
+                <span class="sc-v5-hero-icon"><span data-icon="dollar" data-icon-size="20"></span></span>
+                New Sale
+            </a>
+            <a href="new-job.html" class="sc-v5-hero-btn primary">
+                <span class="sc-v5-hero-icon"><span data-icon="plus" data-icon-size="20"></span></span>
+                New Job
+            </a>
+            <a href="current-jobs.html" class="sc-v5-hero-btn">
+                <span class="sc-v5-hero-icon"><span data-icon="wrench" data-icon-size="20"></span></span>
+                Jobs
+            </a>
+            <a href="sales.html" class="sc-v5-hero-btn" data-role="cashier,manager">
+                <span class="sc-v5-hero-icon"><span data-icon="drawer" data-icon-size="20"></span></span>
+                Register
+            </a>
+        </div>
+
         <div class="stats">
             <div class="stat-card total">
                 <div class="stat-header">
@@ -872,6 +892,7 @@
 
     <script src="js/icons.js"></script>
 <script src="js/staff-banner.js"></script>
+<script src="js/v5-shell.js"></script>
 <script src="js/components.js"></script>
     <script>
         // ── HARD PWA WALL ENFORCEMENT ──────────────────────────────────────
@@ -1038,7 +1059,17 @@
             resolved:     { svg: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>', bg: 'rgba(16,185,129,0.08)',  color: 'var(--success)' }
         };
 
+        function applyV5HeroRoles() {
+            const role = typeof getUserRole === 'function' ? getUserRole() : 'technician';
+            document.querySelectorAll('#scV5HeroActions [data-role]').forEach(function (el) {
+                const allowed = (el.getAttribute('data-role') || '').split(',').map(function (s) { return s.trim(); });
+                el.style.display = allowed.indexOf(role) !== -1 ? '' : 'none';
+            });
+            if (typeof initDataIcons === 'function') initDataIcons(document.getElementById('scV5HeroActions'));
+        }
+
         async function loadDashboard() {
+            applyV5HeroRoles();
             setSyncState('loading', 'Syncing…');
             try {
                 const data = await apiGet({ action: 'list' });

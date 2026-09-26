@@ -59,6 +59,8 @@
         dotYellow: '<circle cx="12" cy="12" r="10" fill="currentColor" stroke="none"/>',
         dotRed: '<circle cx="12" cy="12" r="10" fill="currentColor" stroke="none"/>',
         chevronDown: '<polyline points="6 9 12 15 18 9"/>',
+        chevronLeft: '<polyline points="15 18 9 12 15 6"/>',
+        chevronRight: '<polyline points="9 18 15 12 9 6"/>',
         smartphone: '<rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>',
         eye: '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>'
     };
