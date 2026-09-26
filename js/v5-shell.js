@@ -193,10 +193,10 @@
         ) : '';
 
         placeholder.innerHTML =
-            '<aside class="sc-sidebar" id="scSidebar" aria-label="Main navigation">' +
+            '<aside class="sc-sidebar" id="mainNav" aria-label="Main navigation">' +
             '<div class="sc-sidebar-brand"><div class="sc-sidebar-logo">SC</div>' +
             '<span class="sc-sidebar-title">ServiCell</span></div>' +
-            '<nav class="sc-sidebar-nav" id="mainNav">' + sidebarLinks + '</nav>' +
+            '<nav class="sc-sidebar-nav">' + sidebarLinks + '</nav>' +
             '<div class="sc-sidebar-foot">' +
             '<div class="sc-sidebar-desktop-tools">' + bellHTML + accountHTML + '</div>' +
             '<button type="button" class="sc-sidebar-toggle" id="scSidebarToggle" aria-label="Collapse sidebar">' +

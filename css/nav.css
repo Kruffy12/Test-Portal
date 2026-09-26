@@ -4,7 +4,8 @@
 
 @import url('variables.css');
 
-nav {
+/* V4 floating pill — must NOT apply to V5 <nav class="sc-sidebar-nav|sc-tabbar"> */
+body:not(.sc-v5) nav {
   position: fixed;
   top: 20px;
   left: 50%;
@@ -22,7 +23,7 @@ nav {
   transition: background var(--transition-base), box-shadow var(--transition-base), top var(--transition-base);
 }
 
-nav.scrolled {
+body:not(.sc-v5) nav.scrolled {
   top: 10px;
   background: var(--glass-strong);
   box-shadow: var(--shadow-lg);
@@ -448,13 +449,13 @@ nav.scrolled {
 
 /* ── Responsive ── */
 @media (max-width: 768px) {
-  nav {
+  body:not(.sc-v5) nav {
     width: 92%;
     padding: 10px 14px;
     top: 12px;
   }
 
-  nav.scrolled { top: 8px; }
+  body:not(.sc-v5) nav.scrolled { top: 8px; }
 
   .nav-links { display: none; }
   .hamburger { display: flex; }
@@ -489,7 +490,7 @@ nav.scrolled {
 }
 
 @media (max-width: 400px) {
-  nav { width: 94%; padding: 9px 12px; }
+  body:not(.sc-v5) nav { width: 94%; padding: 9px 12px; }
 
   .mobile-menu-panel { width: 92vw; }
 

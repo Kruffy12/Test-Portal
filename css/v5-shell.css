@@ -96,6 +96,37 @@ body.sc-v5.sc-sidebar-collapsed .sc-sidebar-link-label {
     pointer-events: none;
 }
 
+/* Kill v4 floating-pill rules if they still hit these <nav> tags */
+body.sc-v5 nav.sc-sidebar-nav,
+body.sc-v5 nav.sc-tabbar {
+    transform: none !important;
+    left: auto !important;
+    top: auto !important;
+    width: auto !important;
+    max-width: none !important;
+    border-radius: 0 !important;
+    box-shadow: none;
+}
+
+body.sc-v5 nav.sc-sidebar-nav {
+    position: static !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 4px 0 !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+body.sc-v5 nav.sc-tabbar {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    top: auto !important;
+    width: 100% !important;
+    box-shadow: 0 -4px 24px rgba(15, 23, 42, 0.06);
+}
+
 .sc-sidebar-nav {
     flex: 1;
     overflow-y: auto;
