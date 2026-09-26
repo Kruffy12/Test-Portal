@@ -70,16 +70,11 @@ function logOut() {
 
 function toggleAccountMenu(e) {
     e.stopPropagation();
+    // Close other panels first
     document.getElementById('notifPanel')?.classList.remove('open');
     document.getElementById('mobilePanel')?.classList.remove('open');
     document.getElementById('hamburger')?.classList.remove('active');
-    const chip = e.currentTarget || e.target;
-    const wrap = chip.closest && chip.closest('.nav-account');
-    const drop = wrap && wrap.querySelector('.account-dropdown');
-    document.querySelectorAll('.account-dropdown.open').forEach(d => {
-        if (d !== drop) d.classList.remove('open');
-    });
-    drop?.classList.toggle('open');
+    document.getElementById('accountDropdown')?.classList.toggle('open');
 }
 
 // ── Component Loader ──────────────────────────────────────────────────────────
@@ -146,14 +141,6 @@ const ComponentLoader = {
         const role = getEffectiveRole(username);
         const current = window.location.pathname.split('/').pop() || 'index.html';
         const visible = NAV_LINKS.filter(l => l.roles.includes(role));
-
-        if (typeof SCV5 !== 'undefined' && SCV5.renderShell) {
-            SCV5.renderShell(placeholder, { username, role, current, visible });
-            this.attachNavListeners();
-            if (typeof initDataIcons === 'function') initDataIcons(placeholder);
-            if (username && typeof loadStaffBanner === 'function') loadStaffBanner();
-            return;
-        }
 
         const linksHTML = visible.map(l => {
             const active = current === l.href ? 'active' : '';
@@ -285,11 +272,10 @@ const ComponentLoader = {
 
         // Close account dropdown on outside click
         document.addEventListener('click', (e) => {
-            document.querySelectorAll('.nav-account').forEach(acct => {
-                if (!acct.contains(e.target)) {
-                    acct.querySelector('.account-dropdown')?.classList.remove('open');
-                }
-            });
+            const acct = document.getElementById('navAccount');
+            if (acct && !acct.contains(e.target)) {
+                document.getElementById('accountDropdown')?.classList.remove('open');
+            }
             // Close notif panel on outside click
             const bell = document.getElementById('navBell');
             if (bell && !bell.contains(e.target)) {
