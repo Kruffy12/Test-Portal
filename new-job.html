@@ -201,6 +201,61 @@
             box-shadow: var(--shadow-sm);
         }
 
+        /* backdrop-filter makes each group its own stack; lift the one with an open menu above its neighbours */
+        .nj-group:focus-within,
+        .nj-group.has-menu { position: relative; z-index: 4; }
+
+        .nj-combo { position: relative; }
+
+        .nj-suggest {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            z-index: 20;
+            max-height: 272px;
+            overflow-y: auto;
+            padding: 6px;
+            background: var(--glass-strong);
+            border: 1px solid var(--glass-border);
+            border-radius: 14px;
+            backdrop-filter: blur(24px) saturate(1.4);
+            -webkit-backdrop-filter: blur(24px) saturate(1.4);
+            box-shadow: 0 16px 40px rgba(15, 23, 42, 0.22), 0 2px 8px rgba(15, 23, 42, 0.08);
+            scrollbar-width: thin;
+            scrollbar-color: rgba(var(--primary-rgb), 0.35) transparent;
+            animation: njPop 0.16s ease both;
+        }
+
+        .nj-suggest[hidden] { display: none; }
+
+        @keyframes njPop { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+
+        .nj-suggest-item {
+            display: flex;
+            align-items: center;
+            min-height: 42px;
+            padding: 0 12px;
+            border-radius: 10px;
+            font-size: 0.92rem;
+            font-weight: 500;
+            color: var(--text-main);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .nj-suggest-item mark {
+            background: none;
+            color: inherit;
+            font-weight: 800;
+        }
+
+        .nj-suggest-item.active,
+        .nj-suggest-item:hover {
+            background: rgba(var(--primary-rgb), 0.12);
+            color: var(--primary);
+        }
+
         .nj-group-title {
             font-size: 0.72rem;
             font-weight: 800;
@@ -701,38 +756,13 @@
             to { transform: rotate(360deg); }
         }
 
-        .toast {
-            position: fixed;
-            bottom: 2rem;
-            left: 50%;
-            transform: translateX(-50%) translateY(160px);
-            background: var(--text-main);
-            color: white;
-            padding: 0.85rem 1.5rem;
-            border-radius: var(--radius-full);
-            font-size: 0.88rem;
-            font-weight: 600;
-            box-shadow: var(--shadow-lg);
-            z-index: var(--z-modal);
-            opacity: 0;
-            visibility: hidden;
-            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.25s ease, visibility 0.4s;
-            max-width: calc(100vw - 32px);
-            text-align: center;
-        }
+        .toast { opacity: 0; visibility: hidden; }
 
-        .toast.show {
-            transform: translateX(-50%) translateY(0);
-            opacity: 1;
-            visibility: visible;
-        }
+        /* Sit above the pinned action bar */
+        body.sc-v5 .toast.sc-toast { bottom: calc(env(safe-area-inset-bottom, 0px) + 92px); }
 
-        .toast.success {
-            background: var(--success);
-        }
-
-        .toast.error {
-            background: var(--danger);
+        @media (max-width: 900px) {
+            body.sc-v5.sc-logged-in .toast.sc-toast { bottom: calc(var(--sc-tabbar-h) + env(safe-area-inset-bottom, 0px) + 88px); }
         }
 
         .success-banner {
@@ -966,7 +996,6 @@
         @media (max-width: 900px) {
             .nj-stepper { top: calc(var(--sc-topbar-h) + env(safe-area-inset-top, 0px) + 8px); }
             .nj-actions { bottom: calc(var(--sc-tabbar-h) + env(safe-area-inset-bottom, 0px) + 10px); }
-            .toast { bottom: calc(var(--sc-tabbar-h) + env(safe-area-inset-bottom, 0px) + 90px); }
         }
 
         @media (max-width: 640px) {
@@ -995,6 +1024,7 @@
         @media (prefers-reduced-motion: reduce) {
             .page-header,
             .nj-panel.active,
+            .nj-suggest,
             .success-banner.show,
             .paper-modal-box { animation: none; }
 
@@ -1002,8 +1032,7 @@
             .nj-btn,
             .nj-slot,
             .nj-seg span,
-            .nj-step-btn,
-            .toast { transition: none; }
+            .nj-step-btn { transition: none; }
         }
     </style>
     <script src="js/auth-guard.js"></script>
@@ -1110,9 +1139,12 @@
                     </div>
                     <div class="nj-field" data-field="device">
                         <label class="nj-label" for="device">Model</label>
-                        <input type="text" id="device" class="nj-input" placeholder="e.g. Samsung Galaxy S24 Ultra"
-                            list="deviceModels" enterkeyhint="next" aria-describedby="err-device">
-                        <datalist id="deviceModels"></datalist>
+                        <div class="nj-combo">
+                            <input type="text" id="device" class="nj-input" placeholder="e.g. Samsung Galaxy S24 Ultra"
+                                enterkeyhint="next" aria-describedby="err-device" role="combobox"
+                                aria-autocomplete="list" aria-expanded="false" aria-controls="deviceSuggest">
+                            <div class="nj-suggest" id="deviceSuggest" role="listbox" aria-label="Suggested models" hidden></div>
+                        </div>
                         <div class="nj-error" id="err-device" role="alert"><span></span></div>
                     </div>
                 </div>
@@ -1433,14 +1465,101 @@
 
         function setBrandUI(id) {
             activeBrand = id;
-            const brand = BRANDS.find(b => b.id === id);
             document.querySelectorAll('[data-brand]').forEach(btn => {
                 const on = btn.dataset.brand === id;
                 btn.classList.toggle('is-on', on);
                 btn.setAttribute('aria-pressed', on ? 'true' : 'false');
             });
-            $('deviceModels').innerHTML = (brand ? brand.models : [])
-                .map(m => `<option value="${m}"></option>`).join('');
+        }
+
+        // ── Model suggestions (themed replacement for <datalist>) ────────────
+        let _suggestItems = [];
+        let _suggestIndex = -1;
+
+        function modelMatches(query) {
+            const brand = BRANDS.find(b => b.id === activeBrand);
+            const pool = brand && brand.models.length ? brand.models : BRANDS.flatMap(b => b.models);
+            const q = query.trim().toLowerCase();
+            const isPrefixOnly = BRANDS.some(b => b.prefix && q === b.prefix.trim().toLowerCase());
+            if (!q || isPrefixOnly) return brand && brand.models.length ? pool : [];
+            return pool.filter(m => m.toLowerCase().includes(q) && m.toLowerCase() !== q).slice(0, 8);
+        }
+
+        function renderSuggestions() {
+            const input = $('device');
+            const box = $('deviceSuggest');
+            _suggestItems = document.activeElement === input ? modelMatches(input.value) : [];
+            _suggestIndex = -1;
+            if (!_suggestItems.length) { closeSuggestions(); return; }
+            const q = input.value.trim().toLowerCase();
+            box.innerHTML = _suggestItems.map((m, i) => {
+                const at = q ? m.toLowerCase().indexOf(q) : -1;
+                const label = at < 0 ? escapeHtml(m)
+                    : escapeHtml(m.slice(0, at)) + '<mark>' + escapeHtml(m.slice(at, at + q.length)) + '</mark>' + escapeHtml(m.slice(at + q.length));
+                return `<div class="nj-suggest-item" role="option" id="sugg-${i}" data-index="${i}" aria-selected="false"><span>${label}</span></div>`;
+            }).join('');
+            box.hidden = false;
+            box.scrollTop = 0;
+            box.closest('.nj-group').classList.add('has-menu');
+            input.setAttribute('aria-expanded', 'true');
+        }
+
+        function closeSuggestions() {
+            const box = $('deviceSuggest');
+            box.hidden = true;
+            box.innerHTML = '';
+            box.closest('.nj-group').classList.remove('has-menu');
+            _suggestItems = [];
+            _suggestIndex = -1;
+            $('device').setAttribute('aria-expanded', 'false');
+            $('device').removeAttribute('aria-activedescendant');
+        }
+
+        function highlightSuggestion(i) {
+            const items = $('deviceSuggest').querySelectorAll('.nj-suggest-item');
+            if (!items.length) return;
+            _suggestIndex = (i + items.length) % items.length;
+            items.forEach((el, idx) => {
+                const on = idx === _suggestIndex;
+                el.classList.toggle('active', on);
+                el.setAttribute('aria-selected', on ? 'true' : 'false');
+                if (on) el.scrollIntoView({ block: 'nearest' });
+            });
+            $('device').setAttribute('aria-activedescendant', 'sugg-' + _suggestIndex);
+        }
+
+        function chooseSuggestion(i) {
+            const value = _suggestItems[i];
+            if (!value) return;
+            $('device').value = value;
+            closeSuggestions();
+            clearError('device');
+            saveDraft();
+        }
+
+        function wireDeviceSuggest() {
+            const input = $('device');
+            const box = $('deviceSuggest');
+            input.addEventListener('focus', renderSuggestions);
+            input.addEventListener('input', renderSuggestions);
+            input.addEventListener('blur', () => setTimeout(closeSuggestions, 120));
+            input.addEventListener('keydown', e => {
+                if (box.hidden) {
+                    if (e.key === 'ArrowDown') { renderSuggestions(); highlightSuggestion(0); e.preventDefault(); }
+                    return;
+                }
+                if (e.key === 'ArrowDown') { highlightSuggestion(_suggestIndex + 1); e.preventDefault(); }
+                else if (e.key === 'ArrowUp') { highlightSuggestion(_suggestIndex - 1); e.preventDefault(); }
+                else if (e.key === 'Escape') { closeSuggestions(); e.preventDefault(); }
+                else if (e.key === 'Enter' && _suggestIndex >= 0) { chooseSuggestion(_suggestIndex); e.preventDefault(); }
+            });
+            // mousedown keeps focus in the input so blur doesn't close the menu first
+            box.addEventListener('mousedown', e => {
+                const item = e.target.closest('.nj-suggest-item');
+                if (!item) return;
+                e.preventDefault();
+                chooseSuggestion(Number(item.dataset.index));
+            });
         }
 
         function selectBrand(id) {
@@ -1453,6 +1572,7 @@
             input.focus();
             const end = input.value.length;
             input.setSelectionRange(end, end);
+            renderSuggestions();
             clearError('device');
             saveDraft();
         }
@@ -2191,8 +2311,8 @@
         let _toastTimer = null;
         function showToast(msg, type = '') {
             const t = $('toast');
-            t.textContent = msg;
-            t.className = 'toast ' + type;
+            scRenderToast(t, msg, type);
+            void t.offsetWidth;
             t.classList.add('show');
             clearTimeout(_toastTimer);
             _toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
@@ -2239,6 +2359,7 @@
 
         renderBrandChips();
         renderRepairChips();
+        wireDeviceSuggest();
         if (!restoreDraft()) goToStep(0, { skipValidation: true, focus: false });
         fetchLastId();
 

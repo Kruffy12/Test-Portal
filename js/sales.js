@@ -2706,8 +2706,8 @@ let _toastTimer = null;
 function showToast(msg, type) {
     const el = document.getElementById('toastEl');
     if (!el) return;
-    el.textContent = msg;
-    el.className = 'toast' + (type ? ' ' + type : '');
+    if (window.scRenderToast) scRenderToast(el, msg, type);
+    else { el.textContent = msg; el.className = 'toast' + (type ? ' ' + type : ''); }
     void el.offsetWidth;
     el.classList.add('show');
     clearTimeout(_toastTimer);

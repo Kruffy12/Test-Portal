@@ -5045,8 +5045,9 @@
         }
         function showToast(msg, type = '') {
             const t = document.getElementById('toast');
-            t.textContent = msg;
-            t.className = 'toast ' + type;
+            if (window.scRenderToast) scRenderToast(t, msg, type);
+            else { t.textContent = msg; t.className = 'toast ' + type; }
+            void t.offsetWidth;
             t.classList.add('show');
             setTimeout(() => t.classList.remove('show'), 3200);
         }

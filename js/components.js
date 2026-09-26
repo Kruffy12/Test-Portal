@@ -910,6 +910,34 @@ function haptic(type = 'light') {
 window.haptic = haptic;
 window.IS_ANDROID = IS_ANDROID;
 
+// ── Toasts ────────────────────────────────────────────────────────────────────
+// Shared look for every page's toast element; pages keep their own show/hide timer.
+// Types: 'success'|'ok', 'error'|'err'|'warning', anything else = info.
+const SC_TOAST_TONES = { success: 'success', ok: 'success', error: 'error', err: 'error', warning: 'error', warn: 'error', info: 'info' };
+const SC_TOAST_ICONS = {
+    success: '<polyline points="20 6 9 17 4 12"/>',
+    error:   '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+    info:    '<line x1="12" y1="11" x2="12" y2="17"/><line x1="12" y1="7" x2="12.01" y2="7"/>'
+};
+
+function scRenderToast(el, msg, type) {
+    let text = String(msg == null ? '' : msg);
+    let tone = SC_TOAST_TONES[type] || '';
+    // Many messages start with an emoji; the icon replaces it and it hints the tone when no type is passed
+    const lead = text.match(/^\s*(\p{Extended_Pictographic})\uFE0F?\s*/u);
+    if (lead) {
+        text = text.slice(lead[0].length);
+        if (!tone) tone = /[❌⛔🚫⚠]/u.test(lead[1]) ? 'error' : /[✅✔🎉]/u.test(lead[1]) ? 'success' : '';
+    }
+    tone = tone || 'info';
+    el.className = 'toast sc-toast is-' + tone;
+    el.setAttribute('role', tone === 'error' ? 'alert' : 'status');
+    el.innerHTML = '<span class="sc-toast-icon" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">'
+        + SC_TOAST_ICONS[tone] + '</svg></span><span class="sc-toast-text"></span>';
+    el.querySelector('.sc-toast-text').textContent = text;
+}
+window.scRenderToast = scRenderToast;
+
 // Global light tap feedback on all buttons, links, and interactive elements
 if (IS_ANDROID) {
     document.addEventListener('pointerdown', e => {

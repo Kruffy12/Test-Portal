@@ -711,14 +711,14 @@
         if (!el) {
             el = document.createElement('div');
             el.id = 'invToast';
-            el.style.cssText = 'position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(100px);padding:12px 22px;border-radius:99px;font-size:0.88rem;font-weight:600;box-shadow:0 20px 40px rgba(0,0,0,0.35);z-index:99999;transition:transform 0.35s ease;color:#fff;background:#1e293b;';
+            el.setAttribute('aria-live', 'polite');
             document.body.appendChild(el);
         }
-        el.textContent = msg;
-        el.style.background = type === 'ok' ? '#059669' : type === 'err' ? '#dc2626' : '#1e293b';
-        el.style.transform = 'translateX(-50%) translateY(0)';
+        scRenderToast(el, msg, type);
+        void el.offsetWidth;
+        el.classList.add('show');
         clearTimeout(el._t);
-        el._t = setTimeout(() => { el.style.transform = 'translateX(-50%) translateY(100px)'; }, 3000);
+        el._t = setTimeout(() => el.classList.remove('show'), 3000);
     }
 
     let allItems     = [];

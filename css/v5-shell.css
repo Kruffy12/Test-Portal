@@ -40,6 +40,12 @@ body.sc-v5.sc-sidebar-collapsed {
     --sc-sidebar-current: var(--sc-sidebar-w-collapsed);
 }
 
+/* Native popups (date pickers, selects, scrollbars) can't be styled directly; this makes them follow the theme */
+html { color-scheme: light; accent-color: var(--primary); }
+html[data-theme="dark"],
+html[data-theme="scblue"],
+html[data-theme="merlot"] { color-scheme: dark; }
+
 body.sc-v5.sc-logged-out .sc-sidebar,
 body.sc-v5.sc-logged-out .sc-tabbar,
 body.sc-v5.sc-logged-out .sc-topbar,
@@ -268,6 +274,7 @@ body.sc-v5 nav.sc-tabbar::after {
 body.sc-v5.sc-sidebar-collapsed .sc-sidebar .bell-btn {
     justify-content: center;
     padding: 0;
+    gap: 0;
 }
 
 body.sc-v5.sc-sidebar-collapsed .sc-sidebar .bell-btn::after {
@@ -765,4 +772,70 @@ body.sc-v5 .stats {
 
 @media (min-width: 720px) {
     body.sc-v5 .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+/* ── Toasts: themed glass pill, tone shown by the icon (see scRenderToast) ── */
+body.sc-v5 .toast.sc-toast {
+    position: fixed;
+    left: 50%;
+    right: auto;
+    top: auto;
+    bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+    z-index: 99999;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    width: max-content;
+    max-width: min(92vw, 480px);
+    padding: 8px 18px 8px 8px;
+    border-radius: 99px;
+    background: var(--glass-strong);
+    color: var(--text-main);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.2), 0 2px 6px rgba(15, 23, 42, 0.08);
+    font-family: var(--font-family);
+    font-size: 0.88rem;
+    font-weight: 600;
+    line-height: 1.35;
+    white-space: normal;
+    text-align: left;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translate(-50%, 16px) scale(0.96);
+    transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.2s ease, visibility 0.35s;
+}
+
+body.sc-v5 .toast.sc-toast.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, 0) scale(1);
+}
+
+.sc-toast-icon {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    color: #fff;
+}
+
+body.sc-v5 .toast.sc-toast.is-success { border-color: rgba(16, 185, 129, 0.45); }
+body.sc-v5 .toast.sc-toast.is-error { border-color: rgba(239, 68, 68, 0.5); }
+.sc-toast.is-success .sc-toast-icon { background: var(--success); }
+.sc-toast.is-error .sc-toast-icon { background: var(--danger); }
+.sc-toast.is-info .sc-toast-icon { background: var(--text-main); color: var(--white-alt); }
+
+@media (max-width: 900px) {
+    body.sc-v5.sc-logged-in .toast.sc-toast {
+        bottom: calc(var(--sc-tabbar-h) + env(safe-area-inset-bottom, 0px) + 12px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body.sc-v5 .toast.sc-toast { transition: opacity 0.2s ease, visibility 0.2s; }
 }
