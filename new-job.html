@@ -51,8 +51,13 @@
             position:relative; z-index:1;
         }
 
+        .nj {
+            max-width: 760px;
+            margin: 0 auto;
+        }
+
         .page-header {
-            margin-bottom: var(--space-md);
+            margin-bottom: 18px;
             animation: fadeInUp 0.45s ease both;
         }
 
@@ -73,302 +78,610 @@
             max-width: 60ch;
         }
 
-        .card {
+        .nj-ticket {
+            margin-left: auto;
+            font-size: 0.85rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            color: var(--primary);
+            background: rgba(var(--primary-rgb), 0.08);
+            border: 1px solid rgba(var(--primary-rgb), 0.18);
+            border-radius: 99px;
+            padding: 4px 12px;
+        }
+
+        /* ── Stepper ── */
+        .nj-stepper {
+            list-style: none;
+            display: flex;
+            gap: 4px;
+            padding: 5px;
+            margin-bottom: 20px;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: var(--shadow-sm);
+            position: sticky;
+            top: 12px;
+            z-index: 6;
+        }
+
+        .nj-stepper li { flex: 1 1 0; min-width: 0; }
+
+        .nj-step-btn {
+            width: 100%;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 6px 10px;
+            border: none;
+            border-radius: 12px;
+            background: transparent;
+            color: var(--text-dim);
+            font-family: var(--font-family);
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        .nj-step-btn:disabled { cursor: default; opacity: 0.5; }
+        .nj-step-btn:not(:disabled):not([aria-current="step"]):hover { color: var(--text-main); }
+
+        .nj-step-btn[aria-current="step"] {
+            background: var(--white-alt);
+            color: var(--text-main);
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 4px 14px rgba(15, 23, 42, 0.07);
+        }
+
+        .nj-step-num {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            flex-shrink: 0;
+            font-size: 0.74rem;
+            font-weight: 800;
+            background: rgba(var(--primary-rgb), 0.1);
+            color: var(--primary);
+            transition: background 0.25s ease, color 0.25s ease;
+        }
+
+        .nj-step-num .chk { display: none; }
+        .nj-step-btn[aria-current="step"] .nj-step-num { background: var(--primary); color: #fff; }
+        .nj-step-btn.done .nj-step-num { background: var(--success); color: #fff; }
+        .nj-step-btn.done .nj-step-num .n { display: none; }
+        .nj-step-btn.done .nj-step-num .chk { display: block; }
+
+        .nj-step-label {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* ── Panels ── */
+        .nj-panel { display: none; }
+        .nj-panel.active { display: block; animation: njIn 0.34s cubic-bezier(0.32, 0.72, 0, 1) both; }
+        .nj-panel.active.from-left { animation-name: njInLeft; }
+
+        @keyframes njIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: none; } }
+        @keyframes njInLeft { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: none; } }
+
+        .nj-panel-head { margin-bottom: 14px; }
+
+        .nj-panel-head h2 {
+            font-size: 1.35rem;
+            font-weight: 800;
+            letter-spacing: -0.4px;
+            color: var(--text-main);
+            outline: none;
+        }
+
+        .nj-panel-head p {
+            color: var(--text-dim);
+            font-size: 0.88rem;
+            margin-top: 2px;
+        }
+
+        .nj-group {
             background: var(--glass);
             border: 1px solid var(--glass-border);
             border-radius: 18px;
-            padding: var(--space-md) var(--space-lg);
-            box-shadow: var(--shadow-sm);
-            margin-bottom: var(--space-sm);
+            padding: 18px;
+            margin-bottom: 14px;
             backdrop-filter: blur(14px);
             -webkit-backdrop-filter: blur(14px);
-            position: relative;
-            transition: box-shadow var(--transition-base), border-color var(--transition-base), transform var(--transition-base);
+            box-shadow: var(--shadow-sm);
         }
 
-        .card:hover {
-            border-color: rgba(var(--primary-rgb), 0.25);
-            box-shadow: var(--shadow-md);
-        }
-
-        .card:focus-within {
-            border-color: rgba(var(--primary-rgb), 0.4);
-            box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.08), var(--shadow-md);
-        }
-
-        .card:nth-child(1) { animation: fadeInUp 0.45s ease 0.05s both; }
-        .card:nth-child(2) { animation: fadeInUp 0.45s ease 0.12s both; }
-        .card:nth-child(3) { animation: fadeInUp 0.45s ease 0.19s both; }
-        .card:nth-child(4) { animation: fadeInUp 0.45s ease 0.26s both; }
-
-        .card-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: var(--space-md);
-            padding-bottom: var(--space-sm);
-            border-bottom: 1px solid var(--glass-border);
-        }
-
-        .card-step {
-            width: 28px;
-            height: 28px;
-            border-radius: 9px;
-            background: var(--primary);
-            color: #fff;
-            font-size: 0.82rem;
+        .nj-group-title {
+            font-size: 0.72rem;
             font-weight: 800;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.35);
-        }
-
-        .card-icon {
-            width: 34px;
-            height: 34px;
-            border-radius: var(--radius-sm);
-            background: rgba(var(--primary-rgb), 0.1);
-            color: var(--primary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1rem;
-            flex-shrink: 0;
-        }
-
-        .card-title {
-            font-size: 0.98rem;
-            font-weight: var(--font-bold);
-            color: var(--text-main);
-            letter-spacing: -0.2px;
-        }
-
-        .card-subtitle {
-            font-size: 0.75rem;
-            color: var(--text-light);
-            margin-left: auto;
-            text-align: right;
-            font-style: italic;
-        }
-
-        .local-badge {
-            margin-left: auto;
-            font-size: 0.65rem;
-            background: rgba(245, 158, 11, 0.12);
-            color: #b45309;
-            border: 1px solid rgba(245, 158, 11, 0.3);
-            border-radius: 99px;
-            padding: 2px 9px;
-            letter-spacing: 0.5px;
-            font-weight: 700;
+            letter-spacing: 0.6px;
             text-transform: uppercase;
+            color: var(--text-dim);
+            margin-bottom: 12px;
         }
 
-        .form-row {
+        /* ── Fields ── */
+        .nj-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: var(--space-sm);
+            gap: 14px;
         }
 
-        .form-row.single {
-            grid-template-columns: 1fr;
-        }
-
-        .form-group {
+        .nj-field {
             display: flex;
             flex-direction: column;
-            gap: 7px;
-            margin-bottom: var(--space-sm);
+            gap: 6px;
+            margin-bottom: 16px;
+            min-width: 0;
         }
 
-        .form-group:last-child {
-            margin-bottom: 0;
-        }
+        .nj-field:last-child { margin-bottom: 0; }
+        .nj-row .nj-field { margin-bottom: 16px; }
 
-        .form-group label {
-            font-size: 0.78rem;
+        .nj-label {
+            font-size: 0.8rem;
             font-weight: 700;
-            color: var(--text-dim);
-            letter-spacing: 0.2px;
-        }
-
-        .form-input,
-        .form-textarea {
-            width: 100%;
-            padding: 0.85rem 1rem;
-            border-radius: var(--radius-sm);
-            border: 1.5px solid rgba(var(--primary-rgb), 0.12);
-            background: var(--white-alt);
-            font-family: var(--font-family);
-            font-size: 0.95rem;
             color: var(--text-main);
-            transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
         }
 
-        .form-input:focus,
-        .form-textarea:focus {
-            outline: none;
-            border-color: var(--primary);
-            background: var(--white-alt);
-            box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.1);
-        }
-
-        .form-input::placeholder,
-        .form-textarea::placeholder {
+        .nj-label .opt {
+            font-weight: 500;
             color: var(--text-light);
         }
 
-        .form-textarea {
-            resize: vertical;
-            min-height: 88px;
+        .nj-input,
+        .nj-textarea {
+            width: 100%;
+            min-height: 50px;
+            padding: 0.8rem 1rem;
+            border-radius: 12px;
+            border: 1.5px solid rgba(var(--primary-rgb), 0.14);
+            background: var(--white-alt);
+            font-family: var(--font-family);
+            /* 16px keeps iOS Safari from zooming on focus */
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--text-main);
+            transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
         }
 
-        .id-wrapper {
-            position: relative;
+        .nj-input:focus,
+        .nj-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.12);
         }
 
-        .id-prefix {
+        .nj-input::placeholder,
+        .nj-textarea::placeholder { color: var(--text-light); font-weight: 400; }
+
+        .nj-textarea { min-height: 88px; resize: vertical; }
+
+        .nj-input::-webkit-calendar-picker-indicator {
+            cursor: pointer;
+            opacity: 0.6;
+            filter: invert(var(--calendar-filter, 0));
+        }
+
+        .nj-hint {
+            font-size: 0.75rem;
+            color: var(--text-light);
+        }
+
+        .nj-error {
+            display: none;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--danger);
+        }
+
+        .nj-field.has-error .nj-error { display: flex; }
+
+        .nj-field.has-error .nj-input,
+        .nj-field.has-error .nj-textarea {
+            border-color: var(--danger);
+            box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
+        }
+
+        .nj-affix { position: relative; }
+
+        .nj-affix-pre {
             position: absolute;
-            left: 1rem;
+            left: 14px;
             top: 50%;
             transform: translateY(-50%);
-            font-weight: var(--font-bold);
-            color: var(--primary);
-            font-size: 1rem;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-dim);
             pointer-events: none;
             user-select: none;
         }
 
-        .id-wrapper .form-input {
-            padding-left: 2rem;
-            font-weight: var(--font-bold);
-            font-size: 1.05rem;
-            letter-spacing: 0.5px;
-            color: var(--primary);
-        }
+        .nj-affix.phone .nj-input { padding-left: 60px; }
+        .nj-affix.ticket .nj-input { padding-left: 32px; font-weight: 800; letter-spacing: 0.5px; color: var(--primary); }
+        .nj-affix.ticket .nj-affix-pre { color: var(--primary); }
 
-        .id-wrapper .form-input::-webkit-outer-spin-button,
-        .id-wrapper .form-input::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
+        .nj-affix.ticket .nj-input::-webkit-outer-spin-button,
+        .nj-affix.ticket .nj-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .nj-affix.ticket .nj-input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 
-        .id-wrapper .form-input[type=number] {
-            -moz-appearance: textfield;
-            appearance: textfield;
-        }
-
-        .id-hint {
-            font-size: 0.72rem;
-            color: var(--text-light);
-            margin-top: 4px;
-            font-style: italic;
-        }
-
-        .status-pills {
+        /* ── Chips ── */
+        .nj-chips {
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
         }
 
-        .status-pill input[type="radio"] {
-            display: none;
-        }
-
-        .status-pill label {
+        .nj-chip {
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 6px;
-            padding: 8px 16px;
-            border-radius: var(--radius-full);
-            border: 1.5px solid rgba(var(--primary-rgb), 0.15);
+            min-height: 40px;
+            padding: 0 15px;
+            border-radius: 99px;
+            border: 1.5px solid rgba(var(--primary-rgb), 0.16);
             background: var(--white-alt);
-            font-size: 0.83rem;
+            color: var(--text-main);
+            font-family: var(--font-family);
+            font-size: 0.86rem;
             font-weight: 600;
-            color: var(--text-dim);
             cursor: pointer;
-            transition: all var(--transition-fast);
             user-select: none;
+            transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
 
-        .status-pill label:hover {
-            border-color: var(--primary);
-            color: var(--primary);
-            background: rgba(var(--primary-rgb), 0.04);
-            transform: translateY(-1px);
-        }
+        .nj-chip:hover { border-color: rgba(var(--primary-rgb), 0.45); }
+        .nj-chip:active { transform: scale(0.97); }
 
-        .status-pill input[type="radio"]:checked+label {
-            color: #fff;
-            box-shadow: 0 4px 14px rgba(var(--primary-rgb), 0.3);
-            transform: translateY(-1px);
-        }
-
-        .status-pill.received input:checked+label {
+        .nj-chip.is-on,
+        .nj-choice input:checked + .nj-chip {
             background: var(--primary);
             border-color: var(--primary);
-            box-shadow: 0 4px 14px rgba(var(--primary-rgb), 0.35);
+            color: #fff;
         }
 
-        .status-pill.fixing input:checked+label {
-            background: var(--danger);
-            border-color: var(--danger);
-            box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3);
-        }
+        .nj-choice { position: relative; display: inline-flex; }
+        .nj-choice input { position: absolute; opacity: 0; pointer-events: none; }
+        .nj-choice input:focus-visible + .nj-chip { outline: 2px solid var(--primary); outline-offset: 2px; }
 
-        .status-pill.testing input:checked+label {
-            background: var(--warning);
-            border-color: var(--warning);
-            box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);
-        }
+        .nj-choice.tone-danger input:checked + .nj-chip { background: var(--danger); border-color: var(--danger); }
+        .nj-choice.tone-warning input:checked + .nj-chip { background: var(--warning); border-color: var(--warning); }
+        .nj-choice.tone-success input:checked + .nj-chip { background: var(--success); border-color: var(--success); }
 
-        .status-pill.ready input:checked+label {
-            background: var(--success);
-            border-color: var(--success);
-            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
-        }
+        .nj-field.has-error .nj-chips .nj-chip { border-color: rgba(239, 68, 68, 0.45); }
 
-        .submit-area {
+        #jobTypeOther { display: none; margin-top: 10px; }
+        #jobTypeOther.visible { display: block; }
+
+        #completionPicker { display: none; margin-top: 10px; }
+        #completionPicker.visible { display: flex; flex-direction: column; gap: 6px; }
+
+        /* ── Accessory rows (segmented controls) ── */
+        .nj-acc {
             display: flex;
-            flex-direction: column;
-            gap: var(--space-sm);
-            animation: fadeInUp 0.45s ease 0.25s both;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--glass-border);
         }
 
-        .btn-submit {
-            width: 100%;
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: white;
-            padding: 1.05rem;
-            border: none;
-            border-radius: var(--radius-sm);
-            font-family: var(--font-family);
-            font-weight: var(--font-bold);
-            font-size: 1rem;
-            cursor: pointer;
-            transition: var(--transition-slow);
+        .nj-acc:first-of-type { padding-top: 0; }
+
+        .nj-acc-name {
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .nj-acc-sub {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+
+        .nj-seg {
+            display: inline-grid;
+            grid-auto-flow: column;
+            grid-auto-columns: 1fr;
+            gap: 2px;
+            padding: 3px;
+            border-radius: 11px;
+            background: rgba(var(--primary-rgb), 0.08);
+            flex-shrink: 0;
+        }
+
+        .nj-seg label { position: relative; display: flex; }
+        .nj-seg input { position: absolute; opacity: 0; pointer-events: none; }
+
+        .nj-seg span {
             display: flex;
             align-items: center;
             justify-content: center;
+            min-height: 34px;
+            padding: 0 12px;
+            border-radius: 9px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-dim);
+            white-space: nowrap;
+            cursor: pointer;
+            transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .nj-seg input:checked + span {
+            background: var(--white-alt);
+            color: var(--text-main);
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08), 0 2px 8px rgba(15, 23, 42, 0.06);
+        }
+
+        .nj-seg input[value="missing"]:checked + span { color: var(--danger); }
+        .nj-seg input:focus-visible + span { outline: 2px solid var(--primary); outline-offset: 1px; }
+
+        .nj-acc-other { padding-top: 14px; }
+
+        /* ── Photos ── */
+        .nj-photos {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .nj-photo { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+
+        .nj-slot {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 3 / 4;
+            border-radius: 14px;
+            border: 2px dashed rgba(var(--primary-rgb), 0.24);
+            background: rgba(var(--primary-rgb), 0.03);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            overflow: hidden;
+            cursor: pointer;
+            color: var(--text-dim);
+            font-family: var(--font-family);
+            font-size: 0.85rem;
+            font-weight: 700;
+            transition: border-color 0.2s ease, background 0.2s ease, transform 0.1s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .nj-slot:hover { border-color: var(--primary); background: rgba(var(--primary-rgb), 0.06); }
+        .nj-slot:active { transform: scale(0.98); }
+        .nj-slot:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+        .nj-slot small { font-size: 0.7rem; font-weight: 600; color: var(--text-light); }
+        .nj-slot.required small { color: var(--danger); }
+        .nj-slot svg { color: var(--primary); }
+
+        .nj-slot img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .nj-slot.filled { border-style: solid; border-color: var(--success); }
+
+        .nj-slot-retake {
+            position: absolute;
+            left: 50%;
+            bottom: 8px;
+            transform: translateX(-50%);
+            padding: 4px 12px;
+            border-radius: 99px;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            color: #fff;
+            font-size: 0.72rem;
+            font-weight: 700;
+        }
+
+        .nj-slot-ok {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--success);
+            color: #fff;
+            display: grid;
+            place-items: center;
+        }
+
+        .nj-slot-ok svg { color: #fff; }
+
+        .nj-field.has-error .nj-slot.required:not(.filled) { border-color: var(--danger); background: rgba(239, 68, 68, 0.04); }
+
+        .nj-webcam-btn {
+            align-self: center;
+            border: none;
+            background: none;
+            color: var(--primary);
+            font-family: var(--font-family);
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 8px;
+        }
+
+        .nj-webcam-btn:hover { background: rgba(var(--primary-rgb), 0.08); }
+
+        /* Phones and tablets get the native camera through the file picker */
+        @media (pointer: coarse) {
+            .nj-webcam-btn { display: none; }
+        }
+
+        .nj-extras {
+            display: flex;
+            flex-wrap: wrap;
             gap: 8px;
-            box-shadow: 0 8px 22px rgba(var(--primary-rgb), 0.3);
+            margin-top: 14px;
+            align-items: center;
         }
 
-        .btn-submit:hover:not(:disabled) {
-            filter: brightness(1.05);
-            transform: translateY(-2px);
-            box-shadow: 0 12px 28px rgba(var(--primary-rgb), 0.4);
+        #slot-extra-grid { display: contents; }
+
+        .nj-extra-add {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            min-height: 40px;
+            padding: 0 14px;
+            border-radius: 99px;
+            border: 1.5px dashed rgba(var(--primary-rgb), 0.3);
+            color: var(--primary);
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
         }
 
-        .btn-submit:active:not(:disabled) {
-            transform: translateY(0);
+        .nj-extra-add:hover { background: rgba(var(--primary-rgb), 0.06); }
+
+        /* ── Review summary ── */
+        .nj-sum + .nj-sum {
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid var(--glass-border);
         }
 
-        .btn-submit:disabled {
-            opacity: 0.65;
-            cursor: not-allowed;
+        .nj-sum-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .nj-sum-head h3 {
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            color: var(--text-dim);
+        }
+
+        .nj-link {
+            border: none;
+            background: none;
+            color: var(--primary);
+            font-family: var(--font-family);
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            padding: 6px 10px;
+            margin: -6px -10px;
+            border-radius: 8px;
+        }
+
+        .nj-link:hover { background: rgba(var(--primary-rgb), 0.08); }
+
+        .nj-sum dl { display: grid; gap: 6px; }
+
+        .nj-sum-row {
+            display: grid;
+            grid-template-columns: 120px 1fr;
+            gap: 12px;
+            font-size: 0.9rem;
+        }
+
+        .nj-sum-row dt { color: var(--text-dim); font-weight: 600; }
+        .nj-sum-row dd { color: var(--text-main); font-weight: 600; word-break: break-word; }
+        .nj-sum-row dd .warn { color: var(--danger); }
+
+        .nj-sum-thumbs { display: flex; gap: 6px; flex-wrap: wrap; }
+
+        .nj-sum-thumbs img {
+            width: 44px;
+            height: 58px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid var(--glass-border);
+        }
+
+        /* ── Action bar ── */
+        .nj-actions {
+            position: sticky;
+            bottom: 14px;
+            z-index: 6;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 18px;
+            padding: 8px;
+            background: var(--glass-strong);
+            border: 1px solid var(--glass-border);
+            border-radius: 18px;
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+        }
+
+        .nj-actions-count {
+            padding-left: 10px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-dim);
+            white-space: nowrap;
+        }
+
+        .nj-btn {
+            min-height: 50px;
+            padding: 0 22px;
+            border: none;
+            border-radius: 13px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-family: var(--font-family);
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.1s ease, filter 0.2s ease, box-shadow 0.2s ease;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        .nj-btn:active:not(:disabled) { transform: scale(0.98); }
+        .nj-btn:disabled { opacity: 0.65; cursor: not-allowed; }
+
+        .nj-btn-primary {
+            flex: 1;
+            margin-left: auto;
+            max-width: 340px;
+            background: var(--primary);
+            color: #fff;
+            box-shadow: 0 6px 18px rgba(var(--primary-rgb), 0.3);
+        }
+
+        .nj-btn-primary:hover:not(:disabled) { filter: brightness(1.06); }
+
+        .nj-btn-secondary {
+            background: rgba(var(--primary-rgb), 0.08);
+            color: var(--primary);
         }
 
         .btn-spinner {
@@ -381,37 +694,18 @@
             animation: spin 0.7s linear infinite;
         }
 
-        .btn-submit.loading .btn-text {
-            display: none;
-        }
-
-        .btn-submit.loading .btn-spinner {
-            display: block;
-        }
+        .nj-btn.loading .btn-text { display: none; }
+        .nj-btn.loading .btn-spinner { display: block; }
 
         @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        .btn-back {
-            text-align: center;
-            font-size: 0.88rem;
-            color: var(--text-dim);
-            text-decoration: none;
-            transition: color var(--transition-fast);
-        }
-
-        .btn-back:hover {
-            color: var(--primary);
+            to { transform: rotate(360deg); }
         }
 
         .toast {
             position: fixed;
             bottom: 2rem;
             left: 50%;
-            transform: translateX(-50%) translateY(120px);
+            transform: translateX(-50%) translateY(160px);
             background: var(--text-main);
             color: white;
             padding: 0.85rem 1.5rem;
@@ -420,12 +714,17 @@
             font-weight: 600;
             box-shadow: var(--shadow-lg);
             z-index: var(--z-modal);
-            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.25s ease, visibility 0.4s;
+            max-width: calc(100vw - 32px);
+            text-align: center;
         }
 
         .toast.show {
             transform: translateX(-50%) translateY(0);
+            opacity: 1;
+            visibility: visible;
         }
 
         .toast.success {
@@ -440,7 +739,7 @@
             display: none;
             background: var(--glass);
             border: 1px solid rgba(16, 185, 129, 0.25);
-            border-radius: var(--radius-lg);
+            border-radius: 24px;
             padding: var(--space-xl) var(--space-lg);
             text-align: center;
             backdrop-filter: blur(10px);
@@ -532,89 +831,6 @@
             border-color: rgba(37, 99, 235, 0.3);
         }
 
-        /* ── Job Type Pills ── */
-        .job-type-pills {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 12px;
-        }
-
-        .job-type-pill input[type="radio"] {
-            display: none;
-        }
-
-        .job-type-pill label {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 8px 16px;
-            border-radius: var(--radius-full);
-            border: 1.5px solid rgba(var(--primary-rgb), 0.18);
-            background: var(--white-alt);
-            font-size: 0.83rem;
-            font-weight: 600;
-            color: var(--text-dim);
-            cursor: pointer;
-            transition: all var(--transition-fast);
-            user-select: none;
-        }
-
-        .job-type-pill label:hover {
-            border-color: var(--primary);
-            color: var(--primary);
-            background: rgba(var(--primary-rgb), 0.06);
-            transform: translateY(-1px);
-        }
-
-        .job-type-pill input[type="radio"]:checked+label {
-            background: var(--primary);
-            border-color: var(--primary);
-            color: #fff;
-            box-shadow: 0 4px 14px rgba(var(--primary-rgb), 0.35);
-            transform: translateY(-1px);
-        }
-
-        /* Priority override styles */
-        #pr-low:checked+label {
-            background: var(--primary) !important;
-            border-color: var(--primary) !important;
-            color: #fff !important;
-            box-shadow: 0 4px 14px rgba(var(--primary-rgb), 0.35) !important;
-        }
-
-        #pr-high:checked+label {
-            background: var(--danger) !important;
-            border-color: var(--danger) !important;
-            color: #fff !important;
-            box-shadow: 0 4px 14px rgba(239, 68, 68, 0.35) !important;
-        }
-
-        .other-type-input {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            border-radius: var(--radius-sm);
-            border: 1.5px solid rgba(var(--primary-rgb), 0.2);
-            background: var(--white-alt);
-            font-family: var(--font-family);
-            font-size: 0.92rem;
-            color: var(--text-main);
-            transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
-            display: none;
-            margin-top: 8px;
-        }
-
-        .other-type-input.visible {
-            display: block;
-        }
-
-        .other-type-input:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.1);
-        }
-
-
         .btn-print {
             display: inline-flex;
             align-items: center;
@@ -635,41 +851,6 @@
         .btn-print:hover {
             background: rgba(var(--primary-rgb), 0.08);
             border-color: var(--primary);
-        }
-
-        /* Phone Input */
-        .phone-wrapper {
-            position: relative;
-            display: flex;
-            align-items: center;
-            width: 100%;
-        }
-
-        .phone-prefix {
-            position: absolute;
-            left: 10px;
-            top: 50%;
-            transform: translateY(-40%);
-            background: rgba(var(--primary-rgb), 0.1);
-            color: var(--primary);
-            font-weight: 700;
-            font-size: 0.82rem;
-            padding: 5px 8px;
-            border-radius: 8px;
-            border: 1px solid rgba(var(--primary-rgb), 0.15);
-            pointer-events: none;
-            user-select: none;
-            z-index: 5;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            line-height: 1;
-        }
-
-        .phone-wrapper .form-input {
-            padding-left: 68px !important;
-            height: 52px;
-            line-height: 52px;
         }
 
         /* Paper Size Modal */
@@ -770,80 +951,6 @@
             color: var(--text-main);
         }
 
-        /* Completion Date Picker */
-        .completion-picker {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .completion-mode-pills {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 4px;
-        }
-
-        .completion-mode-pill input[type="radio"] {
-            display: none;
-        }
-
-        .completion-mode-pill label {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 14px;
-            border-radius: var(--radius-full);
-            border: 1.5px solid rgba(37, 99, 235, 0.15);
-            background: var(--white-alt);
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: var(--text-dim);
-            cursor: pointer;
-            transition: all var(--transition-fast);
-            user-select: none;
-        }
-
-        .completion-mode-pill label:hover {
-            border-color: var(--primary);
-            color: var(--primary);
-            background: rgba(var(--primary-rgb), 0.04);
-            transform: translateY(-1px);
-        }
-
-        .completion-mode-pill input[type="radio"]:checked+label {
-            background: var(--primary);
-            border-color: var(--primary);
-            color: #fff;
-            box-shadow: 0 4px 14px rgba(var(--primary-rgb), 0.3);
-            transform: translateY(-1px);
-        }
-
-        .completion-input {
-            font-size: 0.9rem;
-            color: var(--text-main);
-            background: var(--white-alt);
-            border: 1.5px solid rgba(37, 99, 235, 0.12);
-            padding: 0.85rem 1rem;
-            border-radius: var(--radius-sm);
-        }
-
-        .completion-input::-webkit-calendar-picker-indicator {
-            cursor: pointer;
-            opacity: 0.6;
-            transition: opacity var(--transition-fast);
-            filter: invert(var(--calendar-filter, 0));
-        }
-
-        .completion-input::-webkit-calendar-picker-indicator:hover {
-            opacity: 1;
-        }
-
-        .completion-hint {
-            font-size: 0.72rem;
-            color: var(--text-light);
-            font-style: italic;
-        }
-
         @keyframes fadeInUp {
             from {
                 opacity: 0;
@@ -856,59 +963,48 @@
             }
         }
 
+        @media (max-width: 900px) {
+            .nj-stepper { top: calc(var(--sc-topbar-h) + env(safe-area-inset-top, 0px) + 8px); }
+            .nj-actions { bottom: calc(var(--sc-tabbar-h) + env(safe-area-inset-bottom, 0px) + 10px); }
+            .toast { bottom: calc(var(--sc-tabbar-h) + env(safe-area-inset-bottom, 0px) + 90px); }
+        }
+
         @media (max-width: 640px) {
             main {
                 padding: calc(56px + var(--space-md)) var(--space-xs) var(--space-md);
-            }
-
-            .card {
-                padding: var(--space-md);
-                border-radius: var(--radius-md);
-            }
-
-            .card-header .card-subtitle {
-                display: none;
-            }
-
-            .form-row {
-                grid-template-columns: 1fr;
             }
 
             .page-header h1 {
                 font-size: 1.4rem;
             }
 
-            .status-pills {
-                gap: 6px;
-            }
+            .nj-row { grid-template-columns: 1fr; gap: 0; }
+            .nj-group { padding: 16px; }
+            .nj-sum-row { grid-template-columns: 96px 1fr; font-size: 0.86rem; }
 
-            .status-pill label {
-                padding: 7px 13px;
-                font-size: 0.8rem;
-            }
+            /* Only the current step keeps its label so four steps fit on a phone */
+            .nj-step-label { display: none; }
+            .nj-stepper li:has([aria-current="step"]) { flex-grow: 2.4; }
+            .nj-step-btn[aria-current="step"] .nj-step-label { display: inline; }
+
+            .nj-acc { flex-wrap: wrap; }
+            .nj-photos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .success-banner { padding: var(--space-lg) var(--space-md); }
         }
-        /* ── Inspection Checklist ── */
-        .checklist-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--glass-border); transition: background 0.15s; border-radius: 8px; padding-left: 8px; padding-right: 8px; }
-        .checklist-item:last-child { border-bottom: none; }
-        .checklist-item input[type="checkbox"] { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--danger); cursor: pointer; flex-shrink: 0; }
-        .checklist-item label { font-size: 0.9rem; font-weight: 600; color: var(--text-main); cursor: pointer; line-height: 1.4; display: flex; align-items: flex-start; gap: 8px; }
-        .checklist-item label::before { content: ''; display: inline-block; width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--success); background: rgba(16,185,129,0.1); flex-shrink: 0; margin-top: 3px; transition: all 0.15s; }
-        .checklist-item input:checked + label::before { background: var(--danger); border-color: var(--danger); box-shadow: 0 0 0 3px rgba(239,68,68,0.15); }
-        .checklist-item label span { display: block; font-size: 0.75rem; font-weight: 400; color: var(--text-dim); margin-top: 2px; }
-        .checklist-other { display: flex; align-items: center; gap: 12px; padding: 12px 0; }
-        .checklist-other input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--primary); cursor: pointer; flex-shrink: 0; }
-        .checklist-other input[type="text"] { flex: 1; padding: 8px 12px; border-radius: var(--radius-sm); border: 1.5px solid rgba(37,99,235,0.12); background: var(--white-alt); color: var(--text-main); font-family: var(--font-family); font-size: 0.88rem; outline: none; transition: border-color var(--transition-fast); }
-        .checklist-other input[type="text"]:focus { border-color: var(--primary); }
-        .checklist-other input[type="text"]:disabled { opacity: 0.4; cursor: not-allowed; }
-        .img-attach-area { margin-top: 14px; border: 2px dashed var(--glass-border); border-radius: var(--radius-sm); padding: 16px; text-align: center; cursor: pointer; transition: border-color var(--transition-fast); }
-        .img-attach-area:hover { border-color: var(--primary); }
-        .img-attach-area input[type="file"] { display: none; }
-        .img-attach-label { font-size: 0.82rem; color: var(--text-dim); font-weight: 600; }
-        .img-attach-label span { display: block; font-size: 0.72rem; margin-top: 3px; color: var(--text-light); }
-        .img-preview-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-        .img-preview-item { position: relative; width: 72px; height: 72px; border-radius: 8px; overflow: hidden; border: 1px solid var(--glass-border); }
-        .img-preview-item img { width: 100%; height: 100%; object-fit: cover; }
-        .img-preview-item button { position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; border-radius: 50%; border: none; background: rgba(0,0,0,0.6); color: white; font-size: 0.65rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+        @media (prefers-reduced-motion: reduce) {
+            .page-header,
+            .nj-panel.active,
+            .success-banner.show,
+            .paper-modal-box { animation: none; }
+
+            .nj-chip,
+            .nj-btn,
+            .nj-slot,
+            .nj-seg span,
+            .nj-step-btn,
+            .toast { transition: none; }
+        }
     </style>
     <script src="js/auth-guard.js"></script>
 </head>
@@ -921,14 +1017,16 @@
     </div>
     <div id="nav-placeholder"></div>
     <main>
+      <div class="nj">
         <div class="page-header">
             <h1>
-                    <span style="width:36px;height:36px;border-radius:10px;background:rgba(var(--primary-rgb),0.1);color:var(--primary);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-                    </span>
-                    New Repair Job
-                </h1>
-            <p>Log a new device repair. Customer info is saved to the database.</p>
+                <span style="width:36px;height:36px;border-radius:10px;background:rgba(var(--primary-rgb),0.1);color:var(--primary);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                </span>
+                New Repair Job
+                <span class="nj-ticket" id="ticketChip">#—</span>
+            </h1>
+            <p>Four quick steps. If the page reloads, your progress is kept.</p>
         </div>
 
         <!-- Success Banner -->
@@ -958,308 +1056,239 @@
         </div>
 
         <!-- Form -->
-        <div id="formWrapper">
+        <form id="formWrapper" novalidate autocomplete="off">
 
-            <!-- Card 1: Repair ID -->
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-step">1</div>
-                    <div class="card-icon">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--primary)"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-                    </div>
-                    <span class="card-title">Repair ID</span>
-                    <span class="card-subtitle">Auto-incremented · editable</span>
-                </div>
-                <div class="form-group" style="margin-bottom:0">
-                    <label for="repairId">ID Number</label>
-                    <div class="id-wrapper">
-                        <span class="id-prefix">#</span>
-                        <input type="number" id="repairId" class="form-input" min="1" step="1" placeholder="—">
-                    </div>
-                    <div class="id-hint" id="idHint">Fetching last job ID…</div>
-                </div>
-            </div>
+            <ol class="nj-stepper" id="njStepper" aria-label="New job steps">
+                <li><button type="button" class="nj-step-btn" data-goto="0"><span class="nj-step-num"><span class="n">1</span><svg class="chk" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="nj-step-label">Customer</span></button></li>
+                <li><button type="button" class="nj-step-btn" data-goto="1"><span class="nj-step-num"><span class="n">2</span><svg class="chk" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="nj-step-label">Device</span></button></li>
+                <li><button type="button" class="nj-step-btn" data-goto="2"><span class="nj-step-num"><span class="n">3</span><svg class="chk" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="nj-step-label">Condition</span></button></li>
+                <li><button type="button" class="nj-step-btn" data-goto="3"><span class="nj-step-num"><span class="n">4</span><svg class="chk" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="nj-step-label">Review</span></button></li>
+            </ol>
 
-            <!-- Card 2: Customer Info -->
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-step">2</div>
-                    <div class="card-icon">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--primary)"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                    </div>
-                    <span class="card-title">Customer Info</span>
-                    <span class="card-subtitle">Saved to the customer database</span>
+            <!-- Step 1: Customer -->
+            <section class="nj-panel" data-step="0" aria-labelledby="h-step-0">
+                <div class="nj-panel-head">
+                    <h2 id="h-step-0" tabindex="-1">Who's the customer?</h2>
+                    <p>Saved to the customer database.</p>
                 </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="customerName">Name</label>
-                        <input type="text" id="customerName" class="form-input" placeholder="e.g. John Doe"
-                            autocomplete="off" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="customerPhone">Phone</label>
-                        <div class="phone-wrapper">
-                            <span class="phone-prefix">+501</span>
-                            <input type="tel" id="customerPhone" class="form-input" placeholder="600-0000"
-                                autocomplete="off">
+                <div class="nj-group">
+                    <div class="nj-row">
+                        <div class="nj-field" data-field="customerName">
+                            <label class="nj-label" for="customerName">Name</label>
+                            <input type="text" id="customerName" class="nj-input" placeholder="e.g. John Doe"
+                                autocapitalize="words" enterkeyhint="next" aria-describedby="err-customerName">
+                            <div class="nj-error" id="err-customerName" role="alert"><span></span></div>
+                        </div>
+                        <div class="nj-field" data-field="customerPhone">
+                            <label class="nj-label" for="customerPhone">Phone <span class="opt">(optional)</span></label>
+                            <div class="nj-affix phone">
+                                <span class="nj-affix-pre">+501</span>
+                                <input type="tel" id="customerPhone" class="nj-input" placeholder="600 - 0000"
+                                    inputmode="numeric" enterkeyhint="next" aria-describedby="err-customerPhone">
+                            </div>
+                            <div class="nj-error" id="err-customerPhone" role="alert"><span></span></div>
                         </div>
                     </div>
-                </div>
-                <div class="form-row single">
-                    <div class="form-group" style="margin-bottom:0">
-                        <label for="notes">Notes <span
-                                style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-light);font-size:0.75rem;">—
-                                internal use</span></label>
-                        <textarea id="notes" class="form-textarea"
+                    <div class="nj-field">
+                        <label class="nj-label" for="notes">Notes <span class="opt">(internal use)</span></label>
+                        <textarea id="notes" class="nj-textarea"
                             placeholder="e.g. Customer prefers call. Has parts ordered already…"></textarea>
                     </div>
                 </div>
-            </div>
+            </section>
 
-            <!-- Card 3: Device & Status -->
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-step">3</div>
-                    <div class="card-icon">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--primary)"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
-                    </div>
-                    <span class="card-title">Device &amp; Status</span>
-                    <span class="card-subtitle">↑ Sent to Database</span>
+            <!-- Step 2: Device & repair -->
+            <section class="nj-panel" data-step="1" aria-labelledby="h-step-1">
+                <div class="nj-panel-head">
+                    <h2 id="h-step-1" tabindex="-1">What needs fixing?</h2>
+                    <p>Pick a preset or type your own.</p>
                 </div>
-                <div class="form-row" style="margin-bottom:var(--space-sm)">
-                    <div class="form-group" style="margin-bottom:0">
-                        <label for="device">Device</label>
-                        <input type="text" id="device" class="form-input" placeholder="e.g. Samsung S24 Ultra"
-                            autocomplete="off" required>
+                <div class="nj-group">
+                    <div class="nj-group-title">Device</div>
+                    <div class="nj-field">
+                        <div class="nj-chips" id="brandChips" role="group" aria-label="Brand"></div>
                     </div>
-                    <div class="form-group" style="margin-bottom:0">
-                        <label for="issue">Issue</label>
-                        <input type="text" id="issue" class="form-input" placeholder="e.g. Cracked screen"
-                            autocomplete="off">
+                    <div class="nj-field" data-field="device">
+                        <label class="nj-label" for="device">Model</label>
+                        <input type="text" id="device" class="nj-input" placeholder="e.g. Samsung Galaxy S24 Ultra"
+                            list="deviceModels" enterkeyhint="next" aria-describedby="err-device">
+                        <datalist id="deviceModels"></datalist>
+                        <div class="nj-error" id="err-device" role="alert"><span></span></div>
                     </div>
                 </div>
-                <div class="form-group" style="margin-bottom:var(--space-sm)">
-                    <label>Job Type</label>
-                    <div class="job-type-pills">
-                        <div class="job-type-pill">
-                            <input type="radio" name="jobType" id="jt-backglass" value="Back-Glass Repair">
-                            <label for="jt-backglass">Back-Glass Repair</label>
-                        </div>
-                        <div class="job-type-pill">
-                            <input type="radio" name="jobType" id="jt-screen" value="Screen Replacement">
-                            <label for="jt-screen">Screen Replacement</label>
-                        </div>
-                        <div class="job-type-pill">
-                            <input type="radio" name="jobType" id="jt-unlock" value="Unlocking">
-                            <label for="jt-unlock">Unlocking</label>
-                        </div>
-                        <div class="job-type-pill">
-                            <input type="radio" name="jobType" id="jt-other" value="other">
-                            <label for="jt-other">Other…</label>
-                        </div>
+                <div class="nj-group">
+                    <div class="nj-group-title">Repair</div>
+                    <div class="nj-field" data-field="jobType">
+                        <div class="nj-chips" id="jobTypeChips" role="radiogroup" aria-label="Repair type"></div>
+                        <input type="text" id="jobTypeOther" class="nj-input" placeholder="Describe the repair type…"
+                            maxlength="60" enterkeyhint="next" aria-label="Other repair type">
+                        <div class="nj-error" id="err-jobType" role="alert"><span></span></div>
                     </div>
-                    <input type="text" id="jobTypeOther" class="other-type-input" placeholder="Describe the job type…"
-                        maxlength="60">
-                </div>
-                <div class="form-group" style="margin-bottom:var(--space-sm)">
-                    <label>Priority</label>
-                    <div class="job-type-pills">
-                        <div class="job-type-pill">
-                            <input type="radio" name="priority" id="pr-low" value="low">
-                            <label for="pr-low" style="border-color:rgba(var(--primary-rgb),0.2);">Low — Normal</label>
-                        </div>
-                        <div class="job-type-pill">
-                            <input type="radio" name="priority" id="pr-high" value="high">
-                            <label for="pr-high" style="border-color:rgba(239,68,68,0.2);">High — Urgent</label>
-                        </div>
+                    <div class="nj-field">
+                        <label class="nj-label" for="issue">Issue</label>
+                        <input type="text" id="issue" class="nj-input" placeholder="e.g. Cracked screen" enterkeyhint="next">
+                        <div class="nj-hint">Filled in from the repair type. Add any detail.</div>
                     </div>
                 </div>
-                <div class="form-group" style="margin-bottom:0">
-                    <label>Initial Status</label>
-                    <div class="status-pills">
-                        <div class="status-pill received">
-                            <input type="radio" name="status" id="s-received" value="received">
-                            <label for="s-received">Received</label>
-                        </div>
-                        <div class="status-pill fixing">
-                            <input type="radio" name="status" id="s-fixing" value="fixing">
-                            <label for="s-fixing">Fixing</label>
-                        </div>
-                        <div class="status-pill testing">
-                            <input type="radio" name="status" id="s-testing" value="testing">
-                            <label for="s-testing">Testing</label>
-                        </div>
-                        <div class="status-pill ready">
-                            <input type="radio" name="status" id="s-ready" value="ready">
-                            <label for="s-ready">Ready</label>
+            </section>
+
+            <!-- Step 3: Condition & photos -->
+            <section class="nj-panel" data-step="2" aria-labelledby="h-step-2">
+                <div class="nj-panel-head">
+                    <h2 id="h-step-2" tabindex="-1">Check the device</h2>
+                    <p>Record what came in with it and take photos.</p>
+                </div>
+                <div class="nj-group">
+                    <div class="nj-group-title">Accessories &amp; SIM</div>
+                    <div class="nj-acc">
+                        <div><div class="nj-acc-name">SIM tray</div><div class="nj-acc-sub">In the device and undamaged</div></div>
+                        <div class="nj-seg" role="radiogroup" aria-label="SIM tray">
+                            <label><input type="radio" name="acc-simTray" value="present" checked><span>Present</span></label>
+                            <label><input type="radio" name="acc-simTray" value="missing"><span>Missing</span></label>
                         </div>
                     </div>
-                    <div class="form-group" style="margin-bottom:0">
-                        <label>Estimated Completion Date</label>
-                        <div class="completion-picker">
-                            <div class="completion-mode-pills">
-                                <div class="completion-mode-pill">
-                                    <input type="radio" name="completionMode" id="cm-day" value="day">
-                                    <label for="cm-day">Day</label>
-                                </div>
-                                <div class="completion-mode-pill">
-                                    <input type="radio" name="completionMode" id="cm-hour" value="hour">
-                                    <label for="cm-hour">Hour</label>
-                                </div>
+                    <div class="nj-acc">
+                        <div><div class="nj-acc-name">SIM / memory card</div><div class="nj-acc-sub">Customer's card is in the device</div></div>
+                        <div class="nj-seg" role="radiogroup" aria-label="SIM or memory card">
+                            <label><input type="radio" name="acc-simCard" value="present" checked><span>Present</span></label>
+                            <label><input type="radio" name="acc-simCard" value="missing"><span>Missing</span></label>
+                        </div>
+                    </div>
+                    <div class="nj-acc">
+                        <div><div class="nj-acc-name">Case / cover</div><div class="nj-acc-sub">Left with the device</div></div>
+                        <div class="nj-seg" role="radiogroup" aria-label="Case or cover">
+                            <label><input type="radio" name="acc-case" value="present"><span>Brought</span></label>
+                            <label><input type="radio" name="acc-case" value="missing" checked><span>Not brought</span></label>
+                        </div>
+                    </div>
+                    <div class="nj-acc">
+                        <div><div class="nj-acc-name">Charger / cable</div><div class="nj-acc-sub">Left with the device</div></div>
+                        <div class="nj-seg" role="radiogroup" aria-label="Charger or cable">
+                            <label><input type="radio" name="acc-charger" value="present"><span>Brought</span></label>
+                            <label><input type="radio" name="acc-charger" value="missing" checked><span>Not brought</span></label>
+                        </div>
+                    </div>
+                    <div class="nj-acc-other">
+                        <label class="nj-label" for="inspectionOther" style="display:block;margin-bottom:6px;">Other notes <span class="opt">(optional)</span></label>
+                        <input type="text" id="inspectionOther" class="nj-input" placeholder="e.g. Scratch on left side, bent frame" maxlength="120" enterkeyhint="next">
+                    </div>
+                </div>
+                <div class="nj-group">
+                    <div class="nj-group-title">Photos</div>
+                    <div class="nj-field" data-field="photos">
+                        <div class="nj-photos">
+                            <div class="nj-photo">
+                                <button type="button" class="nj-slot required" id="slot-front" onclick="triggerSlot('front')" aria-label="Front of device photo (required)">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                                    <span>Front</span><small>Required</small>
+                                </button>
+                                <input type="file" id="input-front" accept="image/*" hidden onchange="handleSlot('front',event)">
+                                <button type="button" class="nj-webcam-btn" onclick="webcamOpen('front')">Use webcam</button>
                             </div>
-                            <input type="date" id="estimatedCompletion" class="form-input completion-input"
-                                placeholder="Leave Blank if Unknown" disabled>
-                            <div class="completion-hint" id="completionHint">
-                                Select Day or Hour above, then pick a date
+                            <div class="nj-photo">
+                                <button type="button" class="nj-slot required" id="slot-back" onclick="triggerSlot('back')" aria-label="Back of device photo (required)">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                                    <span>Back</span><small>Required</small>
+                                </button>
+                                <input type="file" id="input-back" accept="image/*" hidden onchange="handleSlot('back',event)">
+                                <button type="button" class="nj-webcam-btn" onclick="webcamOpen('back')">Use webcam</button>
+                            </div>
+                            <div class="nj-photo">
+                                <button type="button" class="nj-slot" id="slot-accessories" onclick="triggerSlot('accessories')" aria-label="Accessories photo (optional)">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                                    <span>Accessories</span><small>Optional</small>
+                                </button>
+                                <input type="file" id="input-accessories" accept="image/*" hidden onchange="handleSlot('accessories',event)">
+                                <button type="button" class="nj-webcam-btn" onclick="webcamOpen('accessories')">Use webcam</button>
                             </div>
                         </div>
+                        <div class="nj-extras">
+                            <div id="slot-extra-grid"></div>
+                            <label class="nj-extra-add">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                More photos
+                                <input type="file" id="input-extra" accept="image/*" multiple hidden onchange="handleExtraSlot(event)">
+                            </label>
+                        </div>
+                        <div class="nj-error" id="err-photos" role="alert"><span></span></div>
                     </div>
                 </div>
-            </div>
+            </section>
 
-            <!-- Card 4: Device Inspection Checklist -->
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-step">4</div>
-                    <div class="card-icon">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--primary)"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <!-- Step 4: Review -->
+            <section class="nj-panel" data-step="3" aria-labelledby="h-step-3">
+                <div class="nj-panel-head">
+                    <h2 id="h-step-3" tabindex="-1">Review &amp; log</h2>
+                    <p>Check the details, then log the job.</p>
+                </div>
+                <div class="nj-group">
+                    <div class="nj-group-title">Ticket</div>
+                    <div class="nj-row">
+                        <div class="nj-field" data-field="repairId">
+                            <label class="nj-label" for="repairId">Ticket number</label>
+                            <div class="nj-affix ticket">
+                                <span class="nj-affix-pre">#</span>
+                                <input type="number" id="repairId" class="nj-input" min="1" step="1" placeholder="—"
+                                    inputmode="numeric" aria-describedby="idHint err-repairId">
+                            </div>
+                            <div class="nj-hint" id="idHint">Fetching last job ID…</div>
+                            <div class="nj-error" id="err-repairId" role="alert"><span></span></div>
+                        </div>
+                        <div class="nj-field" data-field="priority">
+                            <span class="nj-label" id="lbl-priority">Priority</span>
+                            <div class="nj-chips" role="radiogroup" aria-labelledby="lbl-priority">
+                                <label class="nj-choice"><input type="radio" name="priority" value="low" checked><span class="nj-chip">Normal</span></label>
+                                <label class="nj-choice tone-danger"><input type="radio" name="priority" value="high"><span class="nj-chip">Urgent</span></label>
+                            </div>
+                            <div class="nj-error" id="err-priority" role="alert"><span></span></div>
+                        </div>
                     </div>
-                    <span class="card-title">Device Inspection</span>
-                    <span class="card-subtitle">Accessories &amp; required photos</span>
+                    <div class="nj-field" data-field="status">
+                        <span class="nj-label" id="lbl-status">Initial status</span>
+                        <div class="nj-chips" role="radiogroup" aria-labelledby="lbl-status">
+                            <label class="nj-choice"><input type="radio" name="status" value="received" checked><span class="nj-chip">Received</span></label>
+                            <label class="nj-choice tone-danger"><input type="radio" name="status" value="fixing"><span class="nj-chip">Fixing</span></label>
+                            <label class="nj-choice tone-warning"><input type="radio" name="status" value="testing"><span class="nj-chip">Testing</span></label>
+                            <label class="nj-choice tone-success"><input type="radio" name="status" value="ready"><span class="nj-chip">Ready</span></label>
+                        </div>
+                        <div class="nj-error" id="err-status" role="alert"><span></span></div>
+                    </div>
+                    <div class="nj-field" data-field="completion">
+                        <span class="nj-label" id="lbl-completion">Estimated completion</span>
+                        <div class="nj-chips" role="radiogroup" aria-labelledby="lbl-completion">
+                            <label class="nj-choice"><input type="radio" name="completionPreset" value="none" checked><span class="nj-chip">Not sure</span></label>
+                            <label class="nj-choice"><input type="radio" name="completionPreset" value="today"><span class="nj-chip">Today</span></label>
+                            <label class="nj-choice"><input type="radio" name="completionPreset" value="tomorrow"><span class="nj-chip">Tomorrow</span></label>
+                            <label class="nj-choice"><input type="radio" name="completionPreset" value="date"><span class="nj-chip">Pick date</span></label>
+                            <label class="nj-choice"><input type="radio" name="completionPreset" value="datetime"><span class="nj-chip">Date &amp; time</span></label>
+                        </div>
+                        <div id="completionPicker">
+                            <input type="date" id="estimatedCompletion" class="nj-input" aria-label="Estimated completion">
+                            <div class="nj-hint" id="completionHint">Shows the date on the receipt</div>
+                        </div>
+                        <div class="nj-error" id="err-completion" role="alert"><span></span></div>
+                    </div>
                 </div>
+                <div class="nj-group" id="reviewSummary"></div>
+            </section>
 
-                <div class="checklist-item">
-                    <input type="checkbox" id="chk-sim-tray" name="inspection" value="SIM Tray Missing">
-                    <label for="chk-sim-tray">
-                        SIM Tray
-                        <span>Check if SIM tray is present and undamaged</span>
-                    </label>
-                </div>
-                <div class="checklist-item">
-                    <input type="checkbox" id="chk-sim-card" name="inspection" value="SIM/Memory Card Missing">
-                    <label for="chk-sim-card">
-                        SIM Card / Memory Card
-                        <span>Note if customer left a SIM or memory card inside</span>
-                    </label>
-                </div>
-                <div class="checklist-item">
-                    <input type="checkbox" id="chk-case" name="inspection" value="Case/Cover Present">
-                    <label for="chk-case">
-                        Case / Cover
-                        <span>Customer brought a case or cover with the device</span>
-                    </label>
-                </div>
-                <div class="checklist-item">
-                    <input type="checkbox" id="chk-charger" name="inspection" value="Charger/Cable Present">
-                    <label for="chk-charger">
-                        Charger / Cable
-                        <span>Customer brought a charger or cable with the device</span>
-                    </label>
-                </div>
-                <div class="checklist-other">
-                    <input type="checkbox" id="chk-other" onchange="document.getElementById('chk-other-text').disabled=!this.checked; if(this.checked) document.getElementById('chk-other-text').focus();">
-                    <input type="text" id="chk-other-text" placeholder="Other notes…" maxlength="120" disabled>
-                </div>
-
-                <!-- Image Attachments -->
-                <div style="margin-top:16px;">
-                    <button type="button" onclick="openPhotoModal()" style="width:100%;padding:12px;border-radius:12px;border:1.5px dashed var(--glass-border);background:none;cursor:pointer;font-family:inherit;font-size:0.88rem;font-weight:700;color:var(--text-dim);transition:border-color 0.2s;display:flex;align-items:center;justify-content:center;gap:8px;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--glass-border)'">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                        Add Inspection Photos
-                    </button>
-                    <div id="photoModalSummary" style="display:none;margin-top:8px;font-size:0.75rem;color:var(--text-dim);"></div>
-                </div>
-            </div>
-
-            <!-- Submit -->
-            <div class="submit-area">
-                <button class="btn-submit" id="submitBtn" onclick="submitJob()">
-                    <span class="btn-text">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:6px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Log Repair Job
-                    </span>
+            <div class="nj-actions">
+                <button type="button" class="nj-btn nj-btn-secondary" id="njBack" onclick="goBack()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                    Back
+                </button>
+                <span class="nj-actions-count" id="njCount">Step 1 of 4</span>
+                <button type="submit" class="nj-btn nj-btn-primary" id="submitBtn">
+                    <span class="btn-text" id="njPrimaryText">Continue</span>
                     <div class="btn-spinner"></div>
                 </button>
-                <a href="index.html" class="btn-back">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:4px;"><polyline points="15 18 9 12 15 6"/></svg>Back to Dashboard
-                </a>
             </div>
-
-        </div>
+        </form>
+      </div>
     </main>
 
     <div id="footer-placeholder"></div>
-    <div class="toast" id="toast"></div>
-
-    <!-- ── Photo Inspection Modal ── -->
-    <div id="photoModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9998;align-items:center;justify-content:center;padding:20px;">
-        <div style="background:var(--glass-strong);border:1px solid var(--glass-border);border-radius:20px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 25px 60px rgba(0,0,0,0.5);scrollbar-width:none;">
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--glass-border);position:sticky;top:0;background:var(--glass-strong);z-index:1;">
-                <div style="display:flex;align-items:center;gap:8px;font-weight:800;font-size:1rem;color:var(--text-main);">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--primary)"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                    Inspection Photos
-                </div>
-                <div style="display:flex;align-items:center;gap:8px;">
-                    <button onclick="closePhotoModal()" style="width:30px;height:30px;border-radius:50%;border:none;background:rgba(100,116,139,0.15);color:var(--text-dim);font-size:1rem;cursor:pointer;">✕</button>
-                </div>
-            </div>
-            <div style="padding:18px 22px;display:flex;flex-direction:column;gap:16px;">
-                <p style="font-size:0.82rem;color:var(--text-dim);line-height:1.6;margin:0;">Front and back photos are required. Accessories are optional.</p>
-
-                <!-- Slot 1: Front -->
-                <div>
-                    <div style="font-size:0.7rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--primary);margin-bottom:6px;">Front of Device <span style="color:var(--danger);">*</span></div>
-                    <div id="slot-front" onclick="triggerSlot('front')" style="height:180px;border-radius:12px;border:2px dashed var(--glass-border);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;transition:border-color 0.2s;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="updateSlotBorder('front')">
-                        <span style="font-size:0.82rem;color:var(--text-dim);">Tap to add</span>
-                    </div>
-                    <input type="file" id="input-front" accept="image/*" style="display:none;" onchange="handleSlot('front',event)">
-                    <div style="display:flex;gap:6px;margin-top:6px;">
-                        <button type="button" onclick="triggerSlot('front')" style="flex:1;padding:7px;border-radius:8px;border:1px solid var(--glass-border);background:var(--glass);color:var(--text-dim);font-family:inherit;font-size:0.75rem;font-weight:700;cursor:pointer;">File</button>
-                        <button type="button" onclick="webcamOpen('front')" style="flex:1;padding:7px;border-radius:8px;border:1px solid var(--glass-border);background:var(--glass);color:var(--text-dim);font-family:inherit;font-size:0.75rem;font-weight:700;cursor:pointer;">Camera</button>
-                    </div>
-                </div>
-
-                <!-- Slot 2: Back -->
-                <div>
-                    <div style="font-size:0.7rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--primary);margin-bottom:6px;">Back of Device <span style="color:var(--danger);">*</span></div>
-                    <div id="slot-back" onclick="triggerSlot('back')" style="height:180px;border-radius:12px;border:2px dashed var(--glass-border);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;transition:border-color 0.2s;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="updateSlotBorder('back')">
-                        <span style="font-size:0.82rem;color:var(--text-dim);">Tap to add</span>
-                    </div>
-                    <input type="file" id="input-back" accept="image/*" style="display:none;" onchange="handleSlot('back',event)">
-                    <div style="display:flex;gap:6px;margin-top:6px;">
-                        <button type="button" onclick="triggerSlot('back')" style="flex:1;padding:7px;border-radius:8px;border:1px solid var(--glass-border);background:var(--glass);color:var(--text-dim);font-family:inherit;font-size:0.75rem;font-weight:700;cursor:pointer;">File</button>
-                        <button type="button" onclick="webcamOpen('back')" style="flex:1;padding:7px;border-radius:8px;border:1px solid var(--glass-border);background:var(--glass);color:var(--text-dim);font-family:inherit;font-size:0.75rem;font-weight:700;cursor:pointer;">Camera</button>
-                    </div>
-                </div>
-
-                <!-- Slot 3: Accessories -->
-                <div>
-                    <div style="font-size:0.7rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--primary);margin-bottom:6px;">Accessories / Other Items <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-dim);">(optional)</span></div>
-                    <div id="slot-accessories" onclick="triggerSlot('accessories')" style="height:180px;border-radius:12px;border:2px dashed var(--glass-border);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;transition:border-color 0.2s;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="updateSlotBorder('accessories')">
-                        <span style="font-size:0.82rem;color:var(--text-dim);">Tap to add</span>
-                    </div>
-                    <input type="file" id="input-accessories" accept="image/*" style="display:none;" onchange="handleSlot('accessories',event)">
-                    <div style="display:flex;gap:6px;margin-top:6px;">
-                        <button type="button" onclick="triggerSlot('accessories')" style="flex:1;padding:7px;border-radius:8px;border:1px solid var(--glass-border);background:var(--glass);color:var(--text-dim);font-family:inherit;font-size:0.75rem;font-weight:700;cursor:pointer;">File</button>
-                        <button type="button" onclick="webcamOpen('accessories')" style="flex:1;padding:7px;border-radius:8px;border:1px solid var(--glass-border);background:var(--glass);color:var(--text-dim);font-family:inherit;font-size:0.75rem;font-weight:700;cursor:pointer;">Camera</button>
-                    </div>
-                </div>
-
-                <!-- Slot 4: Additional (optional) -->
-                <div>
-                    <div style="font-size:0.7rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);margin-bottom:6px;">Additional Photos <span style="font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span></div>
-                    <div id="slot-extra-grid" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;"></div>
-                    <label style="display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border-radius:10px;border:1.5px dashed var(--glass-border);cursor:pointer;font-size:0.78rem;font-weight:700;color:var(--text-dim);">
-                        + Add More
-                        <input type="file" id="input-extra" accept="image/*" multiple style="display:none;" onchange="handleExtraSlot(event)">
-                    </label>
-                </div>
-            </div>
-            <div style="padding:0 22px 22px;display:flex;gap:10px;">
-                <button onclick="closePhotoModal()" style="flex:1;padding:12px;border-radius:12px;border:1px solid var(--glass-border);background:var(--glass);color:var(--text-dim);font-family:inherit;font-size:0.88rem;font-weight:700;cursor:pointer;">Cancel</button>
-                <button onclick="confirmPhotos()" id="photoConfirmBtn" style="flex:1;padding:12px;border-radius:12px;border:none;background:var(--primary);color:#fff;font-family:inherit;font-size:0.88rem;font-weight:700;cursor:pointer;">Done</button>
-            </div>
-        </div>
-    </div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
     <!-- ── Webcam Capture Overlay ── -->
     <div id="webcamOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:10000;flex-direction:column;align-items:center;justify-content:center;gap:16px;">
@@ -1323,74 +1352,428 @@
     <script src="js/qz-drawer.js"></script>
     <script src="js/receipt.js"></script>
     <script>
-        // Phone Formatting
-        document.getElementById('customerPhone').addEventListener('input', function (e) {
-            let x = e.target.value.replace(/\D/g, '').match(/(\d{0,3})(\d{0,4})/);
-            e.target.value = !x[2] ? x[1] : x[1] + ' - ' + x[2];
-        });
+        // ── Presets (edit these lists to change the chips) ─────────────────────
+        const BRANDS = [
+            { id: 'apple', label: 'Apple', prefix: 'iPhone ', models: [
+                'iPhone 11', 'iPhone 12', 'iPhone 12 Pro Max', 'iPhone 13', 'iPhone 13 Pro Max',
+                'iPhone 14', 'iPhone 14 Pro Max', 'iPhone 15', 'iPhone 15 Pro', 'iPhone 15 Pro Max',
+                'iPhone 16', 'iPhone 16 Pro', 'iPhone 16 Pro Max', 'iPhone 17', 'iPhone 17 Pro', 'iPhone 17 Pro Max'
+            ] },
+            { id: 'samsung', label: 'Samsung', prefix: 'Samsung Galaxy ', models: [
+                'Samsung Galaxy A05', 'Samsung Galaxy A15', 'Samsung Galaxy A16', 'Samsung Galaxy A25',
+                'Samsung Galaxy A35', 'Samsung Galaxy A55', 'Samsung Galaxy S23', 'Samsung Galaxy S23 Ultra',
+                'Samsung Galaxy S24', 'Samsung Galaxy S24 Ultra', 'Samsung Galaxy S25', 'Samsung Galaxy S25 Ultra'
+            ] },
+            { id: 'motorola', label: 'Motorola', prefix: 'Motorola ', models: [
+                'Motorola Moto G Play', 'Motorola Moto G Power', 'Motorola Moto G Stylus', 'Motorola Moto G 5G', 'Motorola Moto E'
+            ] },
+            { id: 'google', label: 'Google', prefix: 'Google Pixel ', models: [
+                'Google Pixel 7', 'Google Pixel 7a', 'Google Pixel 8', 'Google Pixel 8a', 'Google Pixel 9'
+            ] },
+            { id: 'xiaomi', label: 'Xiaomi', prefix: 'Xiaomi ', models: [
+                'Xiaomi Redmi Note 12', 'Xiaomi Redmi Note 13', 'Xiaomi Redmi Note 14', 'Xiaomi Redmi 13C', 'Xiaomi Poco X6'
+            ] },
+            { id: 'other', label: 'Other', prefix: '', models: [] }
+        ];
 
-        // Job Type "Other" text box toggle
-        document.querySelectorAll('input[name="jobType"]').forEach(radio => {
-            radio.addEventListener('change', () => {
-                const otherInput = document.getElementById('jobTypeOther');
-                if (document.getElementById('jt-other').checked) {
-                    otherInput.classList.add('visible');
-                    otherInput.focus();
-                } else {
-                    otherInput.classList.remove('visible');
-                    otherInput.value = '';
-                }
-            });
-        });
+        const REPAIRS = [
+            { value: 'Screen Replacement',  issue: 'Cracked / broken screen' },
+            { value: 'Back-Glass Repair',   issue: 'Cracked back glass' },
+            { value: 'Battery Replacement', issue: 'Battery drains fast / not holding charge' },
+            { value: 'Charging Port',       issue: 'Not charging / loose charging port' },
+            { value: 'Unlocking',           issue: 'Device locked, needs unlocking' },
+            { value: 'Water Damage',        issue: 'Liquid damage' },
+            { value: 'Diagnostic',          issue: 'Needs diagnosis' }
+        ];
 
-        // Completion Date Mode Toggle
-        document.querySelectorAll('input[name="completionMode"]').forEach(radio => {
-            radio.addEventListener('change', () => {
-                const input = document.getElementById('estimatedCompletion');
-                const hint = document.getElementById('completionHint');
-                const mode = document.querySelector('input[name="completionMode"]:checked')?.value;
+        // Saved strings must stay the same; Current Jobs and receipts display them as-is
+        const ACCESSORIES = [
+            { name: 'acc-simTray',  label: 'SIM tray',          values: { present: 'SIM Tray: Present', missing: 'SIM Tray: Missing' } },
+            { name: 'acc-simCard',  label: 'SIM / memory card', values: { present: 'SIM Card: Present', missing: 'SIM Card: Missing' } },
+            { name: 'acc-case',     label: 'Case / cover',      values: { present: 'Case: Present',     missing: 'Case: Not Brought' } },
+            { name: 'acc-charger',  label: 'Charger / cable',   values: { present: 'Charger: Present',  missing: 'Charger: Not Brought' } }
+        ];
 
-                if (!mode) {
-                    input.disabled = true;
-                    input.value = '';
-                    hint.textContent = 'Select Day or Hour above, then pick a date';
-                    return;
-                }
+        const STEP_COUNT = 4;
+        const STEP_FIELDS = [
+            ['customerName', 'customerPhone'],
+            ['device', 'jobType'],
+            ['photos'],
+            ['repairId', 'priority', 'status', 'completion']
+        ];
+        const DRAFT_KEY = 'scNewJobDraft';
+        const DRAFT_TEXT_IDS = ['customerName', 'customerPhone', 'notes', 'device', 'issue', 'jobTypeOther', 'inspectionOther', 'estimatedCompletion'];
+        const DRAFT_RADIO_NAMES = ['jobType', 'priority', 'status', 'completionPreset', 'acc-simTray', 'acc-simCard', 'acc-case', 'acc-charger'];
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const hasFinePointer = window.matchMedia('(pointer: fine)').matches;
 
-                input.disabled = false;
-                if (mode === 'day') {
-                    input.type = 'date';
-                    hint.textContent = 'Shows date only on invoice';
-                } else {
-                    input.type = 'datetime-local';
-                    hint.textContent = 'Shows date and time on invoice';
-                }
-
-                input.value = '';
-            });
-        });
-
-        // SCRIPT_URL is provided globally by js/api.js
+        let currentStep = 0;
+        let maxReachedStep = 0;
+        let activeBrand = '';
         let isSubmitting = false;
         let lastJobData = {};
         let currentJobData = lastJobData;
 
-        // Fetch last RepairID on load
+        const $ = id => document.getElementById(id);
+        const val = id => $(id).value.trim();
+        const checkedValue = name => (document.querySelector(`input[name="${name}"]:checked`) || {}).value || '';
+
+        // ── Chip rendering ────────────────────────────────────────────────────
+        function renderBrandChips() {
+            $('brandChips').innerHTML = BRANDS.map(b =>
+                `<button type="button" class="nj-chip" data-brand="${b.id}" aria-pressed="false">${b.label}</button>`
+            ).join('');
+        }
+
+        function renderRepairChips() {
+            $('jobTypeChips').innerHTML = REPAIRS.map(r =>
+                `<label class="nj-choice"><input type="radio" name="jobType" value="${r.value}"><span class="nj-chip">${r.value}</span></label>`
+            ).join('') + `<label class="nj-choice"><input type="radio" name="jobType" value="other"><span class="nj-chip">Other…</span></label>`;
+        }
+
+        function setBrandUI(id) {
+            activeBrand = id;
+            const brand = BRANDS.find(b => b.id === id);
+            document.querySelectorAll('[data-brand]').forEach(btn => {
+                const on = btn.dataset.brand === id;
+                btn.classList.toggle('is-on', on);
+                btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+            });
+            $('deviceModels').innerHTML = (brand ? brand.models : [])
+                .map(m => `<option value="${m}"></option>`).join('');
+        }
+
+        function selectBrand(id) {
+            setBrandUI(id);
+            const brand = BRANDS.find(b => b.id === id);
+            const input = $('device');
+            const current = input.value.trim();
+            const onlyPrefix = !current || BRANDS.some(b => b.prefix && current === b.prefix.trim());
+            if (onlyPrefix) input.value = brand.prefix;
+            input.focus();
+            const end = input.value.length;
+            input.setSelectionRange(end, end);
+            clearError('device');
+            saveDraft();
+        }
+
+        function onJobTypeChange() {
+            const selected = checkedValue('jobType');
+            const other = $('jobTypeOther');
+            const issue = $('issue');
+            const preset = REPAIRS.find(r => r.value === selected);
+            const autoText = issue.dataset.auto || '';
+            const issueIsAuto = !issue.value.trim() || issue.value === autoText;
+
+            if (selected === 'other') {
+                other.classList.add('visible');
+                other.focus();
+                if (issueIsAuto) { issue.value = ''; issue.dataset.auto = ''; }
+            } else {
+                other.classList.remove('visible');
+                other.value = '';
+                if (preset && issueIsAuto) {
+                    issue.value = preset.issue;
+                    issue.dataset.auto = preset.issue;
+                }
+            }
+        }
+
+        // ── Estimated completion ──────────────────────────────────────────────
+        function pad2(n) { return String(n).padStart(2, '0'); }
+
+        function localDateInputValue(d) {
+            return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+        }
+
+        function applyCompletionPreset(keepValue) {
+            const preset = checkedValue('completionPreset');
+            const picker = $('completionPicker');
+            const input = $('estimatedCompletion');
+            const needsPicker = preset === 'date' || preset === 'datetime';
+            picker.classList.toggle('visible', needsPicker);
+            if (!needsPicker) return;
+            const type = preset === 'datetime' ? 'datetime-local' : 'date';
+            if (input.type !== type) {
+                input.type = type;
+                if (!keepValue) input.value = '';
+            }
+            const now = new Date();
+            input.min = type === 'date'
+                ? localDateInputValue(now)
+                : `${localDateInputValue(now)}T${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
+            $('completionHint').textContent = type === 'date'
+                ? 'Shows the date on the receipt'
+                : 'Shows the date and time on the receipt';
+        }
+
+        function getEstimatedCompletion() {
+            const preset = checkedValue('completionPreset');
+            const fmtDate = d => d.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' });
+            if (preset === 'today' || preset === 'tomorrow') {
+                const d = new Date();
+                if (preset === 'tomorrow') d.setDate(d.getDate() + 1);
+                return fmtDate(d);
+            }
+            const raw = $('estimatedCompletion').value;
+            if (!raw) return '';
+            if (preset === 'date') return fmtDate(new Date(raw + 'T00:00'));
+            if (preset === 'datetime') {
+                const d = new Date(raw);
+                return `${fmtDate(d)} @ ${d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`;
+            }
+            return '';
+        }
+
+        // ── Validation ────────────────────────────────────────────────────────
+        function setError(key, msg) {
+            const field = document.querySelector(`.nj-field[data-field="${key}"]`);
+            if (!field) return;
+            field.classList.add('has-error');
+            const text = field.querySelector('.nj-error span');
+            if (text) text.textContent = msg;
+            const input = field.querySelector('input:not([type=radio]):not([type=file]), textarea');
+            if (input) input.setAttribute('aria-invalid', 'true');
+        }
+
+        function clearError(key) {
+            const field = document.querySelector(`.nj-field[data-field="${key}"]`);
+            if (!field) return;
+            field.classList.remove('has-error');
+            field.querySelectorAll('[aria-invalid]').forEach(el => el.removeAttribute('aria-invalid'));
+        }
+
+        function stepErrors(idx) {
+            const errors = [];
+            if (idx === 0) {
+                if (val('customerName').length < 2) errors.push(['customerName', "Enter the customer's name."]);
+                const digits = val('customerPhone').replace(/\D/g, '');
+                if (digits && digits.length !== 7) errors.push(['customerPhone', 'Belize numbers have 7 digits, like 600 - 0000.']);
+            } else if (idx === 1) {
+                if (!val('device')) errors.push(['device', 'Enter the device model.']);
+                const jobType = checkedValue('jobType');
+                if (!jobType) errors.push(['jobType', 'Choose the type of repair.']);
+                else if (jobType === 'other' && !val('jobTypeOther')) errors.push(['jobType', 'Describe the repair type.']);
+            } else if (idx === 2) {
+                const missing = ['front', 'back'].filter(s => !_slots[s]);
+                if (missing.length === 2) errors.push(['photos', 'Add photos of the front and back of the device.']);
+                else if (missing.length === 1) errors.push(['photos', `Add a photo of the ${missing[0]} of the device.`]);
+            } else if (idx === 3) {
+                const id = Number(val('repairId'));
+                if (!Number.isInteger(id) || id < 1) errors.push(['repairId', 'Enter a ticket number.']);
+                if (!checkedValue('priority')) errors.push(['priority', 'Choose a priority.']);
+                if (!checkedValue('status')) errors.push(['status', 'Choose a status.']);
+                const preset = checkedValue('completionPreset');
+                if ((preset === 'date' || preset === 'datetime') && !$('estimatedCompletion').value) {
+                    errors.push(['completion', 'Pick a date, or choose Not sure.']);
+                }
+            }
+            return errors;
+        }
+
+        function validateStep(idx) {
+            STEP_FIELDS[idx].forEach(clearError);
+            const errors = stepErrors(idx);
+            if (!errors.length) return true;
+            errors.forEach(([key, msg]) => setError(key, msg));
+            const field = document.querySelector(`.nj-field[data-field="${errors[0][0]}"]`);
+            const target = field && field.querySelector('input:not([type=file]), textarea, button');
+            if (field) field.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'center' });
+            if (target) target.focus({ preventScroll: true });
+            haptic('error');
+            return false;
+        }
+
+        // ── Step navigation ───────────────────────────────────────────────────
+        function goToStep(target, opts = {}) {
+            target = Math.max(0, Math.min(STEP_COUNT - 1, target));
+            if (!opts.skipValidation && target > currentStep) {
+                for (let i = currentStep; i < target; i++) {
+                    if (stepErrors(i).length) {
+                        if (i !== currentStep) goToStep(i, { skipValidation: true, focus: false });
+                        validateStep(i);
+                        return false;
+                    }
+                }
+            }
+
+            const forward = target >= currentStep;
+            currentStep = target;
+            maxReachedStep = Math.max(maxReachedStep, target);
+
+            document.querySelectorAll('.nj-panel').forEach(panel => {
+                const active = Number(panel.dataset.step) === target;
+                panel.classList.remove('active', 'from-left');
+                if (active) {
+                    void panel.offsetWidth;
+                    panel.classList.add('active');
+                    if (!forward) panel.classList.add('from-left');
+                }
+            });
+
+            document.querySelectorAll('.nj-step-btn').forEach(btn => {
+                const idx = Number(btn.dataset.goto);
+                const isCurrent = idx === target;
+                if (isCurrent) btn.setAttribute('aria-current', 'step');
+                else btn.removeAttribute('aria-current');
+                btn.disabled = idx > maxReachedStep;
+                btn.classList.toggle('done', !isCurrent && idx < maxReachedStep && !stepErrors(idx).length);
+            });
+
+            const isLast = target === STEP_COUNT - 1;
+            $('njBack').style.display = target === 0 ? 'none' : '';
+            $('njCount').style.display = target === 0 ? '' : 'none';
+            $('njCount').textContent = `Step ${target + 1} of ${STEP_COUNT}`;
+            $('njPrimaryText').textContent = isLast ? 'Log Repair Job' : 'Continue';
+
+            if (isLast) renderReview();
+
+            if (opts.focus !== false) {
+                window.scrollTo({ top: 0, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
+                const panel = document.querySelector(`.nj-panel[data-step="${target}"]`);
+                const firstInput = panel.querySelector('input.nj-input:not([type=number]), textarea');
+                // Desktop: jump straight into typing. Touch: don't pop the keyboard uninvited.
+                if (hasFinePointer && firstInput && target < 2) firstInput.focus({ preventScroll: true });
+                else $(`h-step-${target}`).focus({ preventScroll: true });
+            }
+            saveDraft();
+            return true;
+        }
+
+        function goBack() {
+            if (currentStep > 0) goToStep(currentStep - 1);
+        }
+
+        function onPrimary() {
+            if (currentStep < STEP_COUNT - 1) {
+                if (validateStep(currentStep)) {
+                    haptic('light');
+                    goToStep(currentStep + 1, { skipValidation: true });
+                }
+            } else {
+                submitJob();
+            }
+        }
+
+        // ── Review summary ────────────────────────────────────────────────────
+        function renderReview() {
+            const row = (label, value) => value
+                ? `<div class="nj-sum-row"><dt>${label}</dt><dd>${value}</dd></div>` : '';
+            const phoneDigits = val('customerPhone').replace(/\D/g, '');
+            const jobType = checkedValue('jobType') === 'other' ? val('jobTypeOther') : checkedValue('jobType');
+            const accessories = ACCESSORIES.map(a => {
+                const text = escapeHtml(a.values[checkedValue(a.name)] || '');
+                return checkedValue(a.name) === 'missing' && a.name.startsWith('acc-sim')
+                    ? `<span class="warn">${text}</span>` : text;
+            }).join('<br>');
+            const photos = [_slots.front, _slots.back, _slots.accessories, ..._extraPhotos].filter(Boolean);
+
+            $('reviewSummary').innerHTML = `
+                <div class="nj-sum">
+                    <div class="nj-sum-head"><h3>Customer</h3><button type="button" class="nj-link" data-goto="0">Edit</button></div>
+                    <dl>
+                        ${row('Name', escapeHtml(val('customerName')))}
+                        ${row('Phone', phoneDigits ? escapeHtml(formatPhone(phoneDigits)) : 'Not given')}
+                        ${row('Notes', escapeHtml(val('notes')))}
+                    </dl>
+                </div>
+                <div class="nj-sum">
+                    <div class="nj-sum-head"><h3>Device &amp; repair</h3><button type="button" class="nj-link" data-goto="1">Edit</button></div>
+                    <dl>
+                        ${row('Device', escapeHtml(val('device')))}
+                        ${row('Repair', escapeHtml(jobType))}
+                        ${row('Issue', escapeHtml(val('issue')))}
+                    </dl>
+                </div>
+                <div class="nj-sum">
+                    <div class="nj-sum-head"><h3>Condition</h3><button type="button" class="nj-link" data-goto="2">Edit</button></div>
+                    <dl>
+                        ${row('Accessories', accessories)}
+                        ${row('Other', escapeHtml(val('inspectionOther')))}
+                        ${row('Photos', photos.length
+                            ? `<div class="nj-sum-thumbs">${photos.map(src => `<img src="${src}" alt="">`).join('')}</div>`
+                            : '<span class="warn">None yet</span>')}
+                    </dl>
+                </div>`;
+        }
+
+        // ── Draft (survives a reload in the same tab) ─────────────────────────
+        let _draftTimer = null;
+
+        function saveDraft() {
+            if (isSubmitting || $('formWrapper').style.display === 'none') return;
+            clearTimeout(_draftTimer);
+            _draftTimer = setTimeout(() => {
+                const draft = { step: currentStep, max: maxReachedStep, brand: activeBrand, text: {}, radios: {} };
+                DRAFT_TEXT_IDS.forEach(id => { draft.text[id] = $(id).value; });
+                DRAFT_RADIO_NAMES.forEach(name => { draft.radios[name] = checkedValue(name); });
+                draft.issueAuto = $('issue').dataset.auto || '';
+                draft.completionType = $('estimatedCompletion').type;
+                try { sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); } catch (_) {}
+            }, 250);
+        }
+
+        function clearDraft() {
+            clearTimeout(_draftTimer);
+            try { sessionStorage.removeItem(DRAFT_KEY); } catch (_) {}
+        }
+
+        function restoreDraft() {
+            let draft = null;
+            try { draft = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || 'null'); } catch (_) {}
+            if (!draft || !draft.text) return false;
+            const hasContent = ['customerName', 'customerPhone', 'device', 'notes'].some(id => (draft.text[id] || '').trim());
+            if (!hasContent) return false;
+
+            DRAFT_RADIO_NAMES.forEach(name => {
+                const value = draft.radios && draft.radios[name];
+                if (!value) return;
+                const input = document.querySelector(`input[name="${name}"][value="${CSS.escape(value)}"]`);
+                if (input) input.checked = true;
+            });
+            if (draft.completionType) $('estimatedCompletion').type = draft.completionType;
+            DRAFT_TEXT_IDS.forEach(id => { if (draft.text[id] != null) $(id).value = draft.text[id]; });
+            $('issue').dataset.auto = draft.issueAuto || '';
+            $('jobTypeOther').classList.toggle('visible', checkedValue('jobType') === 'other');
+            if (draft.brand) setBrandUI(draft.brand);
+            applyCompletionPreset(true);
+
+            maxReachedStep = draft.max || 0;
+            // Photos aren't kept in the draft, so never land past the photo step
+            const step = Math.min(draft.step || 0, 2);
+            showToast(maxReachedStep >= 2 ? 'Unsaved job restored. Add the photos again.' : 'Unsaved job restored.');
+            goToStep(step, { skipValidation: true, focus: false });
+            return true;
+        }
+
+        // ── Load next ticket number ───────────────────────────────────────────
+        function updateTicketChip() {
+            const id = val('repairId');
+            $('ticketChip').textContent = id ? '#' + id : '#—';
+        }
+
         async function fetchLastId() {
-            const hint = document.getElementById('idHint');
+            const hint = $('idHint');
             try {
                 const data = await apiGet({ action: 'lastid' });
                 const next = (Number(data.lastId) || 100) + 1;
-                document.getElementById('repairId').value = next;
-                hint.textContent = `Last used: ${data.lastId} — next is ${next}`;
+                $('repairId').value = next;
+                hint.textContent = `Last used: ${data.lastId}. Next is ${next}.`;
             } catch (e) {
-                document.getElementById('repairId').placeholder = 'Enter manually';
-                hint.textContent = 'Could not auto-fetch — enter ID manually.';
+                $('repairId').placeholder = 'Enter manually';
+                hint.textContent = "Couldn't fetch the next number. Enter it manually.";
             }
+            updateTicketChip();
         }
-        fetchLastId();
 
-        // Submit Logic
+        // ── Submit ────────────────────────────────────────────────────────────
+        function buildInspection() {
+            const parts = ACCESSORIES.map(a => a.values[checkedValue(a.name)] || a.values.present);
+            const other = val('inspectionOther');
+            if (other) parts.push('Other: ' + other);
+            return parts.join('; ');
+        }
+
         async function submitJob() {
             if (isSubmitting) return;
             if (window.isOffline && window.isOffline()) {
@@ -1398,75 +1781,27 @@
                 return;
             }
 
-            const nameInput = document.getElementById('customerName');
-            const repairIdInput = document.getElementById('repairId');
-            const deviceInput = document.getElementById('device');
-
-            const customerName = nameInput.value.trim();
-            const repairId = repairIdInput.value;
-            const device = deviceInput.value.trim();
-            const issue = document.getElementById('issue').value.trim();
-            const customerPhone = document.getElementById('customerPhone').value.trim();
-            const notes = document.getElementById('notes').value.trim();
-
-            const statusEl = document.querySelector('input[name="status"]:checked');
-            const jobTypeEl = document.querySelector('input[name="jobType"]:checked');
-            const priorityEl = document.querySelector('input[name="priority"]:checked');
-
-            if (!customerName || !repairId || !device) {
-                showToast('⚠️ Name, ID, and Device are required.', 'error');
-                haptic('error');
-                if (!customerName) nameInput.style.borderColor = '#ef4444';
-                if (!device) deviceInput.style.borderColor = '#ef4444';
-                return;
+            for (let i = 0; i < STEP_COUNT; i++) {
+                if (stepErrors(i).length) {
+                    if (i !== currentStep) goToStep(i, { skipValidation: true, focus: false });
+                    validateStep(i);
+                    return;
+                }
             }
 
-            if (!jobTypeEl) {
-                showToast('⚠️ Please select a job type.', 'error');
-                haptic('error');
-                return;
-            }
-            const selectedJobType = jobTypeEl.value;
-            const jobType = selectedJobType === 'other'
-                ? document.getElementById('jobTypeOther').value.trim()
-                : selectedJobType;
-            if (selectedJobType === 'other' && !jobType) {
-                showToast('⚠️ Please describe the job type.', 'error');
-                haptic('error');
-                document.getElementById('jobTypeOther').focus();
-                return;
-            }
+            const repairId = val('repairId');
+            const customerName = val('customerName');
+            const customerPhone = val('customerPhone');
+            const notes = val('notes');
+            const device = val('device');
+            const issue = val('issue');
+            const jobType = checkedValue('jobType') === 'other' ? val('jobTypeOther') : checkedValue('jobType');
+            const priority = checkedValue('priority');
+            const status = checkedValue('status');
+            const estimatedCompletion = getEstimatedCompletion();
+            const inspection = buildInspection();
 
-            if (!priorityEl) {
-                showToast('⚠️ Please select a priority.', 'error');
-                haptic('error');
-                return;
-            }
-            const priority = priorityEl.value;
-
-            if (!statusEl) {
-                showToast('⚠️ Please select an initial status.', 'error');
-                haptic('error');
-                return;
-            }
-            const status = statusEl.value;
-
-            // Mandate front and back photos
-            if (!_slots.front || !_slots.back) {
-                showToast('📷 Front and back photos are required before submitting.', 'error');
-                haptic('error');
-                openPhotoModal();
-                return;
-            }
-
-            const completionInputVal = document.getElementById('estimatedCompletion').value;
-            if (completionInputVal && !document.querySelector('input[name="completionMode"]:checked')) {
-                showToast('⚠️ Select Day or Hour for the estimated completion.', 'error');
-                haptic('error');
-                return;
-            }
-
-            const btn = document.getElementById('submitBtn');
+            const btn = $('submitBtn');
             btn.classList.add('loading');
             btn.disabled = true;
             isSubmitting = true;
@@ -1475,59 +1810,10 @@
                 month: 'numeric', day: 'numeric', year: 'numeric'
             });
 
-            // Get estimated completion date
-            let estimatedCompletion = '';
-            const completionInput = completionInputVal;
-            if (completionInput) {
-                const completionMode = document.querySelector('input[name="completionMode"]:checked').value;
-
-                if (completionMode === 'hour') {
-                    // datetime-local format is "YYYY-MM-DDTHH:MM" — parse correctly
-                    const completionDate = new Date(completionInput);
-                    estimatedCompletion = completionDate.toLocaleTimeString('en-US', {
-                        hour: 'numeric',
-                        minute: '2-digit',
-                        hour12: true
-                    });
-                } else {
-                    const completionDate = new Date(completionInput);
-                    const datePart = completionDate.toLocaleDateString('en-US', {
-                        month: 'numeric',
-                        day: 'numeric',
-                        year: 'numeric'
-                    });
-                    const timePart = completionDate.toLocaleTimeString('en-US', {
-                        hour: 'numeric',
-                        minute: '2-digit',
-                        hour12: true
-                    });
-                    estimatedCompletion = completionMode === 'day'
-                        ? datePart
-                        : `${datePart} @ ${timePart}`;
-                }
-            }
-
             // Technician on ticket = who will do the repair (not who logged it at the desk)
             const loggedIn = localStorage.getItem('scUser') || sessionStorage.getItem('scUser') || 'Unknown';
             const role = typeof getUserRole === 'function' ? getUserRole() : '';
             const technician = (role === 'technician' || role === 'manager') ? loggedIn : 'Unassigned';
-
-            // Build inspection checklist string — always save all 4 items with their state
-            const ACCESSORY_ITEMS = [
-                { id: 'chk-sim-tray', label: 'SIM Tray',             present: 'SIM Tray: Present',      missing: 'SIM Tray: Missing' },
-                { id: 'chk-sim-card', label: 'SIM/Memory Card',      present: 'SIM Card: Present',       missing: 'SIM Card: Missing' },
-                { id: 'chk-case',     label: 'Case/Cover',           present: 'Case: Present',           missing: 'Case: Not Brought' },
-                { id: 'chk-charger',  label: 'Charger/Cable',        present: 'Charger: Present',        missing: 'Charger: Not Brought' },
-            ];
-            const inspectionParts = ACCESSORY_ITEMS.map(item => {
-                const el = document.getElementById(item.id);
-                // Checked = flagged/missing, unchecked = present/ok
-                return el && el.checked ? item.missing : item.present;
-            });
-            const otherChk = document.getElementById('chk-other');
-            const otherTxt = document.getElementById('chk-other-text').value.trim();
-            if (otherChk && otherChk.checked && otherTxt) inspectionParts.push('Other: ' + otherTxt);
-            const inspection = inspectionParts.join('; ');
 
             const sheetData = {
                 action: 'create',
@@ -1564,12 +1850,15 @@
             };
             currentJobData = lastJobData;
 
+            _inspectionImages = [_slots.front, _slots.back, _slots.accessories, ..._extraPhotos].filter(Boolean);
+
             try {
                 const params = new URLSearchParams(sheetData);
                 const result = await apiPost(params);
                 if (result && result.success === false) {
                     if ((result.error || '').includes('already exists')) {
                         await fetchLastId();
+                        setError('repairId', 'That ticket number is taken. The next free number has been filled in.');
                     }
                     throw new Error(result.error || 'Server rejected the job');
                 }
@@ -1587,9 +1876,11 @@
         }
 
         function showSuccess(id) {
-            document.getElementById('formWrapper').style.display = 'none';
-            document.getElementById('successBanner').classList.add('show');
-            document.getElementById('repairIdDisplay').textContent = '#' + id;
+            clearDraft();
+            $('formWrapper').style.display = 'none';
+            $('successBanner').classList.add('show');
+            $('repairIdDisplay').textContent = '#' + id;
+            window.scrollTo({ top: 0, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
             haptic('success');
         }
 
@@ -1598,49 +1889,38 @@
             _slots.back = null;
             _slots.accessories = null;
             _extraPhotos = [];
-            ['front', 'back', 'accessories'].forEach(function(name) {
-                const slot = document.getElementById('slot-' + name);
-                if (!slot) return;
-                slot.innerHTML = '<span style="font-size:0.82rem;color:var(--text-dim);">Tap to add</span>';
-                slot.style.border = '2px dashed var(--glass-border)';
-                slot.style.borderColor = 'var(--glass-border)';
-                const input = document.getElementById('input-' + name);
-                if (input) input.value = '';
+            Object.keys(SLOT_EMPTY_HTML).forEach(name => {
+                const slot = $('slot-' + name);
+                slot.innerHTML = SLOT_EMPTY_HTML[name];
+                slot.classList.remove('filled');
             });
-            const summary = document.getElementById('photoModalSummary');
-            if (summary) { summary.style.display = 'none'; summary.textContent = ''; }
+            $('slot-extra-grid').innerHTML = '';
         }
 
         function resetForm() {
-            ['customerName', 'customerPhone', 'notes', 'device', 'issue'].forEach(id => {
-                const el = document.getElementById(id);
-                el.value = '';
-                el.style.borderColor = '';
-            });
-            document.querySelectorAll('input[name="jobType"], input[name="priority"], input[name="status"], input[name="completionMode"]').forEach(r => { r.checked = false; });
-            document.getElementById('jobTypeOther').classList.remove('visible');
-            document.getElementById('jobTypeOther').value = '';
-            document.getElementById('estimatedCompletion').value = '';
-            document.getElementById('estimatedCompletion').disabled = true;
-            document.getElementById('estimatedCompletion').type = 'date';
-            document.getElementById('completionHint').textContent = 'Select Day or Hour above, then pick a date';
-            // Reset inspection checklist
-            document.querySelectorAll('input[name="inspection"]').forEach(c => c.checked = false);
-            document.getElementById('chk-other').checked = false;
-            document.getElementById('chk-other-text').value = '';
-            document.getElementById('chk-other-text').disabled = true;
-            document.getElementById('imgPreviewGrid').innerHTML = '';
+            const form = $('formWrapper');
+            form.reset();
+            $('estimatedCompletion').type = 'date';
+            $('issue').dataset.auto = '';
+            $('jobTypeOther').classList.remove('visible');
+            setBrandUI('');
+            applyCompletionPreset();
+            document.querySelectorAll('.nj-field.has-error').forEach(f => clearError(f.dataset.field));
             _inspectionImages = [];
             resetPhotoSlots();
-            const btn = document.getElementById('submitBtn');
+            const btn = $('submitBtn');
             btn.classList.remove('loading');
             btn.disabled = false;
             isSubmitting = false;
-            document.getElementById('formWrapper').style.display = 'block';
-            document.getElementById('successBanner').classList.remove('show');
-            document.getElementById('paperModal').classList.remove('open');
-            const up = document.getElementById('uploadProgress');
+            form.style.display = '';
+            $('successBanner').classList.remove('show');
+            $('paperModal').classList.remove('open');
+            const up = $('uploadProgress');
             if (up) up.style.display = 'none';
+            clearDraft();
+            currentStep = 0;
+            maxReachedStep = 0;
+            goToStep(0, { skipValidation: true });
             fetchLastId();
         }
 
@@ -1650,8 +1930,8 @@
 
         async function webcamOpen(slot) {
             _webcamSlot = slot;
-            const overlay = document.getElementById('webcamOverlay');
-            const label   = document.getElementById('webcamSlotLabel');
+            const overlay = $('webcamOverlay');
+            const label   = $('webcamSlotLabel');
             const labels  = { front: 'Front of Device', back: 'Back of Device', accessories: 'Accessories' };
             label.textContent = labels[slot] || 'Taking photo…';
             overlay.style.display = 'flex';
@@ -1663,7 +1943,7 @@
             try {
                 const devices = await navigator.mediaDevices.enumerateDevices();
                 const cameras = devices.filter(d => d.kind === 'videoinput');
-                const sel = document.getElementById('webcamDeviceSelect');
+                const sel = $('webcamDeviceSelect');
                 sel.innerHTML = cameras.map((c, i) =>
                     `<option value="${c.deviceId}">${c.label || 'Camera ' + (i + 1)}</option>`
                 ).join('');
@@ -1681,7 +1961,7 @@
             };
             try {
                 _webcamStream = await navigator.mediaDevices.getUserMedia(constraints);
-                document.getElementById('webcamVideo').srcObject = _webcamStream;
+                $('webcamVideo').srcObject = _webcamStream;
             } catch(e) {
                 webcamClose();
                 showToast('Camera not available — use file picker instead.', 'error');
@@ -1689,74 +1969,62 @@
         }
 
         function webcamSwitchDevice() {
-            const sel = document.getElementById('webcamDeviceSelect');
-            webcamStartStream(sel.value);
+            webcamStartStream($('webcamDeviceSelect').value);
         }
 
         function webcamSnap() {
-            const video  = document.getElementById('webcamVideo');
-            const canvas = document.getElementById('webcamCanvas');
+            const video  = $('webcamVideo');
+            const canvas = $('webcamCanvas');
             canvas.width  = video.videoWidth  || 1280;
             canvas.height = video.videoHeight || 720;
             canvas.getContext('2d').drawImage(video, 0, 0);
             const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
             webcamClose();
-            // Feed into the slot
-            _slots[_webcamSlot] = dataUrl;
-            const slotEl = document.getElementById('slot-' + _webcamSlot);
-            slotEl.innerHTML = `<img src="${dataUrl}" style="width:100%;height:100%;object-fit:cover;">`;
-            slotEl.style.border = '2px solid var(--success)';
+            setSlotImage(_webcamSlot, dataUrl);
         }
 
         function webcamClose() {
             if (_webcamStream) { _webcamStream.getTracks().forEach(t => t.stop()); _webcamStream = null; }
-            document.getElementById('webcamOverlay').style.display = 'none';
+            $('webcamOverlay').style.display = 'none';
             document.body.style.overflow = '';
         }
 
         // Space bar to snap
         document.addEventListener('keydown', e => {
-            if (e.code === 'Space' && document.getElementById('webcamOverlay').style.display === 'flex') {
+            if (e.code === 'Space' && $('webcamOverlay').style.display === 'flex') {
                 e.preventDefault();
                 webcamSnap();
             }
         });
 
-        // ── Photo Modal ───────────────────────────────────────────────────────
+        // ── Photo slots ───────────────────────────────────────────────────────
         const _slots = { front: null, back: null, accessories: null };
         let _extraPhotos = [];
-
-        function openPhotoModal() {
-            document.getElementById('photoModal').style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closePhotoModal() {
-            document.getElementById('photoModal').style.display = 'none';
-            document.body.style.overflow = '';
-        }
+        let _inspectionImages = [];
+        const SLOT_LABELS = { front: 'Front', back: 'Back', accessories: 'Accessories' };
+        const SLOT_EMPTY_HTML = {};
+        Object.keys(SLOT_LABELS).forEach(name => { SLOT_EMPTY_HTML[name] = $('slot-' + name).innerHTML; });
 
         function triggerSlot(name) {
-            document.getElementById('input-' + name).click();
+            $('input-' + name).click();
         }
 
-        function updateSlotBorder(name) {
-            const el = document.getElementById('slot-' + name);
-            if (!el) return;
-            el.style.borderColor = _slots[name] ? 'var(--success)' : 'var(--glass-border)';
+        function setSlotImage(name, dataUrl) {
+            _slots[name] = dataUrl;
+            const slot = $('slot-' + name);
+            slot.classList.add('filled');
+            slot.innerHTML = `<img src="${dataUrl}" alt="${SLOT_LABELS[name]} photo">
+                <span class="nj-slot-ok"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+                <span class="nj-slot-retake">Retake</span>`;
+            if (_slots.front && _slots.back) clearError('photos');
+            haptic('light');
         }
 
         function handleSlot(name, e) {
             const file = e.target.files[0];
             if (!file) return;
             const reader = new FileReader();
-            reader.onload = ev => {
-                _slots[name] = ev.target.result;
-                const slot = document.getElementById('slot-' + name);
-                slot.innerHTML = `<img src="${ev.target.result}" style="width:100%;height:100%;object-fit:cover;">`;
-                slot.style.borderColor = 'var(--success)';
-                slot.style.border = '2px solid var(--success)';
-            };
+            reader.onload = ev => setSlotImage(name, ev.target.result);
             reader.readAsDataURL(file);
             e.target.value = '';
         }
@@ -1767,11 +2035,11 @@
                 reader.onload = ev => {
                     _extraPhotos.push(ev.target.result);
                     const idx = _extraPhotos.length - 1;
-                    const grid = document.getElementById('slot-extra-grid');
+                    const grid = $('slot-extra-grid');
                     const thumb = document.createElement('div');
-                    thumb.style.cssText = 'position:relative;width:72px;height:72px;border-radius:8px;overflow:hidden;border:1px solid var(--glass-border);';
-                    thumb.innerHTML = `<img src="${ev.target.result}" style="width:100%;height:100%;object-fit:cover;">
-                        <button onclick="_extraPhotos[${idx}]=null;this.parentNode.remove();" style="position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,0.6);border:none;color:#fff;font-size:0.65rem;cursor:pointer;">✕</button>`;
+                    thumb.style.cssText = 'position:relative;width:56px;height:56px;border-radius:10px;overflow:hidden;border:1px solid var(--glass-border);';
+                    thumb.innerHTML = `<img src="${ev.target.result}" alt="Extra photo" style="width:100%;height:100%;object-fit:cover;">
+                        <button type="button" aria-label="Remove photo" onclick="_extraPhotos[${idx}]=null;this.parentNode.remove();" style="position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,0.6);border:none;color:#fff;font-size:0.65rem;cursor:pointer;">✕</button>`;
                     grid.appendChild(thumb);
                 };
                 reader.readAsDataURL(file);
@@ -1779,58 +2047,11 @@
             e.target.value = '';
         }
 
-        function confirmPhotos() {
-            const missing = ['front','back'].filter(s => !_slots[s]);
-            if (missing.length > 0) {
-                const names = missing.map(s => s === 'accessories' ? 'Accessories' : s.charAt(0).toUpperCase() + s.slice(1));
-                showToast('📷 Missing: ' + names.join(', '), 'error');
-                return;
-            }
-            closePhotoModal();
-            // Build the combined _inspectionImages array in order
-            _inspectionImages = [
-                _slots.front,
-                _slots.back,
-                _slots.accessories,
-                ..._extraPhotos.filter(Boolean)
-            ].filter(Boolean);
-            // Update summary label
-            const summary = document.getElementById('photoModalSummary');
-            summary.style.display = 'block';
-            summary.textContent = `✅ ${_inspectionImages.length} photo${_inspectionImages.length > 1 ? 's' : ''} ready (Front, Back, Accessories${_extraPhotos.filter(Boolean).length > 0 ? ' + ' + _extraPhotos.filter(Boolean).length + ' more' : ''})`;
-        }
-
-        // ── Inspection image handling (kept for upload compatibility) ─────────
-        let _inspectionImages = [];
-
-        function handleInspectionImages(e) {
-            const files = Array.from(e.target.files);
-            files.forEach(file => {
-                const reader = new FileReader();
-                reader.onload = ev => {
-                    _inspectionImages.push(ev.target.result);
-                    const grid = document.getElementById('imgPreviewGrid');
-                    const item = document.createElement('div');
-                    item.className = 'img-preview-item';
-                    const idx = _inspectionImages.length - 1;
-                    item.innerHTML = `<img src="${ev.target.result}" alt="inspection photo"><button onclick="removeInspectionImage(${idx},this.parentNode)">✕</button>`;
-                    grid.appendChild(item);
-                };
-                reader.readAsDataURL(file);
-            });
-            e.target.value = ''; // allow re-selecting same file
-        }
-
-        function removeInspectionImage(idx, el) {
-            _inspectionImages[idx] = null;
-            el.remove();
-        }
-
         function _setUploadProgress(done, total, detail, isError) {
-            const wrap = document.getElementById('uploadProgress');
-            const text = document.getElementById('uploadProgressText');
-            const bar  = document.getElementById('uploadProgressBar');
-            const sub  = document.getElementById('uploadProgressDetail');
+            const wrap = $('uploadProgress');
+            const text = $('uploadProgressText');
+            const bar  = $('uploadProgressBar');
+            const sub  = $('uploadProgressDetail');
             if (!wrap || !text || !bar) return;
             wrap.style.display = 'block';
             const pct = total ? Math.round((done / total) * 100) : 0;
@@ -1876,8 +2097,9 @@
             }
         }
 
+        // ── Receipt / printing ────────────────────────────────────────────────
         function openPaperModal() {
-            document.getElementById('paperModal').classList.add('open');
+            $('paperModal').classList.add('open');
         }
 
         function bzDate(dateStr) {
@@ -1936,7 +2158,7 @@
                 showToast('⚠️ No job data available to print', 'error');
                 return;
             }
-            document.getElementById('paperModal').classList.remove('open');
+            $('paperModal').classList.remove('open');
             const isReceipt = paperSize === 'receipt';
             if (typeof isMobileReceipt === 'function' && isMobileReceipt()) {
                 openJobReceiptPreview(currentJobData, isReceipt ? 'receipt' : 'a4');
@@ -1954,7 +2176,7 @@
                 showToast('⚠️ No job data available', 'error');
                 return;
             }
-            document.getElementById('paperModal').classList.remove('open');
+            $('paperModal').classList.remove('open');
             shareJobCustomerMessage(currentJobData, { context: context || 'intake' });
         }
 
@@ -1966,20 +2188,59 @@
             openJobReceiptPreview(currentJobData, 'receipt');
         }
 
+        let _toastTimer = null;
         function showToast(msg, type = '') {
-            const t = document.getElementById('toast');
+            const t = $('toast');
             t.textContent = msg;
             t.className = 'toast ' + type;
             t.classList.add('show');
-            setTimeout(() => t.classList.remove('show'), 3500);
+            clearTimeout(_toastTimer);
+            _toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
         }
 
-        document.addEventListener('keydown', e => {
-            if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
-                e.preventDefault();
-                submitJob();
-            }
+        // ── Wiring ────────────────────────────────────────────────────────────
+        const form = $('formWrapper');
+
+        // Enter in a field (or the primary button) advances; on the last step it logs the job
+        form.addEventListener('submit', e => {
+            e.preventDefault();
+            onPrimary();
         });
+
+        form.addEventListener('click', e => {
+            const brandBtn = e.target.closest('[data-brand]');
+            if (brandBtn) { selectBrand(brandBtn.dataset.brand); return; }
+        });
+
+        document.addEventListener('click', e => {
+            const goto = e.target.closest('[data-goto]');
+            if (goto && !goto.disabled) goToStep(Number(goto.dataset.goto));
+        });
+
+        form.addEventListener('input', e => {
+            const field = e.target.closest('.nj-field.has-error');
+            if (field) clearError(field.dataset.field);
+            if (e.target.id === 'repairId') updateTicketChip();
+            saveDraft();
+        });
+
+        form.addEventListener('change', e => {
+            const field = e.target.closest('.nj-field.has-error');
+            if (field) clearError(field.dataset.field);
+            if (e.target.name === 'jobType') onJobTypeChange();
+            if (e.target.name === 'completionPreset') applyCompletionPreset();
+            saveDraft();
+        });
+
+        $('customerPhone').addEventListener('input', e => {
+            const x = e.target.value.replace(/\D/g, '').match(/(\d{0,3})(\d{0,4})/);
+            e.target.value = !x[2] ? x[1] : x[1] + ' - ' + x[2];
+        });
+
+        renderBrandChips();
+        renderRepairChips();
+        if (!restoreDraft()) goToStep(0, { skipValidation: true, focus: false });
+        fetchLastId();
 
         document.addEventListener("DOMContentLoaded", () => {
             const splash = document.querySelector('.splash-screen');

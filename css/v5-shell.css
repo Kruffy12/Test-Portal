@@ -325,6 +325,7 @@ body.sc-v5.sc-sidebar-collapsed .sc-sidebar .account-caret {
 
 body.sc-v5.sc-sidebar-collapsed .sc-sidebar .account-chip {
     padding: 4px;
+    gap: 0;
     justify-content: center;
 }
 
