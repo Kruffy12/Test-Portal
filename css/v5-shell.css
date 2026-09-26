@@ -414,6 +414,17 @@ body.sc-v5.sc-sidebar-collapsed .sc-sidebar .account-caret {
     touch-action: manipulation;
 }
 
+@media (min-width: 901px) {
+    body.sc-v5 #staff-broadcast-card,
+    body.sc-v5 #sc-app-update-card {
+        top: 16px;
+    }
+}
+
+body.sc-v5 .minimal-footer {
+    padding-bottom: calc(12px + var(--sc-v5-tabbar-offset, 0px));
+}
+
 body.sc-v5.sc-logged-in main {
     padding-top: calc(var(--sc-topbar-h) + env(safe-area-inset-top, 0px) + 14px) !important;
     padding-bottom: calc(var(--sc-tabbar-h) + env(safe-area-inset-bottom, 0px) + 20px) !important;

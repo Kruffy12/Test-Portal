@@ -95,7 +95,7 @@ body.sc-v5 main {
 
 @media (max-width: 700px) {
     body.sc-v5 .page-header-left h1 {
-        display: none;
+        display: none !important;
     }
 
     body.sc-v5 .page-header a.btn-secondary[href="current-jobs.html"] {
@@ -190,6 +190,10 @@ body.sc-v5 main {
         border-radius: 22px 22px 0 0;
         max-height: min(92vh, 900px);
         padding: 18px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+    }
+
+    body.sc-v5.modal-open .sc-tabbar {
+        display: none !important;
     }
 }
 
