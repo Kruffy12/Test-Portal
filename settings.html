@@ -208,6 +208,12 @@
             transition: background 0.25s;
         }
 
+        html[data-theme="dark"] .toggle-track,
+        html[data-theme="scblue"] .toggle-track,
+        html[data-theme="merlot"] .toggle-track {
+            background: rgba(148, 163, 184, 0.3);
+        }
+
         .toggle input:checked+.toggle-track {
             background: var(--primary);
         }
@@ -1935,6 +1941,7 @@
             const vars = THEMES[name] || THEMES.light;
             const root = document.documentElement;
             Object.entries(vars).forEach(([k, v]) => root.style.setProperty(k, v));
+            root.setAttribute('data-theme', THEMES[name] ? name : 'light');
         }
 
         function setTheme(name) {

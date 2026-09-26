@@ -12,18 +12,28 @@
     --sc-v5-glass: rgba(255, 255, 255, 0.84);
     --sc-v5-glass-border: rgba(37, 99, 235, 0.12);
     --sc-v5-panel-solid: #ffffff;
+    --sc-v5-page-solid: #f1f5f9;
 }
 
-html[data-theme="dark"],
-html[data-theme="scblue"],
-html[data-theme="merlot"] {
+html[data-theme="dark"] {
     --sc-v5-glass: rgba(15, 23, 42, 0.9);
-    --sc-v5-glass-border: rgba(96, 165, 250, 0.16);
-    --sc-v5-panel-solid: #111a2e;
+    --sc-v5-glass-border: rgba(255, 255, 255, 0.08);
+    --sc-v5-panel-solid: #162033;
+    --sc-v5-page-solid: #0f172a;
+}
+
+html[data-theme="scblue"] {
+    --sc-v5-glass: rgba(10, 22, 40, 0.9);
+    --sc-v5-glass-border: rgba(37, 99, 235, 0.35);
+    --sc-v5-panel-solid: #0f1f3d;
+    --sc-v5-page-solid: #0a1628;
 }
 
 html[data-theme="merlot"] {
+    --sc-v5-glass: rgba(26, 10, 14, 0.9);
+    --sc-v5-glass-border: rgba(201, 100, 80, 0.18);
     --sc-v5-panel-solid: #2a1016;
+    --sc-v5-page-solid: #1a0a0e;
 }
 
 body.sc-v5.sc-sidebar-collapsed {

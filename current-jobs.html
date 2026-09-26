@@ -403,9 +403,25 @@
             color: #475569;
         }
 
+        html[data-theme="dark"] .status-badge.unsuccessful,
+        html[data-theme="scblue"] .status-badge.unsuccessful,
+        html[data-theme="merlot"] .status-badge.unsuccessful {
+            color: #94a3b8;
+        }
+
+        :root {
+            --sc-abandoned: #b91c1c;
+        }
+
+        html[data-theme="dark"],
+        html[data-theme="scblue"],
+        html[data-theme="merlot"] {
+            --sc-abandoned: #f87171;
+        }
+
         .status-badge.abandoned {
             background: rgba(153, 27, 27, 0.15);
-            color: #b91c1c;
+            color: var(--sc-abandoned);
         }
 
         /* ── Action Buttons ── */
@@ -833,6 +849,8 @@
             padding: 14px;
             border-radius: 14px;
             border: none;
+            background: rgba(var(--primary-rgb), 0.12);
+            color: var(--primary);
             font-family: var(--font-family);
             font-weight: 700;
             font-size: 0.9rem;
@@ -2754,9 +2772,9 @@
                 <div class="stat-value" id="statReady">0</div>
                 <div class="stat-label">Ready</div>
             </div>
-            <div class="stat-card" style="color:#b91c1c">
+            <div class="stat-card" style="color:var(--sc-abandoned)">
                 <div class="stat-card-inner">
-                    <div class="stat-card-icon" style="background:rgba(153,27,27,0.12);color:#b91c1c">
+                    <div class="stat-card-icon" style="background:rgba(153,27,27,0.12);color:var(--sc-abandoned)">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="10" />

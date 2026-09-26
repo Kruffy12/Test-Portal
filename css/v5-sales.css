@@ -107,7 +107,7 @@ body.sc-v5 main {
         top: calc(var(--sc-topbar-h) + env(safe-area-inset-top, 0px));
         z-index: 5;
         padding: 8px 0 10px;
-        background: linear-gradient(180deg, var(--bg-gradient) 70%, transparent);
+        background: linear-gradient(180deg, var(--sc-v5-page-solid, #f1f5f9) 70%, transparent);
     }
 
     .pos-hero .btn-primary,

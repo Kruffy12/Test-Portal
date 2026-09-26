@@ -89,6 +89,7 @@
     Object.entries(THEMES[theme]).forEach(([key, value]) => {
         root.style.setProperty(key, value);
     });
+    root.setAttribute('data-theme', theme);
 
     // Update browser/OS status bar color to match theme
     const THEME_COLORS = {
