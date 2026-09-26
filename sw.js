@@ -3,7 +3,7 @@
 // Network-first strategy for fast security updates
 // ─────────────────────────────────────────────────────────────────────────────
 
-const CACHE_DATE = '2026-09-26b'; // ← change this to today's date on each deploy
+const CACHE_DATE = '2026-09-26c'; // ← change this to today's date on each deploy
 const CACHE_NAME = 'servicell-' + CACHE_DATE;
 const BASE = (function () {
     try {
@@ -32,6 +32,7 @@ const PRECACHE_URLS = [
     BASE + '/css/perf.css',
     BASE + '/css/staff-banner.css',
     BASE + '/css/v5-shell.css',
+    BASE + '/css/v5-sales.css',
     BASE + '/js/staff-banner.js',
     BASE + '/js/v5-shell.js',
     BASE + '/js/components.js',

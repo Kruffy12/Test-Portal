@@ -1201,6 +1201,7 @@ function openSaleModal() {
     document.getElementById('saleSubmitBtn').disabled = false;
     document.getElementById('saleSubmitBtn').textContent = 'Complete Sale';
     updateSaleTotal();
+    renderPosCashChips();
     openModal('saleModal');
     if (!window._inventoryCache) loadInventoryCache();
     setTimeout(() => document.getElementById('saleScanner').focus(), 300);
@@ -1294,6 +1295,35 @@ function updateSaleTotal() {
         }
         calcSaleChange();
     }
+    renderPosCashChips();
+}
+
+function currentSaleTotal() {
+    return parseFloat(String(document.getElementById('saleTotalDisplay').textContent || '').replace(/[^\d.]/g, '')) || 0;
+}
+
+function applyPosCashChip(amount) {
+    const field = document.getElementById('saleCashTendered');
+    if (!field) return;
+    field.value = (parseFloat(amount) || 0).toFixed(2);
+    calcSaleChange();
+}
+
+function renderPosCashChips() {
+    const wrap = document.getElementById('saleCashChips');
+    if (!wrap) return;
+    const method = (document.querySelector('input[name="saleMethod"]:checked') || {}).value || 'cash';
+    if (method !== 'cash') {
+        wrap.innerHTML = '';
+        return;
+    }
+    const total = currentSaleTotal();
+    const presets = [10, 20, 50, 100].filter(function (n) { return n + 0.001 >= total; });
+    let html = '<button type="button" class="pos-chip" onclick="applyPosCashChip(' + total.toFixed(2) + ')">Exact</button>';
+    presets.forEach(function (n) {
+        html += '<button type="button" class="pos-chip" onclick="applyPosCashChip(' + n + ')">BZ$' + n + '</button>';
+    });
+    wrap.innerHTML = html;
 }
 
 function togglePartialField() {
@@ -1310,6 +1340,7 @@ function togglePartialField() {
         const disp = document.getElementById('saleChangeDisplay');
         if (disp) disp.style.display = 'none';
     }
+    renderPosCashChips();
 }
 
 function calcSaleChange() {

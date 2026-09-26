@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="css/perf.css">
     <link rel="stylesheet" href="css/nav.css">
     <link rel="stylesheet" href="css/v5-shell.css">
+    <link rel="stylesheet" href="css/v5-sales.css">
     <link rel="stylesheet" href="css/footer.css">
     <link rel="stylesheet" href="css/splash.css">
     <style>
@@ -798,10 +799,12 @@
                 <div class="sum-value" id="sumReversed">0</div>
             </div>
         </div>
-        <div class="action-bar">
-            <button class="btn-primary" onclick="openSaleModal()">+ New Sale</button>
-            <button class="btn-secondary" onclick="openJobPickupModal()" data-icon="job">Job Pickup</button>
-            <button class="btn-secondary" onclick="openSalesPartialSales()" data-icon="bolt">Partial Owed</button>
+        <div class="pos-hero" data-tour="sales-hero">
+            <button class="btn-primary pos-hero-sale" type="button" onclick="openSaleModal()">New Sale</button>
+            <button class="btn-secondary pos-hero-pickup" type="button" onclick="openJobPickupModal()" data-icon="job">Pickup</button>
+        </div>
+        <div class="action-bar pos-tools">
+            <button class="btn-secondary" onclick="openSalesPartialSales()" data-icon="bolt">Partials</button>
             <button class="btn-secondary" onclick="printSalesReport()" data-icon="print">Print Report</button>
             <input type="date" id="salesDateFilter" style="padding:10px 13px;border-radius:var(--radius-full);border:1px solid var(--glass-border);background:var(--glass);color:var(--text-main);font-family:var(--font-family);font-size:0.82rem;font-weight:700;outline:none;cursor:pointer;margin-left:auto;" onchange="onSalesDateChange()">
         </div>
@@ -990,6 +993,7 @@
         <div class="form-group" id="cashTenderedGroup" style="display:none;">
             <label>Cash Tendered (BZ$)</label>
             <input type="number" id="saleCashTendered" placeholder="0.00" min="0" step="0.01" oninput="calcSaleChange()">
+            <div class="pos-cash-chips" id="saleCashChips"></div>
             <div id="saleChangeDisplay" style="display:none;margin-top:8px;padding:10px 14px;border-radius:10px;font-size:0.95rem;font-weight:800;text-align:center;"></div>
         </div>
         <div class="modal-footer">
