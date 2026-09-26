@@ -4048,42 +4048,19 @@
             return age >= 0 && age < 10 * 60 * 1000;
         }
 
-        const CLAIM_BTN_DEFAULT_HTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"'
-            + ' stroke-linecap="round" stroke-linejoin="round"'
-            + ' style="display:inline-block;vertical-align:middle;margin-right:5px;">'
-            + '<rect x="3" y="11" width="18" height="11" rx="2" />'
-            + '<path d="M7 11V7a5 5 0 0 1 10 0v4" />'
-            + '</svg>Claim Job';
-
-        let _claimInFlight = false;
-
-        function resetClaimButton() {
-            const claimBtn = document.getElementById('claimBtn');
-            if (!claimBtn) return;
-            claimBtn.disabled = false;
-            claimBtn.innerHTML = CLAIM_BTN_DEFAULT_HTML;
-        }
-
         async function claimCurrentJob() {
-            if (_claimInFlight) return;
             const j = getJob(currentViewId);
             if (!j) return;
             const scUser = localStorage.getItem('scUser') || sessionStorage.getItem('scUser') || '';
-            if (!scUser.trim()) {
-                showToast('❌ Not signed in — refresh and log in again.', 'err');
-                return;
-            }
-            const rawRole = typeof getUserRole === 'function'
+            const effectiveRole = typeof getUserRole === 'function'
                 ? getUserRole()
                 : (localStorage.getItem('scRole') || sessionStorage.getItem('scRole') || deriveRole(scUser));
-            const effectiveRole = String(rawRole || deriveRole(scUser)).toLowerCase().trim();
             const claimBtn = document.getElementById('claimBtn');
 
             // OPTIMISTIC UPDATE: Update UI immediately for instant feedback
             const originalClaimedBy = j.claimedBy;
             const originalClaimedAt = j.claimedAt;
 
-            _claimInFlight = true;
             claimBtn.disabled = true;
             claimBtn.textContent = 'Claiming…';
 
@@ -4096,49 +4073,32 @@
             openViewModal(currentViewId);
 
             try {
-                const data = await apiPost({
-                    action: 'claimjob',
-                    id: currentViewId,
-                    username: scUser,
-                    role: effectiveRole
-                });
-                const job = getJob(currentViewId) || j;
+                const data = await apiPost({ action: 'claimjob', id: currentViewId, username: scUser, role: effectiveRole });
                 if (data.success) {
-                    job.claimedBy = data.claimedBy || scUser;
+                    // Backend confirmed - update with server timestamp if provided
                     if (data.claimedAt) {
-                        job.claimedAt = data.claimedAt;
+                        j.claimedAt = data.claimedAt;
                     }
                     showToast('✅ Job claimed!', 'ok');
+                    // Refresh UI one more time with server data
                     filterAndRender();
                     openViewModal(currentViewId);
                 } else {
-                    job.claimedBy = originalClaimedBy;
-                    job.claimedAt = originalClaimedAt;
+                    // REVERT: Backend failed, restore original state
+                    j.claimedBy = originalClaimedBy;
+                    j.claimedAt = originalClaimedAt;
                     showToast('❌ ' + (data.error || 'Could not claim job'), 'err');
                     filterAndRender();
                     openViewModal(currentViewId);
                 }
             } catch (e) {
                 console.error('claimCurrentJob error:', e);
-                const job = getJob(currentViewId) || j;
-                job.claimedBy = originalClaimedBy;
-                job.claimedAt = originalClaimedAt;
+                // REVERT: Network error, restore original state
+                j.claimedBy = originalClaimedBy;
+                j.claimedAt = originalClaimedAt;
                 showToast('❌ Network error', 'err');
                 filterAndRender();
                 openViewModal(currentViewId);
-            } finally {
-                _claimInFlight = false;
-                resetClaimButton();
-                const refreshed = getJob(currentViewId);
-                const scRole = typeof getUserRole === 'function' ? getUserRole() : deriveRole(scUser);
-                const canClaim = ['manager', 'technician'].includes(scRole);
-                if (claimBtn && refreshed) {
-                    if (refreshed.claimedBy) {
-                        claimBtn.style.display = 'none';
-                    } else {
-                        claimBtn.style.display = canClaim ? '' : 'none';
-                    }
-                }
             }
         }
 
@@ -4211,10 +4171,6 @@
             const claimBtn = document.getElementById('claimBtn');
             const unclaimBtn = document.getElementById('unclaimBtn');
             const claimedByEl = document.getElementById('view-claimed-by');
-
-            if (!_claimInFlight) {
-                resetClaimButton();
-            }
 
             if (j.claimedBy) {
                 claimedByEl.innerHTML = `<span class="claimed-chip">🔒 ${escH(j.claimedBy)}</span>`;
