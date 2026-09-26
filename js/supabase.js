@@ -285,12 +285,13 @@ const Jobs = {
 
   async claim(id, username, role) {
     const allowed = ['manager', 'technician'];
-    if (!allowed.includes(role)) return { success: false, error: 'Only managers and technicians can claim jobs' };
+    const normalizedRole = String(role || '').toLowerCase().trim();
+    if (!allowed.includes(normalizedRole)) return { success: false, error: 'Only managers and technicians can claim jobs' };
 
     const rows = await sbGet('jobs', `id=eq.${id}&select=claimed_by,status`);
     if (!rows.length) return { success: false, error: 'Job not found' };
     const job = rows[0];
-    if (job.claimed_by && role !== 'manager') return { success: false, error: `Job already claimed by ${job.claimed_by}` };
+    if (job.claimed_by && normalizedRole !== 'manager') return { success: false, error: `Job already claimed by ${job.claimed_by}` };
 
     const now = new Date().toISOString();
     const patch = { claimed_by: username, claimed_at: now };
