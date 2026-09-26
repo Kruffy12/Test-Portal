@@ -95,7 +95,8 @@ body.sc-v5.sc-logged-out .sc-more-sheet {
     white-space: nowrap;
     overflow: hidden;
     opacity: 1;
-    transition: opacity 0.15s;
+    max-width: 12rem;
+    transition: opacity 0.2s ease 0.1s, max-width 0.22s ease;
 }
 
 .sc-sidebar-title {
@@ -108,8 +109,9 @@ body.sc-v5.sc-logged-out .sc-more-sheet {
 body.sc-v5.sc-sidebar-collapsed .sc-sidebar-title,
 body.sc-v5.sc-sidebar-collapsed .sc-sidebar-link-label {
     opacity: 0;
-    width: 0;
+    max-width: 0;
     pointer-events: none;
+    transition: opacity 0.14s ease, max-width 0.22s ease;
 }
 
 /* Kill v4 floating-pill rules if they still hit these <nav> tags */
@@ -237,6 +239,7 @@ body.sc-v5 nav.sc-tabbar::after {
     font-family: var(--font-family);
     font-weight: 600;
     font-size: 0.88rem;
+    transition: padding 0.22s ease, justify-content 0.22s ease, background 0.2s, color 0.2s, border-color 0.2s;
 }
 
 .sc-sidebar .bell-btn svg {
@@ -249,6 +252,10 @@ body.sc-v5 nav.sc-tabbar::after {
     content: 'Notifications';
     order: 1;
     white-space: nowrap;
+    overflow: hidden;
+    max-width: 10rem;
+    opacity: 1;
+    transition: opacity 0.2s ease 0.1s, max-width 0.22s ease;
 }
 
 .sc-sidebar .bell-btn .notif-badge {
@@ -264,7 +271,9 @@ body.sc-v5.sc-sidebar-collapsed .sc-sidebar .bell-btn {
 }
 
 body.sc-v5.sc-sidebar-collapsed .sc-sidebar .bell-btn::after {
-    display: none;
+    max-width: 0;
+    opacity: 0;
+    transition: opacity 0.14s ease, max-width 0.22s ease;
 }
 
 body.sc-v5.sc-sidebar-collapsed .sc-sidebar .bell-btn .notif-badge {
@@ -278,6 +287,16 @@ body.sc-v5.sc-sidebar-collapsed .sc-sidebar .bell-btn .notif-badge {
     min-height: 44px;
     padding: 4px 10px 4px 6px;
     border-radius: var(--sc-v5-radius);
+    transition: padding 0.22s ease, justify-content 0.22s ease;
+}
+
+.sc-sidebar .account-name,
+.sc-sidebar .account-caret {
+    white-space: nowrap;
+    overflow: hidden;
+    max-width: 8rem;
+    opacity: 1;
+    transition: opacity 0.2s ease 0.1s, max-width 0.22s ease;
 }
 
 .sc-sidebar-desktop-tools {
@@ -296,7 +315,17 @@ body.sc-v5.sc-sidebar-collapsed .sc-sidebar .bell-btn .notif-badge {
 
 body.sc-v5.sc-sidebar-collapsed .sc-sidebar .account-name,
 body.sc-v5.sc-sidebar-collapsed .sc-sidebar .account-caret {
-    display: none;
+    max-width: 0;
+    opacity: 0;
+    margin: 0;
+    padding: 0;
+    pointer-events: none;
+    transition: opacity 0.14s ease, max-width 0.22s ease;
+}
+
+body.sc-v5.sc-sidebar-collapsed .sc-sidebar .account-chip {
+    padding: 4px;
+    justify-content: center;
 }
 
 .sc-topbar {
