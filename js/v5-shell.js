@@ -60,7 +60,7 @@
         back.classList.toggle('open', open);
         global.document.body.classList.toggle('sc-more-open', open);
         if (btn) {
-            btn.classList.toggle('active', open);
+            btn.classList.toggle('active', open || btn.getAttribute('data-current') === '1');
             btn.setAttribute('aria-expanded', open ? 'true' : 'false');
         }
         syncChromeVars();
@@ -154,11 +154,16 @@
                 icon(t.ic, 22) + '<span class="sc-tab-label">' + t.label + '</span></a>';
         }).join('');
 
-        tabHtml += '<button type="button" class="sc-tab" id="scTabMore" data-tour="tab-more" aria-expanded="false">' +
+        var moreLinks = visible.filter(function (l) { return !tabHrefs[l.href]; });
+        var moreIsCurrent = moreLinks.some(function (l) { return isActive(l.href, current); });
+
+        tabHtml += '<button type="button" class="sc-tab' + (moreIsCurrent ? ' active' : '') + '" id="scTabMore" data-tour="tab-more" aria-expanded="false"' +
+            (moreIsCurrent ? ' data-current="1"' : '') + '>' +
             icon('list', 22) + '<span class="sc-tab-label">More</span></button>';
 
-        var moreItems = visible.filter(function (l) { return !tabHrefs[l.href]; }).map(function (l) {
-            return '<a href="' + l.href + '" class="sc-more-link">' + icon(l.icon, 20) + '<span>' + l.label + '</span></a>';
+        var moreItems = moreLinks.map(function (l) {
+            var active = isActive(l.href, current) ? ' active' : '';
+            return '<a href="' + l.href + '" class="sc-more-link' + active + '">' + icon(l.icon, 20) + '<span>' + l.label + '</span></a>';
         }).join('');
 
         var accountHTML = username ? (

@@ -198,6 +198,60 @@ body.sc-v5 nav.sc-tabbar {
     justify-content: flex-start;
 }
 
+.sc-sidebar .bell-btn {
+    height: auto;
+    min-height: 44px;
+    padding: 0 12px;
+    gap: 12px;
+    border-radius: var(--sc-v5-radius);
+    border-color: transparent;
+    background: transparent;
+    font-family: var(--font-family);
+    font-weight: 600;
+    font-size: 0.88rem;
+}
+
+.sc-sidebar .bell-btn svg {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+}
+
+.sc-sidebar .bell-btn::after {
+    content: 'Notifications';
+    order: 1;
+    white-space: nowrap;
+}
+
+.sc-sidebar .bell-btn .notif-badge {
+    position: static;
+    order: 2;
+    margin-left: auto;
+    border-color: transparent;
+}
+
+body.sc-v5.sc-sidebar-collapsed .sc-sidebar .bell-btn {
+    justify-content: center;
+    padding: 0;
+}
+
+body.sc-v5.sc-sidebar-collapsed .sc-sidebar .bell-btn::after {
+    display: none;
+}
+
+body.sc-v5.sc-sidebar-collapsed .sc-sidebar .bell-btn .notif-badge {
+    position: absolute;
+    top: 4px;
+    right: 8px;
+    margin: 0;
+}
+
+.sc-sidebar .account-chip {
+    min-height: 44px;
+    padding: 4px 10px 4px 6px;
+    border-radius: var(--sc-v5-radius);
+}
+
 .sc-sidebar-desktop-tools {
     display: flex;
     flex-direction: column;
@@ -414,10 +468,42 @@ body.sc-v5.sc-sidebar-collapsed .sc-sidebar .account-caret {
     touch-action: manipulation;
 }
 
+.sc-more-link.active {
+    background: rgba(var(--primary-rgb), 0.12);
+    border-color: rgba(var(--primary-rgb), 0.35);
+    color: var(--primary);
+}
+
 @media (min-width: 901px) {
     body.sc-v5 #staff-broadcast-card,
     body.sc-v5 #sc-app-update-card {
-        top: 16px;
+        top: auto;
+        right: max(20px, env(safe-area-inset-right));
+        transform: translateY(8px) scale(0.98);
+    }
+
+    body.sc-v5 #sc-app-update-card {
+        bottom: 20px;
+    }
+
+    body.sc-v5 #staff-broadcast-card {
+        bottom: calc(20px + var(--sc-notice-stack-above-broadcast, 0px));
+        transition: opacity 0.28s ease, transform 0.28s ease, bottom 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    body.sc-v5 #staff-broadcast-card.is-visible,
+    body.sc-v5 #sc-app-update-card.is-visible {
+        transform: translateY(0) scale(1);
+    }
+}
+
+@media (min-width: 768px) and (max-width: 900px) {
+    body.sc-v5 #sc-app-update-card {
+        top: calc(var(--sc-topbar-h) + env(safe-area-inset-top, 0px) + 10px);
+    }
+
+    body.sc-v5 #staff-broadcast-card {
+        top: calc(var(--sc-topbar-h) + env(safe-area-inset-top, 0px) + 10px + var(--sc-notice-stack-above-broadcast, 0px));
     }
 }
 
@@ -460,6 +546,71 @@ body.sc-v5.sc-logged-in main {
     body.sc-v5 .mobile-menu-panel { display: none !important; }
 
     .sc-sidebar { display: none !important; }
+
+    body.sc-v5.sc-logged-in .page-header h1,
+    body.sc-v5.sc-logged-in .dash-header h1 {
+        display: none !important;
+    }
+
+    body.sc-v5.sc-logged-in .dash-header {
+        margin-bottom: 14px;
+    }
+
+    body.sc-v5.sc-logged-in .dash-header p,
+    body.sc-v5.sc-logged-in .page-header p {
+        margin-top: 0;
+    }
+}
+
+@media (max-width: 600px) {
+    body.sc-v5 .stats {
+        gap: 10px;
+    }
+
+    body.sc-v5 .stat-card {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        grid-template-rows: auto auto;
+        column-gap: 12px;
+        align-items: center;
+        padding: 14px;
+        border-radius: 16px;
+    }
+
+    body.sc-v5 .stat-card .stat-header {
+        grid-row: span 2;
+        margin: 0;
+    }
+
+    body.sc-v5 .stat-card .stat-value {
+        font-size: 1.6rem;
+        margin: 0;
+    }
+
+    body.sc-v5 .stat-card .stat-label {
+        font-size: 0.62rem;
+        letter-spacing: 0.4px;
+        line-height: 1.25;
+    }
+
+    body.sc-v5 .stat-card::after {
+        display: none;
+    }
+
+    .sc-v5-hero-btn {
+        min-height: 64px;
+        flex-direction: row;
+        justify-content: flex-start;
+        gap: 10px;
+        padding: 12px;
+        font-size: 0.85rem;
+    }
+
+    .sc-v5-hero-icon {
+        width: 36px;
+        height: 36px;
+        flex-shrink: 0;
+    }
 }
 
 @media (max-width: 360px) {

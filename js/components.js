@@ -809,8 +809,10 @@ window.isOffline = () => !navigator.onLine;
         }
     }
 
+    let hadController = !!navigator.serviceWorker.controller;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
         if (!navigator.serviceWorker.controller) return;
+        if (!hadController) { hadController = true; return; }
         const card = document.getElementById('sc-app-update-card');
         if (!card || !card.classList.contains('is-visible')) {
             showUpdateNotice(null);

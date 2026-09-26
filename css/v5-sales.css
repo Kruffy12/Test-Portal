@@ -197,9 +197,41 @@ body.sc-v5 main {
     }
 }
 
+@media (max-width: 380px) {
+    .sum-card {
+        min-width: 0;
+        padding: 12px;
+    }
+
+    .sum-value {
+        font-size: 1.15rem;
+        overflow-wrap: anywhere;
+    }
+
+    #saleModal .pay-pills,
+    #jobPickupModal .pay-pills {
+        gap: 6px;
+    }
+
+    .pay-pill {
+        min-width: 0;
+    }
+
+    .pay-pill label {
+        padding: 8px 4px;
+        gap: 4px;
+        font-size: 0.78rem;
+        min-width: 0;
+    }
+
+    .pay-pill label svg {
+        width: 14px;
+        height: 14px;
+    }
+}
+
 @media (min-width: 701px) {
     .pos-hero {
-        grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-        max-width: 520px;
+        grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
     }
 }

@@ -486,6 +486,7 @@
             color: var(--text-light);
             pointer-events: none;
             display: flex;
+            z-index: 1;
         }
 
         /* ── Filter active state ── */
@@ -1377,6 +1378,28 @@
                 height: 44px;
                 border-radius: 12px;
             }
+
+            body.sc-v5 .job-row {
+                grid-template-columns: auto auto minmax(0, 1fr);
+                grid-template-areas:
+                    "id id status"
+                    "name name name"
+                    "dev dev dev"
+                    "type prio prio"
+                    "store act act";
+                gap: 6px 8px;
+                padding: 12px 14px;
+                align-items: center;
+            }
+
+            body.sc-v5 .job-row>div:nth-child(1) { grid-area: id; }
+            body.sc-v5 .job-row>div:nth-child(2) { grid-area: name; }
+            body.sc-v5 .job-row>div:nth-child(3) { grid-area: dev; }
+            body.sc-v5 .job-row>div:nth-child(4) { grid-area: type; }
+            body.sc-v5 .job-row>div:nth-child(5) { grid-area: prio; }
+            body.sc-v5 .job-row>div:nth-child(6) { grid-area: status; justify-self: end; }
+            body.sc-v5 .job-row>div:nth-child(7) { grid-area: store; font-size: 0.75rem; }
+            body.sc-v5 .job-row>div:nth-child(8) { grid-area: act; justify-self: end; }
 
             .modal-overlay {
                 align-items: flex-end;
@@ -2607,7 +2630,7 @@
                     </svg>
                 </span>
                 <input type="text" id="searchInput" class="search-input"
-                    placeholder="Search jobs (ID, name, device, phone, technician, notes...)">
+                    placeholder="Search ID, name, device, phone…" aria-label="Search jobs by ID, name, device, phone, technician or notes">
             </div>
             <select id="statusFilter" class="filter-dropdown">
                 <option value="all">All Shop Activity</option>
@@ -2619,7 +2642,7 @@
                 <option value="unsuccessful">Unsuccessful</option>
                 <option value="abandoned">Abandoned</option>
             </select>
-            <button class="refresh-btn" id="refreshBtn" onclick="refreshJobs()" title="Sync Spreadsheet">
+            <button class="refresh-btn" id="refreshBtn" onclick="refreshJobs()" title="Refresh jobs" aria-label="Refresh jobs">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                     stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="23 4 23 10 17 10" />

@@ -405,7 +405,7 @@ function renderSales() {
             : (s.status === 'settled' ? '<span class="badge badge-paid">Paid</span>'
             : (s.method === 'partial' ? '<span class="badge badge-partial">Balance Due: ' + bz(Math.max(0, transactionTotal - amountTendered)) + '</span>' : '<span class="badge badge-paid">Paid</span>'));
         const editBtn    = '<button class="item-btn" title="Edit" onclick="openEditSale(\'' + escH(s.saleId) + '\')">' + (typeof scIcon === 'function' ? scIcon('edit', 15) : 'Edit') + '</button>';
-        const reverseBtn = '<button class="item-btn red" title="Reverse" onclick="reverseSale(\'' + escH(s.saleId) + '\')">&#x21A9;&#xFE0F;</button>';
+        const reverseBtn = '<button class="item-btn red" title="Reverse" onclick="reverseSale(\'' + escH(s.saleId) + '\')" aria-label="Reverse sale">' + (typeof scIcon === 'function' ? scIcon('revert', 15) : 'Reverse') + '</button>';
         const viewBtn    = '<button class="item-btn" title="View" onclick="openViewSale(\'' + escH(s.saleId) + '\')">' + (typeof scIcon === 'function' ? scIcon('eye', 15) : 'View') + '</button>';
         
         // Build amount display: show collected vs invoice total
@@ -2746,6 +2746,13 @@ document.addEventListener('DOMContentLoaded', function () {
     setInterval(updateShiftBanner, 60000);
     initEODShiftPills();
     if (typeof initDataIcons === 'function') initDataIcons();
+
+    const deepLink = (location.hash || '').replace('#', '');
+    if (deepLink === 'new' || deepLink === 'eod') {
+        history.replaceState(null, '', location.pathname + location.search);
+        if (deepLink === 'eod') switchTab('eod');
+        else setTimeout(openSaleModal, 150);
+    }
 });
 
 window.addEventListener('sc-back-online', function () { loadAll(); });
