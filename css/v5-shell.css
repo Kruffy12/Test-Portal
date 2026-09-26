@@ -742,6 +742,31 @@ body.sc-v5.sc-more-open {
     text-align: center;
     box-shadow: var(--shadow-sm);
     touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, filter 0.2s ease;
+}
+
+@media (hover: hover) {
+    .sc-v5-hero-btn:hover {
+        transform: translateY(-2px);
+        border-color: rgba(var(--primary-rgb), 0.35);
+        box-shadow: 0 8px 20px rgba(var(--primary-rgb), 0.25);
+    }
+
+    .sc-v5-hero-btn.primary:hover {
+        border-color: transparent;
+        filter: brightness(1.05);
+    }
+}
+
+.sc-v5-hero-btn:active {
+    transform: translateY(0) scale(0.98);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sc-v5-hero-btn { transition: box-shadow 0.2s ease, border-color 0.2s ease, filter 0.2s ease; }
+    .sc-v5-hero-btn:hover,
+    .sc-v5-hero-btn:active { transform: none; }
 }
 
 .sc-v5-hero-btn.primary {

@@ -224,10 +224,15 @@
             box-shadow: 0 16px 40px rgba(15, 23, 42, 0.22), 0 2px 8px rgba(15, 23, 42, 0.08);
             scrollbar-width: thin;
             scrollbar-color: rgba(var(--primary-rgb), 0.35) transparent;
-            animation: njPop 0.16s ease both;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
         }
 
+        .nj-suggest.is-opening { animation: njPop 0.16s ease both; }
         .nj-suggest[hidden] { display: none; }
+
+        /* Keep the open menu above the pinned action bar */
+        .nj-form-menu-open .nj-actions { z-index: 3; }
 
         @keyframes njPop { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
 
@@ -242,6 +247,9 @@
             color: var(--text-main);
             cursor: pointer;
             user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
 
         .nj-suggest-item mark {
@@ -250,11 +258,20 @@
             font-weight: 800;
         }
 
-        .nj-suggest-item.active,
-        .nj-suggest-item:hover {
+        .nj-suggest-item.active {
             background: rgba(var(--primary-rgb), 0.12);
             color: var(--primary);
         }
+
+        /* Touch screens keep :hover on the last tapped row, so only use it with a real pointer */
+        @media (hover: hover) {
+            .nj-suggest-item:hover {
+                background: rgba(var(--primary-rgb), 0.12);
+                color: var(--primary);
+            }
+        }
+
+        .nj-suggest-item:active { background: rgba(var(--primary-rgb), 0.18); }
 
         .nj-group-title {
             font-size: 0.72rem;
@@ -400,7 +417,9 @@
             touch-action: manipulation;
         }
 
-        .nj-chip:hover { border-color: rgba(var(--primary-rgb), 0.45); }
+        @media (hover: hover) {
+            .nj-chip:hover { border-color: rgba(var(--primary-rgb), 0.45); }
+        }
         .nj-chip:active { transform: scale(0.97); }
 
         .nj-chip.is-on,
@@ -1498,17 +1517,41 @@
                     : escapeHtml(m.slice(0, at)) + '<mark>' + escapeHtml(m.slice(at, at + q.length)) + '</mark>' + escapeHtml(m.slice(at + q.length));
                 return `<div class="nj-suggest-item" role="option" id="sugg-${i}" data-index="${i}" aria-selected="false"><span>${label}</span></div>`;
             }).join('');
+            if (box.hidden) {
+                box.classList.remove('is-opening');
+                void box.offsetWidth;
+                box.classList.add('is-opening');
+            }
             box.hidden = false;
             box.scrollTop = 0;
             box.closest('.nj-group').classList.add('has-menu');
+            $('formWrapper').classList.add('nj-form-menu-open');
             input.setAttribute('aria-expanded', 'true');
+            sizeSuggestions();
+        }
+
+        // Fit the menu between the input and the bottom of what's visible (keyboard included)
+        let _sizeFrame = 0;
+        function sizeSuggestions() {
+            cancelAnimationFrame(_sizeFrame);
+            _sizeFrame = requestAnimationFrame(() => {
+                const box = $('deviceSuggest');
+                if (box.hidden) return;
+                const vv = window.visualViewport;
+                const viewBottom = vv ? vv.offsetTop + vv.height : window.innerHeight;
+                const top = $('device').getBoundingClientRect().bottom + 6;
+                const space = Math.floor(viewBottom - top - 12);
+                box.style.maxHeight = Math.max(132, Math.min(272, space)) + 'px';
+            });
         }
 
         function closeSuggestions() {
             const box = $('deviceSuggest');
             box.hidden = true;
             box.innerHTML = '';
+            box.classList.remove('is-opening');
             box.closest('.nj-group').classList.remove('has-menu');
+            $('formWrapper').classList.remove('nj-form-menu-open');
             _suggestItems = [];
             _suggestIndex = -1;
             $('device').setAttribute('aria-expanded', 'false');
@@ -1516,14 +1559,20 @@
         }
 
         function highlightSuggestion(i) {
-            const items = $('deviceSuggest').querySelectorAll('.nj-suggest-item');
+            const box = $('deviceSuggest');
+            const items = box.querySelectorAll('.nj-suggest-item');
             if (!items.length) return;
             _suggestIndex = (i + items.length) % items.length;
             items.forEach((el, idx) => {
                 const on = idx === _suggestIndex;
                 el.classList.toggle('active', on);
                 el.setAttribute('aria-selected', on ? 'true' : 'false');
-                if (on) el.scrollIntoView({ block: 'nearest' });
+                if (!on) return;
+                // Scroll only the menu; scrollIntoView would also move the page
+                const top = el.offsetTop;
+                const bottom = top + el.offsetHeight;
+                if (top < box.scrollTop) box.scrollTop = top - 6;
+                else if (bottom > box.scrollTop + box.clientHeight) box.scrollTop = bottom - box.clientHeight + 6;
             });
             $('device').setAttribute('aria-activedescendant', 'sugg-' + _suggestIndex);
         }
@@ -1553,13 +1602,18 @@
                 else if (e.key === 'Escape') { closeSuggestions(); e.preventDefault(); }
                 else if (e.key === 'Enter' && _suggestIndex >= 0) { chooseSuggestion(_suggestIndex); e.preventDefault(); }
             });
-            // mousedown keeps focus in the input so blur doesn't close the menu first
-            box.addEventListener('mousedown', e => {
+            // Keep focus (and the phone keyboard) in the input while the menu is pressed
+            box.addEventListener('mousedown', e => e.preventDefault());
+            // Pick on click, not mousedown: closing on mousedown lets the rest of a tap land on whatever is underneath
+            box.addEventListener('click', e => {
                 const item = e.target.closest('.nj-suggest-item');
-                if (!item) return;
-                e.preventDefault();
-                chooseSuggestion(Number(item.dataset.index));
+                if (item) chooseSuggestion(Number(item.dataset.index));
             });
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', sizeSuggestions);
+                window.visualViewport.addEventListener('scroll', sizeSuggestions);
+            }
+            window.addEventListener('scroll', sizeSuggestions, { passive: true });
         }
 
         function selectBrand(id) {

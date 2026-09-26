@@ -2652,6 +2652,7 @@
             </div>
             <select id="statusFilter" class="filter-dropdown">
                 <option value="all">All Shop Activity</option>
+                <option value="inprogress">All In Progress</option>
                 <option value="received">Received / Ordered</option>
                 <option value="fixing">Repair In Progress</option>
                 <option value="testing">Finalizing / Testing</option>
@@ -2659,6 +2660,7 @@
                 <option value="resolved">Picked Up</option>
                 <option value="unsuccessful">Unsuccessful</option>
                 <option value="abandoned">Abandoned</option>
+                <option value="expiring">Expiring Soon (7 days)</option>
             </select>
             <button class="refresh-btn" id="refreshBtn" onclick="refreshJobs()" title="Refresh jobs" aria-label="Refresh jobs">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
@@ -3507,6 +3509,28 @@
             return res;
         }
 
+        // Same rule as the dashboard's "Expiring Soon" card: ready/unsuccessful, 0–7 days before the 90-day abandon date
+        function isExpiringSoon(job, cls) {
+            if (!['ready', 'unsuccessful'].includes(cls) || !job.dateCompleted) return false;
+            const daysLeft = 90 - Math.floor((new Date() - new Date(job.dateCompleted)) / 86400000);
+            return daysLeft <= 7 && daysLeft >= 0;
+        }
+
+        // Dashboard rows link here as ?job=<id>; open that job once, then drop the param so a refresh doesn't reopen it
+        let _openedJobFromUrl = false;
+        function openJobFromUrl() {
+            if (_openedJobFromUrl) return;
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get('job');
+            if (!id) return;
+            _openedJobFromUrl = true;
+            if (getJob(id)) openViewModal(id);
+            else showToast('Job #' + id + ' was not found.', 'err');
+            params.delete('job');
+            const qs = params.toString();
+            history.replaceState(null, '', window.location.pathname + (qs ? '?' + qs : '') + window.location.hash);
+        }
+
         function updateStats(jobs) {
             let s = { total: jobs.length, received: 0, fixing: 0, testing: 0, ready: 0, abandoned: 0 };
             jobs.forEach(j => {
@@ -3676,7 +3700,11 @@
                 );
 
                 // Check status filter
-                const matchFilter = _viewingArchive || filter === 'all' || classifyStatus(j).class === filter;
+                const cls = classifyStatus(j).class;
+                const matchFilter = _viewingArchive || filter === 'all'
+                    || (filter === 'inprogress' ? ['received', 'fixing', 'testing'].includes(cls)
+                        : filter === 'expiring' ? isExpiringSoon(j, cls)
+                        : cls === filter);
 
                 return matchSearch && matchFilter;
             });
@@ -3855,6 +3883,7 @@
                 filterAndRender();
                 updateStats(allJobs);
                 checkStaleJobs(allJobs);
+                openJobFromUrl();
             } catch (error) {
                 console.error('loadJobs error:', error);
                 const cached = localStorage.getItem('sc_cache_jobs');
@@ -3862,6 +3891,7 @@
                     allJobs = JSON.parse(cached);
                     filterAndRender();
                     updateStats(allJobs);
+                    openJobFromUrl();
                     showToast('📡 Offline — showing cached data', '');
                 } else {
                     showToast('❌ Could not load jobs from the server.', 'err');
