@@ -1360,7 +1360,7 @@
             const loginOverlay = document.getElementById('loginOverlay');
             const mainContent = document.querySelector('main');
             const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true' || sessionStorage.getItem('isLoggedIn') === 'true';
-            const duration = [1000, 1500][Math.floor(Math.random() * 2)];
+            const duration = splash && splash.classList.contains('is-cold') ? 700 : 0;
 
             // Show suspended notice if redirected from force-logout
             if (new URLSearchParams(window.location.search).get('revoked') === '1') {
@@ -1383,10 +1383,10 @@
                     } else {
                         loadDashboard();
                     }
-                }, 400);
+                }, 200);
                 setTimeout(() => {
                     if (splash) splash.classList.add('hidden');
-                }, 800);
+                }, 420);
             }, duration);
         }
 

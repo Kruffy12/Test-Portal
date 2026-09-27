@@ -40,6 +40,14 @@ body.sc-v5.sc-sidebar-collapsed {
     --sc-sidebar-current: var(--sc-sidebar-w-collapsed);
 }
 
+/* Moving between pages crossfades instead of flashing blank (browsers without support just switch) */
+@view-transition { navigation: auto; }
+::view-transition-old(root),
+::view-transition-new(root) { animation-duration: 0.18s; }
+@media (prefers-reduced-motion: reduce) {
+    @view-transition { navigation: none; }
+}
+
 /* Native popups (date pickers, selects, scrollbars) can't be styled directly; this makes them follow the theme */
 html { color-scheme: light; accent-color: var(--primary); }
 html[data-theme="dark"],

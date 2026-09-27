@@ -82,7 +82,9 @@ function toggleAccountMenu(e) {
 const ComponentLoader = {
     config: {
         footerPath: 'components/footer.html',
-        minSplashTime: 3000,
+        // First open of the app this session gets a short branded moment; moving between pages
+        // only covers the page while it's actually loading
+        minSplashTime: 700,
     },
 
     state: {
@@ -99,27 +101,35 @@ const ComponentLoader = {
             this.loadFooter()
         ]);
 
-        const elapsed = Date.now() - this.state.loadStartTime;
-        const remaining = Math.max(0, this.config.minSplashTime - elapsed);
+        const min = this.splashIsCold() ? this.config.minSplashTime : 0;
+        const remaining = Math.max(0, min - (Date.now() - this.state.loadStartTime));
         setTimeout(() => this.hideSplash(), remaining);
+    },
+
+    splashIsCold() {
+        const splash = document.getElementById('splash-screen');
+        return !!(splash && splash.classList.contains('is-cold'));
     },
 
     createSplash() {
         // Don't create a second splash if one already exists
         if (document.getElementById('splash-screen')) return;
+        let cold = true;
+        try {
+            cold = !sessionStorage.getItem('scBooted');
+            sessionStorage.setItem('scBooted', '1');
+        } catch (_) {}
         const splash = document.createElement('div');
         splash.id = 'splash-screen';
-        splash.className = 'splash-screen';
+        splash.className = 'splash-screen ' + (cold ? 'is-cold' : 'is-warm');
+        splash.setAttribute('role', 'status');
+        splash.setAttribute('aria-label', 'Loading');
         splash.innerHTML = `
-          <div class="splash-loader">
-            <div class="rotating-grid">
-              <div class="box"></div>
-              <div class="box"></div>
-              <div class="box"></div>
-              <div class="box"></div>
-            </div>
-          </div>
-          <div class="splash-loading-text">ServiCell Belize - Staff Portal</div>`;
+          <div class="splash-glow" aria-hidden="true"></div>
+          <div class="splash-stage" aria-hidden="true">
+            <div class="splash-mark"><i></i><i></i><i></i><i></i></div>
+            <div class="splash-name">ServiCell Staff Portal</div>
+          </div>`;
         document.body.prepend(splash);
     },
 
@@ -131,7 +141,7 @@ const ComponentLoader = {
         setTimeout(() => {
             splash.classList.add('hidden');
             document.body.classList.add('page-ready');
-        }, 600);
+        }, this.splashIsCold() ? 420 : 220);
     },
 
     async loadNav() {
@@ -324,6 +334,9 @@ const ComponentLoader = {
           </nav>`;
     }
 };
+
+// Cover the page from its first paint, not from DOMContentLoaded
+if (document.body) ComponentLoader.createSplash();
 
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => ComponentLoader.init());

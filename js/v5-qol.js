@@ -1160,7 +1160,7 @@
             '<div class="sc-intro-eyebrow">ServiCell Staff Portal</div>' +
             '<h1 class="sc-intro-title" id="scIntroTitle" aria-label="Version 5.0.0"><span class="sc-intro-v" aria-hidden="true">V</span><span class="sc-intro-5" aria-hidden="true">5</span></h1>' +
             '<div class="sc-intro-version" aria-hidden="true">Version 5.0.0</div>' +
-            '<p class="sc-intro-sub">Everything you use every day — faster, calmer and built for the counter.</p>' +
+            '<p class="sc-intro-sub">The whole shop, one tap away.</p>' +
             '<div class="sc-intro-actions">' +
             '<button type="button" class="sc-intro-go">Show me around</button>' +
             '<button type="button" class="sc-intro-skip">Skip for now</button>' +
@@ -1302,7 +1302,7 @@
         layer.classList.add('show');
         setTimeout(function () {
             if (!layer._gone) global.location.href = route[idx].page;
-        }, prefersReducedMotion() ? 300 : 1000);
+        }, prefersReducedMotion() ? 200 : 520);
     }
 
     function moveStop(route, idx, dir) {
@@ -1334,7 +1334,9 @@
         }
         layer.classList.add('show');
         whenSettled(function () {
-            var hold = titled ? Math.max(0, (prefersReducedMotion() ? 700 : 1500) - (Date.now() - shownAt)) : 0;
+            // Arriving, the card was already read on the page before; it only needs a beat here
+            var minHold = opts.arrive ? 600 : 1100;
+            var hold = titled ? Math.max(0, (prefersReducedMotion() ? minHold / 2 : minHold) - (Date.now() - shownAt)) : 0;
             setTimeout(function () {
                 if (layer._gone) return;
                 var started = startTour(true, {
@@ -1490,6 +1492,13 @@
             startWelcome();
         });
         obs.observe(doc.body, { attributes: true, attributeFilter: ['class'] });
+    }
+
+    // Arriving on the next tour stop: put its title card up now, before the page's own scripts run,
+    // so the hop from the previous page reads as one motion (boot then finds the tour already going)
+    if (doc.body && isLoggedIn()) {
+        var arriving = parseStage(onboardStage());
+        if (arriving && arriving.page === currentPage()) resumeTour(onboardStage());
     }
 
     if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', boot);

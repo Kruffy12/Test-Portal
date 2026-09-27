@@ -1,258 +1,122 @@
 /* ============================================
-   PREMIUM SPLASH SCREEN
+   V5 LOADING SCREEN
+   is-cold: first open this session — the mark settles in with the name for a short beat.
+   is-warm: moving between pages — a plain veil in the page colour; the mark only appears
+   if the page is still loading after a moment, so quick hops never flash it.
    ============================================ */
 
 .splash-screen {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: var(--bg-gradient, #0f172a);
-    /* Fallback color */
-    z-index: 9999;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    transition: opacity 0.6s ease, visibility 0.6s ease;
+    inset: 0;
+    z-index: var(--z-splash, 9999);
+    display: grid;
+    place-items: center;
+    background: var(--sc-v5-page-solid, var(--bg-gradient, #f1f5f9));
+    color: var(--text-main);
+    font-family: var(--font-family);
+    overflow: hidden;
+    transition: opacity 0.4s ease, visibility 0s linear 0.4s;
 }
 
+.splash-screen.is-warm { transition-duration: 0.2s, 0s; transition-delay: 0s, 0.2s; }
+
+.splash-screen.exiting,
 .splash-screen.hidden {
     opacity: 0;
-    visibility: hidden;
     pointer-events: none;
 }
 
-/* Animated Background Blobs for Splash */
-.splash-blobs {
+.splash-screen.hidden { visibility: hidden; }
+
+.splash-glow {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    z-index: var(--z-background);
-}
-
-.splash-blob {
-    position: absolute;
-    background: var(--primary);
-    filter: blur(80px);
-    border-radius: 50%;
-    opacity: 0.15;
-    animation: blobFloat 8s infinite alternate ease-in-out;
-}
-
-.splash-blob:nth-child(1) {
-    width: 400px;
-    height: 400px;
-    top: 10%;
-    left: 10%;
-    animation-delay: 0s;
-}
-
-.splash-blob:nth-child(2) {
-    width: 300px;
-    height: 300px;
-    bottom: 20%;
-    right: 15%;
-    background: var(--accent);
-    animation-delay: -2s;
-}
-
-.splash-blob:nth-child(3) {
-    width: 250px;
-    height: 250px;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%);
-    background: var(--primary-light);
-    animation-delay: -4s;
-    opacity: 0.1;
-}
-
-@keyframes blobFloat {
-    0% {
-        transform: translate(0, 0) scale(1);
-    }
-
-    100% {
-        transform: translate(30px, -30px) scale(1.1);
-    }
-}
-
-/* Logo Animation */
-.splash-logo-container {
-    position: relative;
-    z-index: var(--z-base);
-    text-align: center;
-}
-
-.splash-logo {
-    width: 120px;
-    height: 120px;
-    margin-bottom: var(--space-md);
-    animation: logoPulse 2s infinite ease-in-out;
-    filter: drop-shadow(0 10px 30px rgba(37, 99, 235, 0.3));
-}
-
-@keyframes logoPulse {
-
-    0%,
-    100% {
-        transform: scale(1);
-    }
-
-    50% {
-        transform: scale(1.05);
-    }
-}
-
-.splash-brand {
-    font-size: 2rem;
-    font-weight: var(--font-bold);
-    color: var(--text-main);
-    letter-spacing: -1px;
-    margin-bottom: var(--space-xs);
-}
-
-.splash-brand span {
-    color: var(--primary);
-}
-
-.splash-tagline {
-    font-size: 0.9rem;
-    color: var(--text-dim);
-    font-style: italic;
+    width: 70vmax;
+    height: 70vmax;
+    margin: -35vmax 0 0 -35vmax;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(var(--primary-rgb, 37, 99, 235), 0.16) 0%, transparent 60%);
     opacity: 0;
-    animation: fadeInUp 0.8s ease 0.5s forwards;
+    animation: splash-fade 0.8s ease forwards;
 }
 
-/* Container for the 2x2 grid */
-.rotating-grid {
+.splash-stage {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    opacity: 0;
+    animation: splash-rise 0.5s cubic-bezier(0.32, 0.72, 0, 1) 0.05s forwards;
+    transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1), filter 0.4s ease;
+}
+
+.splash-screen.is-warm .splash-glow,
+.splash-screen.is-warm .splash-stage { animation-delay: 0.35s; }
+
+.splash-screen.exiting .splash-stage {
+    transform: scale(1.05);
+    filter: blur(6px);
+}
+
+/* The four tiles from the intro, already turned into the ServiCell diamond; a light wave runs through them */
+.splash-mark {
     display: grid;
-    grid-template-columns: repeat(2, 25px);
-    grid-template-rows: repeat(2, 25px);
-    gap: 8px;
-    animation: gridRotate 3s linear infinite;
-    /* Overall grid rotation */
+    grid-template-columns: repeat(2, 22px);
+    gap: 7px;
+    transform: rotate(45deg);
 }
 
-.box {
-    width: 25px;
-    height: 25px;
-    background-color: var(--primary);
+.splash-mark i {
+    width: 22px;
+    height: 22px;
     border-radius: 6px;
-    animation: boxScale 1.5s ease-in-out infinite;
-    /* Individual box pulsing */
+    background: var(--primary, #2563eb);
+    animation: splash-wave 1.4s ease-in-out infinite;
 }
 
-/* Stagger the boxes for a "wave" effect */
-.box:nth-child(2) {
-    animation-delay: 0.2s;
-    background-color: var(--accent);
-}
+.splash-mark i:nth-child(2) { background: var(--accent, #7c3aed); animation-delay: 0.12s; }
+.splash-mark i:nth-child(3) { background: var(--primary-light, #60a5fa); animation-delay: 0.36s; }
+.splash-mark i:nth-child(4) { background: var(--primary-dark, #1d4ed8); animation-delay: 0.24s; }
 
-.box:nth-child(3) {
-    animation-delay: 0.4s;
-    background-color: var(--primary-light);
-}
-
-.box:nth-child(4) {
-    animation-delay: 0.6s;
-    background-color: var(--primary-dark);
-}
-
-@keyframes gridRotate {
-    0% {
-        transform: rotate(0deg);
-    }
-
-    100% {
-        transform: rotate(360deg);
-    }
-}
-
-@keyframes boxScale {
-
-    0%,
-    100% {
-        transform: scale(1);
-        opacity: 1;
-    }
-
-    50% {
-        transform: scale(0.6);
-        opacity: 0.5;
-        border-radius: 50%;
-    }
-}
-
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-/* Loading Text */
-.splash-loading-text {
-    margin-top: var(--space-sm);
-    font-size: 0.75rem;
-    color: var(--text-dim);
+.splash-name {
+    margin-top: 30px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
     text-transform: uppercase;
-    letter-spacing: 2px;
-    font-weight: var(--font-medium);
-    animation: pulseText 1.5s infinite;
+    color: var(--text-dim);
 }
 
-@keyframes pulseText {
-
-    0%,
-    100% {
-        opacity: 0.6;
-    }
-
-    50% {
-        opacity: 1;
-    }
+@keyframes splash-fade {
+    to { opacity: 1; }
 }
 
-/* Progress Bar */
-.splash-progress-bar {
-    height: 100%;
-    width: 0%;
-    background: linear-gradient(90deg, var(--primary), var(--accent));
-    animation: progressLoad ease-out forwards;
-    /* Removed the 2.5s */
-    box-shadow: 0 0 10px rgba(37, 99, 235, 0.5);
+@keyframes splash-rise {
+    from { opacity: 0; transform: translateY(8px) scale(0.96); }
+    to { opacity: 1; transform: none; }
 }
 
-@keyframes progressLoad {
-    0% {
-        width: 0%;
-    }
+@keyframes splash-wave {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(0.72); opacity: 0.55; }
+}
 
-    100% {
-        width: 100%;
-    }
+@media (prefers-reduced-motion: reduce) {
+    .splash-glow,
+    .splash-stage { animation: splash-fade 0.2s ease forwards; }
+    .splash-screen.is-warm .splash-glow,
+    .splash-screen.is-warm .splash-stage { animation-delay: 0.35s; }
+    .splash-mark i { animation: none; }
+    .splash-screen.exiting .splash-stage { transform: none; filter: none; }
+}
+
+/* Shared keyframes other pages rely on */
+@keyframes spin {
+    to { transform: rotate(360deg); }
 }
 
 @keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Exit Animation */
-.splash-screen.exiting {
-    opacity: 0;
-    transform: scale(1.02);
-    transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }

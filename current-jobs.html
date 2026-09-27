@@ -5551,24 +5551,6 @@
         });
 
         document.addEventListener("DOMContentLoaded", () => {
-            const splash = document.querySelector('.splash-screen');
-            const progressBar = document.querySelector('.splash-progress-bar');
-
-            const options = [1500, 2000, 3000];
-            const randomDuration = options[Math.floor(Math.random() * options.length)];
-
-            if (progressBar) {
-                progressBar.style.animationDuration = `${randomDuration}ms`;
-            }
-
-            setTimeout(() => {
-                splash.classList.add('exiting');
-
-                setTimeout(() => {
-                    splash.classList.add('hidden');
-                }, 800);
-            }, randomDuration);
-
             document.getElementById('pay-unpaid')?.addEventListener('change', () => {
                 document.getElementById('payment-method-row').style.display = 'none';
             });
