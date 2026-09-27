@@ -761,7 +761,7 @@
                 if (layout === 'photo') return 'Tap a photo to see the job’s full details. Switch back to Cards or Rows to edit or delete.';
                 return 'Use the eye to see full details, the pencil to update status or invoice, and the bin to delete — you’ll get a few seconds to undo.';
             } },
-            { sel: '#refreshBtn', title: 'Always up to date', body: 'The board refreshes every minute. On a phone, you can also pull down from the top to refresh.' }
+            { sel: '.refresh-hint', title: 'Always up to date', body: 'The board refreshes every minute. On a phone, swipe down from the top to refresh right away.' }
         ],
         'new-job.html': [
             { tour: true, sel: '#njStepper', title: 'Four quick steps', body: 'Customer, device, condition, then review. Your progress is saved if you leave the page.' },

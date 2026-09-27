@@ -701,7 +701,7 @@ body.sc-v5.sc-logged-in main {
         gap: 10px;
     }
 
-    body.sc-v5 .stat-card {
+    body.sc-v5 .stats .stat-card {
         display: grid;
         grid-template-columns: auto 1fr;
         grid-template-rows: auto auto;
@@ -711,23 +711,23 @@ body.sc-v5.sc-logged-in main {
         border-radius: 16px;
     }
 
-    body.sc-v5 .stat-card .stat-header {
+    body.sc-v5 .stats .stat-card .stat-header {
         grid-row: span 2;
         margin: 0;
     }
 
-    body.sc-v5 .stat-card .stat-value {
+    body.sc-v5 .stats .stat-card .stat-value {
         font-size: 1.6rem;
         margin: 0;
     }
 
-    body.sc-v5 .stat-card .stat-label {
+    body.sc-v5 .stats .stat-card .stat-label {
         font-size: 0.62rem;
         letter-spacing: 0.4px;
         line-height: 1.25;
     }
 
-    body.sc-v5 .stat-card::after {
+    body.sc-v5 .stats .stat-card::after {
         display: none;
     }
 

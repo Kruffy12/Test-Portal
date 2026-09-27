@@ -124,7 +124,8 @@
         .stock-bar { flex: 1; height: 5px; background: var(--glass-border); border-radius: 3px; overflow: hidden; }
         .stock-bar-fill { height: 100%; border-radius: 3px; transition: width 0.3s ease; }
         .row-actions { display: flex; gap: 6px; justify-content: flex-end; }
-        .row-btn { width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.05); color: var(--text-dim); font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .row-btn { width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.05); color: var(--text-dim); font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; padding: 0; }
+        .row-btn svg { display: block; }
         .row-btn:hover { background: var(--primary); border-color: var(--primary); color: white; }
         .row-btn.danger:hover { background: var(--danger); border-color: var(--danger); }
 
@@ -998,9 +999,9 @@
                 <span class="status-badge ${statusCls}">${statusLabel}</span>
             </div>
             <div class="row-actions" onclick="event.stopPropagation()">
-                <button class="row-btn" title="Adjust stock" onclick="openAdjustModal('${escH(i.sku)}')">&#177;</button>
-                ${isManager ? `<button class="row-btn" title="Edit" onclick="openItemModal('${escH(i.sku)}')">&#9999;&#65039;</button>` : ''}
-                ${isManager ? `<button class="row-btn danger" title="Delete" onclick="openDeleteModal('${escH(i.sku)}')">&#128465;&#65039;</button>` : ''}
+                <button class="row-btn" title="Adjust stock" aria-label="Adjust stock" onclick="openAdjustModal('${escH(i.sku)}')">${scIcon('plus', 14)}</button>
+                ${isManager ? `<button class="row-btn" title="Edit" aria-label="Edit" onclick="openItemModal('${escH(i.sku)}')">${scIcon('edit', 14)}</button>` : ''}
+                ${isManager ? `<button class="row-btn danger" title="Delete" aria-label="Delete" onclick="openDeleteModal('${escH(i.sku)}')">${scIcon('trash', 14)}</button>` : ''}
             </div>
         </div>`;
     }

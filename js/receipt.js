@@ -1192,7 +1192,7 @@ function _ensureCustomerSmsModal() {
 .customer-sms-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding:18px 20px 12px; border-bottom:1px solid var(--glass-border,rgba(0,0,0,0.08)); }
 .customer-sms-head h3 { margin:0 0 4px; font-size:1rem; font-weight:800; }
 .customer-sms-sub { margin:0; font-size:0.78rem; color:var(--text-dim,#64748b); line-height:1.4; }
-.customer-sms-close { width:36px; height:36px; border-radius:50%; border:1px solid var(--glass-border,rgba(0,0,0,0.1)); background:transparent; cursor:pointer; font-size:1.1rem; flex-shrink:0; }
+.customer-sms-close { width:36px; height:36px; border-radius:50%; border:1px solid var(--glass-border,rgba(0,0,0,0.1)); background:transparent; color:var(--text-main,#111); cursor:pointer; font-size:1.1rem; flex-shrink:0; }
 .customer-sms-body { overflow:auto; padding:16px 20px; flex:1; -webkit-overflow-scrolling:touch; }
 .customer-sms-label { display:block; font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; color:var(--text-dim,#64748b); margin-bottom:8px; }
 .customer-sms-pills { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
@@ -1200,9 +1200,10 @@ function _ensureCustomerSmsModal() {
 .customer-sms-pill-btn.active { background:var(--primary,#2563eb); border-color:var(--primary,#2563eb); color:#fff; }
 .customer-sms-progress-wrap { display:none; margin-bottom:14px; }
 .customer-sms-progress-wrap.is-visible { display:block; }
-.customer-sms-custom { display:none; width:100%; padding:12px 14px; border-radius:12px; border:1px solid var(--glass-border,rgba(0,0,0,0.12)); font-family:inherit; font-size:0.9rem; margin-bottom:14px; box-sizing:border-box; }
+.customer-sms-custom { display:none; width:100%; padding:12px 14px; border-radius:12px; border:1px solid var(--glass-border,rgba(0,0,0,0.12)); background:var(--login-field-bg, var(--white-alt, #fff)); color:var(--text-main,#111); caret-color:var(--text-main,#111); font-family:inherit; font-size:0.9rem; margin-bottom:14px; box-sizing:border-box; }
+.customer-sms-custom::placeholder { color:var(--text-light,#94a3b8); }
 .customer-sms-custom.is-visible { display:block; }
-.customer-sms-preview { width:100%; min-height:160px; max-height:240px; padding:14px; border-radius:12px; border:1px solid var(--glass-border,rgba(0,0,0,0.1)); background:#f8fafc; color:var(--text-main,#111); font-family:inherit; font-size:0.84rem; line-height:1.55; resize:vertical; box-sizing:border-box; white-space:pre-wrap; }
+.customer-sms-preview { width:100%; min-height:160px; max-height:240px; padding:14px; border-radius:12px; border:1px solid var(--glass-border,rgba(0,0,0,0.1)); background:var(--login-field-bg, var(--white-alt, #fff)); color:var(--text-main,#111); font-family:inherit; font-size:0.84rem; line-height:1.55; resize:vertical; box-sizing:border-box; white-space:pre-wrap; }
 .customer-sms-actions { display:flex; gap:10px; padding:14px 20px calc(14px + env(safe-area-inset-bottom)); border-top:1px solid var(--glass-border,rgba(0,0,0,0.08)); }
 .customer-sms-actions button { flex:1; padding:14px; border-radius:12px; border:none; font-family:inherit; font-size:0.9rem; font-weight:700; cursor:pointer; }
 .customer-sms-cancel { background:var(--glass,rgba(0,0,0,0.06)); color:var(--text-main,#111); border:1px solid var(--glass-border,rgba(0,0,0,0.1)) !important; }

@@ -138,49 +138,36 @@
             background-position: right 15px center;
         }
 
-        .refresh-btn {
+        .refresh-text {
             height: 50px;
-            width: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            padding: 0 16px;
             border-radius: 14px;
             background: var(--white-alt);
             border: 1px solid var(--glass-border);
-            cursor: pointer;
-            backdrop-filter: blur(12px);
-            transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-            font-size: 1.2rem;
             color: var(--text-main);
-            position: relative;
+            font-family: var(--font-family);
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
         }
 
-        .refresh-btn:hover:not(.loading):not(.success) {
+        .refresh-text:hover {
             border-color: var(--primary);
-            transform: scale(1.05);
-            box-shadow: 0 0 20px rgba(var(--primary-rgb), 0.3);
         }
 
-        .refresh-btn.loading {
-            pointer-events: none;
-            border-color: var(--warning);
-            animation: spin 1s linear infinite;
+        .refresh-hint {
+            display: none;
+            flex: 1 1 100%;
+            margin: 0;
+            text-align: center;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--text-dim);
         }
 
-        .refresh-btn.success {
-            border-color: var(--success);
-            background: rgba(16, 185, 129, 0.1);
-            color: var(--success);
-        }
-
-        @keyframes spin {
-            from {
-                transform: rotate(0deg);
-            }
-
-            to {
-                transform: rotate(360deg);
-            }
+        @media (hover: none) and (pointer: coarse) {
+            .refresh-text { display: none; }
+            .refresh-hint { display: block; }
         }
 
         /* ── Stats ── */
@@ -246,6 +233,12 @@
             font-size: 2rem;
             font-weight: 800;
             line-height: 1;
+            color: inherit;
+            font-variant-numeric: proportional-nums;
+        }
+
+        body.sc-v5 .stats-row .stat-card {
+            display: block;
         }
 
         .stat-value.zero {
@@ -510,11 +503,6 @@
         .filter-dropdown.active {
             border-color: var(--primary);
             color: var(--primary);
-        }
-
-        /* ── Refresh btn SVG ── */
-        .refresh-btn svg {
-            display: block;
         }
 
         /* ── Delete modal icon ── */
@@ -1343,15 +1331,17 @@
             }
 
             .filter-dropdown {
-                flex: 1 1 calc(100% - 58px);
+                flex: 1 1 100%;
                 order: 2;
                 font-size: 0.85rem;
                 padding: 0 36px 0 12px;
             }
 
-            .refresh-btn {
+            .refresh-text { display: none; }
+
+            .refresh-hint {
+                display: block;
                 order: 3;
-                flex-shrink: 0;
             }
 
             .stats-row {
@@ -2846,24 +2836,9 @@
                 <option value="expiring">Expiring Soon (7 days)</option>
                 <option value="stale">Stale (14+ days in shop)</option>
             </select>
-            <button class="refresh-btn" id="refreshBtn" onclick="refreshJobs()" title="Refresh jobs" aria-label="Refresh jobs">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="23 4 23 10 17 10" />
-                    <polyline points="1 20 1 14 7 14" />
-                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-                </svg>
-            </button>
+            <button type="button" class="refresh-text" onclick="loadJobs()">Refresh</button>
             <button id="archiveToggleBtn" class="archive-btn" onclick="toggleArchiveView()"
-                title="Search archived jobs">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="21 8 21 21 3 21 3 8" />
-                    <rect x="1" y="3" width="22" height="5" />
-                    <line x1="10" y1="12" x2="14" y2="12" />
-                </svg>
-                Archives
-            </button>
+                title="Search archived jobs">Archives</button>
             <!-- View Toggle -->
             <div class="view-toggle" role="group" aria-label="Board view">
                 <button class="view-toggle-btn active" id="viewListBtn" onclick="setView('list')" title="Cards" aria-label="Cards view" aria-pressed="true">
@@ -2898,6 +2873,7 @@
                 <input type="checkbox" id="photoHideEmpty" checked onchange="togglePhotoHideEmpty(this.checked)">
                 <span>With photos only</span>
             </label>
+            <p class="refresh-hint">Swipe down to refresh</p>
         </div>
 
         <div class="stats-row">
@@ -3033,7 +3009,7 @@
                     </svg>
                     Job Details
                 </h2>
-                <button class="modal-close" onclick="closeModal('viewModal')">✕</button>
+                <button class="modal-close" onclick="closeModal('viewModal')">×</button>
             </div>
             <div class="modal-body">
                 <div class="view-id-tag" id="view-id-tag">#—</div>
@@ -3176,7 +3152,7 @@
                     </svg>
                     Unsaved Changes
                 </h2>
-                <button class="modal-close" onclick="closeModal('unsavedModal')">✕</button>
+                <button class="modal-close" onclick="closeModal('unsavedModal')">×</button>
             </div>
             <div class="modal-body" style="padding-top:8px;">
                 <p style="font-size:0.9rem;color:var(--text-dim);line-height:1.6;">You have unsaved changes. Are you
@@ -3201,7 +3177,7 @@
                     </svg>
                     Reassign Job
                 </h2>
-                <button class="modal-close" onclick="closeModal('reassignModal')">✕</button>
+                <button class="modal-close" onclick="closeModal('reassignModal')">×</button>
             </div>
             <div class="modal-body" style="padding-top:8px;">
                 <p style="font-size:0.9rem;color:var(--text-dim);line-height:1.6;">This will remove the current claim
@@ -3221,7 +3197,7 @@
         </div>
     </div>
     <div id="photoLightbox">
-        <button class="lb-close" onclick="closeLightbox()">✕</button>
+        <button class="lb-close" onclick="closeLightbox()">×</button>
         <button class="lb-nav lb-prev" id="lbPrev" onclick="lbNav(-1)">&#x2039;</button>
         <img id="lbImg" alt="Inspection photo">
         <button class="lb-nav lb-next" id="lbNext" onclick="lbNav(1)">&#x203A;</button>
@@ -3265,14 +3241,14 @@
                         style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px;border-radius:12px;border:1.5px dashed var(--glass-border);cursor:pointer;font-size:0.82rem;font-weight:700;color:var(--text-dim);transition:border-color 0.2s;"
                         onmouseover="this.style.borderColor='var(--primary)'"
                         onmouseout="this.style.borderColor='var(--glass-border)'">
-                        📁 Choose Files
+                        Choose Files
                         <input type="file" accept="image/*" multiple style="display:none;"
                             onchange="handlePhotoEditorFiles(event)">
                     </label>
                     <button type="button" onclick="photoEditorWebcamOpen()"
                         style="flex:1;padding:11px;border-radius:12px;border:1.5px dashed var(--glass-border);background:none;cursor:pointer;font-family:inherit;font-size:0.82rem;font-weight:700;color:var(--text-dim);transition:border-color 0.2s;"
                         onmouseover="this.style.borderColor='var(--primary)'"
-                        onmouseout="this.style.borderColor='var(--glass-border)'">📷 Camera</button>
+                        onmouseout="this.style.borderColor='var(--glass-border)'">Camera</button>
                 </div>
             </div>
 
@@ -3300,8 +3276,7 @@
         </div>
         <div style="display:flex;gap:12px;">
             <button onclick="photoEditorWebcamSnap()"
-                style="padding:14px 32px;border-radius:99px;border:none;background:var(--primary);color:#fff;font-family:inherit;font-size:1rem;font-weight:800;cursor:pointer;">📸
-                Snap</button>
+                style="padding:14px 32px;border-radius:99px;border:none;background:var(--primary);color:#fff;font-family:inherit;font-size:1rem;font-weight:800;cursor:pointer;">Snap</button>
             <button onclick="photoEditorWebcamClose()"
                 style="padding:14px 24px;border-radius:99px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#fff;font-family:inherit;font-size:0.88rem;font-weight:700;cursor:pointer;">Cancel</button>
         </div>
@@ -3323,7 +3298,7 @@
                     Edit Job <span id="edit-id-tag"
                         style="font-family:monospace;color:var(--primary);font-size:0.9rem;"></span>
                 </h2>
-                <button class="modal-close" onclick="tryCloseEdit()">✕</button>
+                <button class="modal-close" onclick="tryCloseEdit()">×</button>
             </div>
             <div class="modal-body">
                 <span class="edit-label">Status</span>
@@ -3422,14 +3397,14 @@
                             style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border-radius:12px;border:1.5px dashed var(--glass-border);cursor:pointer;font-size:0.82rem;font-weight:700;color:var(--text-dim);transition:border-color 0.2s;"
                             onmouseover="this.style.borderColor='var(--primary)'"
                             onmouseout="this.style.borderColor='var(--glass-border)'">
-                            📁 Choose File
+                            Choose File
                             <input type="file" id="editPhotoInput" accept="image/*" multiple style="display:none;"
                                 onchange="handleEditPhotos(event)">
                         </label>
                         <button type="button" onclick="editWebcamOpen()"
                             style="flex:1;padding:10px;border-radius:12px;border:1.5px dashed var(--glass-border);background:none;cursor:pointer;font-family:inherit;font-size:0.82rem;font-weight:700;color:var(--text-dim);transition:border-color 0.2s;"
                             onmouseover="this.style.borderColor='var(--primary)'"
-                            onmouseout="this.style.borderColor='var(--glass-border)'">📷 Camera</button>
+                            onmouseout="this.style.borderColor='var(--glass-border)'">Camera</button>
                     </div>
                     <div id="editPhotoUploadStatus"
                         style="font-size:0.75rem;color:var(--text-dim);margin-top:6px;display:none;"></div>
@@ -3479,7 +3454,7 @@
                     </svg>
                     Delete Job
                 </h2>
-                <button class="modal-close" onclick="closeModal('deleteModal')">✕</button>
+                <button class="modal-close" onclick="closeModal('deleteModal')">×</button>
             </div>
             <div class="delete-body">
                 <div class="delete-icon-wrap">
@@ -3526,17 +3501,14 @@
             <p>Select the paper size for your printer</p>
             <div class="paper-choices">
                 <button class="paper-choice-btn" onclick="shareJobCustomerMessageFromPaper('update')">
-                    <span class="choice-icon">💬</span>
                     <span class="choice-label">Text Customer</span>
                     <span class="choice-sub">Pre-filled update message</span>
                 </button>
                 <button class="paper-choice-btn" onclick="printJobInvoice('receipt')">
-                    <span class="choice-icon">🧾</span>
                     <span class="choice-label">Receipt Paper</span>
                     <span class="choice-sub">72mm Thermal Roll</span>
                 </button>
                 <button class="paper-choice-btn" onclick="printJobInvoice('regular')">
-                    <span class="choice-icon">📄</span>
                     <span class="choice-label">Regular Paper</span>
                     <span class="choice-sub">A4 / Letter</span>
                 </button>
@@ -3650,9 +3622,9 @@
                     el.innerHTML = '<span class="payment-badge partial">Balance Due: BZ$' + balance.toFixed(2) + '</span>'
                         + '<div style="font-size:0.75rem;color:var(--text-dim);margin-top:6px;">Paid BZ$' + paid.toFixed(2) + ' of BZ$' + invoiceTotal.toFixed(2) + '</div>';
                 } else if (paid > 0.009 && balance <= 0.009) {
-                    el.innerHTML = '<span class="payment-badge paid">✅ Paid in full</span>';
+                    el.innerHTML = '<span class="payment-badge paid">Paid in full</span>';
                 } else if (balance > 0.009) {
-                    el.innerHTML = '<span class="payment-badge unpaid">🔴 Unpaid · BZ$' + invoiceTotal.toFixed(2) + ' due</span>';
+                    el.innerHTML = '<span class="payment-badge unpaid">Unpaid · BZ$' + invoiceTotal.toFixed(2) + ' due</span>';
                 }
             } catch (e) {
                 console.warn('[view] job payment badge', e);
@@ -3799,7 +3771,7 @@
                             ? 180 - Math.floor((Date.now() - new Date(j.dateCompleted).getTime()) / 86400000)
                             : null;
                         const archiveWarn = archiveDaysLeft !== null && archiveDaysLeft <= 3 && archiveDaysLeft >= 0
-                            ? `<div style="margin-top:3px;font-size:0.68rem;font-weight:800;color:#fbbf24;">⏳ Archiving in ${archiveDaysLeft}d</div>` : '';
+                            ? `<div style="margin-top:3px;font-size:0.68rem;font-weight:800;color:#fbbf24;">Archiving in ${archiveDaysLeft}d</div>` : '';
                         storage = `<span style="color:#fca5a5;font-size:0.78rem;font-weight:700;">Abandoned On ${abandonedStr}</span>${archiveWarn}`;
                     } else {
                         storage = `<span style="color:#fca5a5;font-weight:800;">ABANDONED</span>`;
@@ -3810,7 +3782,7 @@
                         const daysPassed = Math.floor((Date.now() - new Date(j.dateCompleted).getTime()) / 86400000);
                         const archiveDaysLeft = 60 - daysPassed;
                         if (archiveDaysLeft <= 3 && archiveDaysLeft >= 0) {
-                            storage = `<span style="font-size:0.72rem;font-weight:800;color:#fbbf24;">⏳ Archiving in ${archiveDaysLeft}d</span>`;
+                            storage = `<span style="font-size:0.72rem;font-weight:800;color:#fbbf24;">Archiving in ${archiveDaysLeft}d</span>`;
                         } else {
                             storage = `<span style="font-size:0.75rem;opacity:0.6;">${new Date(j.dateCompleted).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>`;
                         }
@@ -3825,9 +3797,9 @@
                     }
                 }
                 const priorityClass = (j.priority || 'low').toLowerCase() === 'high' ? 'high' : 'low';
-                const priorityLabel = priorityClass === 'high' ? '🔴 Urgent' : '🔵 Normal';
+                const priorityLabel = priorityClass === 'high' ? 'Urgent' : 'Normal';
                 const claimedChip = j.claimedBy
-                    ? `<span class="claimed-chip">🔒 ${escH(j.claimedBy)}</span>`
+                    ? `<span class="claimed-chip">${escH(j.claimedBy)}</span>`
                     : (stat.class === 'received' ? `<div style="font-size:0.65rem;opacity:0.4;margin-top:2px;">Unclaimed</div>` : '');
 
                 // Call status badge for ready jobs
@@ -3835,7 +3807,7 @@
                 if (stat.class === 'ready') {
                     const callStatus = j.calledStatus || 'not_called';
                     if (callStatus === 'not_called') {
-                        callBadge = '<span class="call-status-badge not-called">📞 Not Called</span>';
+                        callBadge = '<span class="call-status-badge not-called">Not Called</span>';
                     } else if (callStatus === 'called' && j.calledDate) {
                         const timeAgo = formatTimeAgo(j.calledDate);
                         const calledBy = escH(j.calledBy || 'Staff');
@@ -4194,14 +4166,14 @@
                 btn.style.background = 'rgba(var(--primary-rgb),0.15)';
                 btn.style.borderColor = 'var(--primary)';
                 btn.style.color = 'var(--primary)';
-                btn.innerHTML = '📦 Archives <span style="font-size:0.65rem;background:var(--primary);color:#fff;padding:2px 6px;border-radius:99px;margin-left:4px;">ON</span>';
+                btn.innerHTML = 'Archives <span style="font-size:0.65rem;background:var(--primary);color:#fff;padding:2px 6px;border-radius:99px;margin-left:4px;">ON</span>';
                 if (banner) banner.style.display = 'flex';
                 if (!archivedJobs.length) {
-                    btn.innerHTML = '⏳ Loading…';
+                    btn.textContent = 'Loading...';
                     try {
                         const data = await apiGet({ action: 'listarchived' });
                         archivedJobs = data.jobs || [];
-                        btn.innerHTML = '📦 Archives <span style="font-size:0.65rem;background:var(--primary);color:#fff;padding:2px 6px;border-radius:99px;margin-left:4px;">ON</span>';
+                        btn.innerHTML = 'Archives <span style="font-size:0.65rem;background:var(--primary);color:#fff;padding:2px 6px;border-radius:99px;margin-left:4px;">ON</span>';
                         if (!archivedJobs.length) showToast('No archived jobs found.', '');
                     } catch (e) {
                         console.error('toggleArchiveView error:', e);
@@ -4210,7 +4182,7 @@
                         btn.style.background = '';
                         btn.style.borderColor = '';
                         btn.style.color = '';
-                        btn.innerHTML = '📦 Archives';
+                        btn.textContent = 'Archives';
                         if (banner) banner.style.display = 'none';
                         return;
                     }
@@ -4219,7 +4191,7 @@
                 btn.style.background = '';
                 btn.style.borderColor = '';
                 btn.style.color = '';
-                btn.innerHTML = '📦 Archives';
+                btn.textContent = 'Archives';
                 if (banner) banner.style.display = 'none';
             }
             filterAndRender();
@@ -4248,43 +4220,6 @@
                 } else {
                     showToast('❌ Could not load jobs from the server.', 'err');
                 }
-            }
-        }
-
-        // Refresh with visual feedback
-        async function refreshJobs() {
-            const btn = document.getElementById('refreshBtn');
-            if (!btn || btn.classList.contains('loading')) return;
-
-            // Add loading state
-            btn.classList.add('loading');
-            btn.textContent = '⏳';
-            if (typeof haptic === 'function') haptic('light');
-
-            try {
-                await loadJobs();
-
-                // Success state
-                btn.classList.remove('loading');
-                btn.classList.add('success');
-                btn.textContent = '✓';
-                if (typeof haptic === 'function') haptic('success');
-
-                // Reset after 1.5 seconds
-                setTimeout(() => {
-                    btn.classList.remove('success');
-                    btn.textContent = '🔄';
-                }, 1500);
-            } catch (error) {
-                // Error state
-                btn.classList.remove('loading');
-                btn.textContent = '✕';
-                if (typeof haptic === 'function') haptic('error');
-
-                // Reset after 2 seconds
-                setTimeout(() => {
-                    btn.textContent = '🔄';
-                }, 2000);
             }
         }
 
@@ -4367,7 +4302,7 @@
             const scUser = localStorage.getItem('scUser') || sessionStorage.getItem('scUser') || 'Staff';
 
             btn.disabled = true;
-            btn.textContent = '⏳ Marking...';
+            btn.textContent = 'Marking...';
 
             // OPTIMISTIC UPDATE: Update UI immediately
             const job = allJobs.find(j => String(j.id) === String(_markCalledJobId));
@@ -4436,7 +4371,7 @@
                 }
             } finally {
                 btn.disabled = false;
-                btn.textContent = '📞 Mark as Called';
+                btn.textContent = 'Mark as Called';
             }
         }
 
@@ -4640,7 +4575,7 @@
             }
 
             if (j.claimedBy) {
-                claimedByEl.innerHTML = `<span class="claimed-chip">🔒 ${escH(j.claimedBy)}</span>`;
+                claimedByEl.innerHTML = `<span class="claimed-chip">${escH(j.claimedBy)}</span>`;
                 claimBtn.style.display = 'none';
                 unclaimBtn.style.display = canUnclaim ? '' : 'none';
             } else {
@@ -4711,7 +4646,7 @@
                 ];
                 rows = CHECKLIST_DISPLAY.map(item => {
                     const isMissing = checked.some(c => c.toLowerCase().startsWith(item.missing));
-                    const icon = isMissing ? '❌' : '✅';
+                    const icon = isMissing ? 'No' : 'Yes';
                     const color = isMissing ? 'var(--danger)' : 'var(--success)';
                     const note = isMissing ? 'Not brought' : 'Present';
                     return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--glass-border);font-size:0.85rem;">
@@ -4724,7 +4659,7 @@
             const otherItems = checked.filter(c => c.toLowerCase().startsWith('other:'));
             otherItems.forEach(o => {
                 rows.push(`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;font-size:0.85rem;">
-                    <span style="font-size:1rem;flex-shrink:0;">❌</span>
+                    <span style="font-size:0.75rem;font-weight:800;flex-shrink:0;color:var(--danger);">No</span>
                     <span style="color:var(--danger);font-weight:600;">${escH(o)}</span>
                 </div>`);
             });
@@ -4780,7 +4715,7 @@
             }
 
             const pClass = (j.priority || 'low').toLowerCase() === 'high' ? 'high' : 'low';
-            const pLabel = pClass === 'high' ? '🔴 High — Urgent' : '🔵 Low — Normal';
+            const pLabel = pClass === 'high' ? 'High — Urgent' : 'Low — Normal';
             document.getElementById('view-priority').innerHTML = `<span class="priority-badge ${pClass}">${pLabel}</span>`;
 
             document.getElementById('view-device').textContent = j.device || '—';
@@ -4836,14 +4771,14 @@
                 totalEl.textContent = '$' + total.toFixed(2);
 
                 if (isPaid) {
-                    paymentBadgeEl.innerHTML = `<span class="payment-badge paid">✅ Paid · ${method}</span>`;
+                    paymentBadgeEl.innerHTML = `<span class="payment-badge paid">Paid · ${method}</span>`;
                     paymentBadgeEl.style.display = '';
                 } else if (payment === 'partial') {
                     paymentBadgeEl.innerHTML = `<span class="payment-badge partial">Balance due — loading…</span>`;
                     paymentBadgeEl.style.display = '';
                     refreshViewJobPaymentBadge(j.id, total, paymentBadgeEl);
                 } else {
-                    paymentBadgeEl.innerHTML = `<span class="payment-badge unpaid">🔴 Unpaid</span>`;
+                    paymentBadgeEl.innerHTML = `<span class="payment-badge unpaid">Unpaid</span>`;
                     paymentBadgeEl.style.display = '';
                     refreshViewJobPaymentBadge(j.id, total, paymentBadgeEl);
                 }
@@ -5041,7 +4976,7 @@
                     const thumb = document.createElement('div');
                     thumb.style.cssText = 'position:relative;width:72px;height:72px;border-radius:8px;overflow:hidden;border:1px solid var(--glass-border);flex-shrink:0;';
                     thumb.innerHTML = `<img src="${ev.target.result}" style="width:100%;height:100%;object-fit:cover;">
-                        <button onclick="_editPhotos[${idx}]=null;this.parentNode.remove();" style="position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,0.6);border:none;color:#fff;font-size:0.65rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>`;
+                        <button onclick="_editPhotos[${idx}]=null;this.parentNode.remove();" style="position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,0.6);border:none;color:#fff;font-size:0.65rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>`;
                     preview.appendChild(thumb);
                 };
                 reader.readAsDataURL(file);
@@ -5372,7 +5307,7 @@
             row.innerHTML = `
                 <input class="inv-input inv-desc" type="text" placeholder="Description…" value="${desc}">
                 <input class="inv-input inv-price price" type="number" placeholder="0.00" min="0" step="0.01" value="${price}">
-                <button class="inv-remove-btn" onclick="this.closest('.invoice-item-row').remove(); recalcTotal()">✕</button>
+                <button class="inv-remove-btn" onclick="this.closest('.invoice-item-row').remove(); recalcTotal()">×</button>
             `;
             row.querySelector('.inv-price').addEventListener('input', recalcTotal);
             container.appendChild(row);
@@ -5590,8 +5525,7 @@
         </div>
         <div style="display:flex;gap:12px;">
             <button onclick="editWebcamSnap()"
-                style="padding:14px 32px;border-radius:99px;border:none;background:var(--primary);color:#fff;font-family:inherit;font-size:1rem;font-weight:800;cursor:pointer;">📸
-                Snap</button>
+                style="padding:14px 32px;border-radius:99px;border:none;background:var(--primary);color:#fff;font-family:inherit;font-size:1rem;font-weight:800;cursor:pointer;">Snap</button>
             <button onclick="editWebcamClose()"
                 style="padding:14px 24px;border-radius:99px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#fff;font-family:inherit;font-size:0.88rem;font-weight:700;cursor:pointer;">Cancel</button>
         </div>
@@ -5656,7 +5590,7 @@
             const thumb = document.createElement('div');
             thumb.style.cssText = 'position:relative;width:72px;height:72px;border-radius:8px;overflow:hidden;border:1px solid var(--glass-border);flex-shrink:0;';
             thumb.innerHTML = `<img src="${dataUrl}" style="width:100%;height:100%;object-fit:cover;">
-                <button onclick="_editPhotos[${idx}]=null;this.parentNode.remove();" style="position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,0.6);border:none;color:#fff;font-size:0.65rem;cursor:pointer;">✕</button>`;
+                <button onclick="_editPhotos[${idx}]=null;this.parentNode.remove();" style="position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,0.6);border:none;color:#fff;font-size:0.65rem;cursor:pointer;">×</button>`;
             preview.appendChild(thumb);
             showToast('📸 Photo added', 'ok');
         }
@@ -5721,7 +5655,7 @@
             wrap.innerHTML = `
                 <img src="${url}" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.parentNode.style.display='none'">
                 <button onclick="_peMarkRemove(this)" title="Remove photo"
-                    style="position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;background:rgba(220,38,38,0.85);border:none;color:#fff;font-size:0.65rem;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:900;line-height:1;">✕</button>`;
+                    style="position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;background:rgba(220,38,38,0.85);border:none;color:#fff;font-size:0.65rem;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:900;line-height:1;">×</button>`;
             return wrap;
         }
 
@@ -5734,7 +5668,7 @@
                 wrap.style.opacity = '1';
                 wrap.style.outline = '';
                 btn.style.background = 'rgba(220,38,38,0.85)';
-                btn.innerHTML = '✕';
+                btn.innerHTML = '×';
             } else {
                 _peRemovedUrls.push(url);
                 wrap.style.opacity = '0.35';
@@ -5756,7 +5690,7 @@
                     thumb.innerHTML = `
                         <img src="${ev.target.result}" style="width:100%;height:100%;object-fit:cover;display:block;">
                         <button onclick="_peNewPhotos[${idx}]=null;this.parentNode.remove();"
-                            style="position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;background:rgba(220,38,38,0.85);border:none;color:#fff;font-size:0.65rem;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:900;">✕</button>`;
+                            style="position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;background:rgba(220,38,38,0.85);border:none;color:#fff;font-size:0.65rem;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:900;">×</button>`;
                     preview.appendChild(thumb);
                 };
                 reader.readAsDataURL(file);
@@ -5896,7 +5830,7 @@
             thumb.innerHTML = `
                 <img src="${dataUrl}" style="width:100%;height:100%;object-fit:cover;display:block;">
                 <button onclick="_peNewPhotos[${idx}]=null;this.parentNode.remove();"
-                    style="position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;background:rgba(220,38,38,0.85);border:none;color:#fff;font-size:0.65rem;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:900;">✕</button>`;
+                    style="position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;background:rgba(220,38,38,0.85);border:none;color:#fff;font-size:0.65rem;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:900;">×</button>`;
             preview.appendChild(thumb);
             showToast('📸 Photo added', 'ok');
         }
