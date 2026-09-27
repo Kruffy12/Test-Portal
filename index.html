@@ -609,6 +609,26 @@
             font-size: 0.875rem;
         }
 
+        .login-notice {
+            margin: 18px 0 -4px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            background: rgba(var(--primary-rgb),0.08);
+            border: 1px solid rgba(var(--primary-rgb),0.2);
+            color: var(--text-main);
+            font-size: 0.84rem;
+            line-height: 1.45;
+            text-align: left;
+            animation: fadeInUp 0.35s ease both;
+        }
+        .login-notice strong { display: block; font-weight: 700; margin-bottom: 2px; }
+        .login-notice span { color: var(--text-dim); }
+        .login-notice.is-warn {
+            background: rgba(220,38,38,0.08);
+            border-color: rgba(220,38,38,0.25);
+        }
+        .login-notice[hidden] { display: none; }
+
         .input-group {
             display: flex;
             flex-direction: column;
@@ -780,6 +800,8 @@
                 <h2>ServiCell Portal</h2>
                 <p>Authentication Required</p>
             </div>
+
+            <div class="login-notice" id="loginNotice" role="status" aria-live="polite" hidden></div>
 
             <div class="input-group">
                 <input type="text" id="userInput" placeholder="Username"
@@ -1350,6 +1372,76 @@
             span.textContent = text;
         }
 
+        // ── Sessions ─────────────────────────────────────────────────────────────
+        // Signed in = the old "logged in" flags plus a session token from the server.
+        function scIsLoggedIn() {
+            const flagged = localStorage.getItem('isLoggedIn') === 'true' || sessionStorage.getItem('isLoggedIn') === 'true';
+            return flagged && !!(localStorage.getItem('scSession') || sessionStorage.getItem('scSession'));
+        }
+
+        // Why this device is on the sign-in screen. Kept for the tab until someone signs in, because
+        // an app update can reload the page before it's read. A login from before the security
+        // upgrade has no token, so it is cleared here.
+        const SC_SIGNED_OUT_REASON = (function () {
+            const params = new URLSearchParams(window.location.search);
+            let reason = params.get('signedout') || (params.get('revoked') === '1' ? 'revoked' : '');
+            const flagged = localStorage.getItem('isLoggedIn') === 'true' || sessionStorage.getItem('isLoggedIn') === 'true';
+            if (flagged && !scIsLoggedIn()) {
+                ['isLoggedIn', 'scUser', 'scRole', 'scDisplayName'].forEach(k => {
+                    localStorage.removeItem(k);
+                    sessionStorage.removeItem(k);
+                });
+                reason = reason || 'upgrade';
+            }
+            if (params.has('signedout') || params.has('revoked')) history.replaceState({}, '', window.location.pathname);
+            if (scIsLoggedIn()) { sessionStorage.removeItem('scSignedOutReason'); return ''; }
+            if (reason) sessionStorage.setItem('scSignedOutReason', reason);
+            else reason = sessionStorage.getItem('scSignedOutReason') || '';
+            return reason;
+        })();
+
+        const SC_NOTICES = {
+            upgrade: { title: 'ServiCell got a security upgrade', body: 'Please sign in again. Your password hasn’t changed.' },
+            expired: { title: 'You’ve been signed out', body: 'This device was inactive for 12 hours. Please sign in again.' },
+            revoked: { title: 'Your access was ended', body: 'A manager ended your session. Contact them if you think this is a mistake.', warn: true },
+            invalid: { title: 'Please sign in again', body: 'Your session ended, for example after a password change.' },
+            none:    { title: 'Please sign in again', body: 'Your session ended.' }
+        };
+
+        function showLoginNotice(title, body, warn) {
+            const el = document.getElementById('loginNotice');
+            if (!el) return;
+            if (!title) { el.hidden = true; el.innerHTML = ''; return; }
+            el.classList.toggle('is-warn', !!warn);
+            el.innerHTML = '';
+            const t = document.createElement('strong');
+            t.textContent = title;
+            el.appendChild(t);
+            if (body) {
+                const b = document.createElement('span');
+                b.textContent = body;
+                el.appendChild(b);
+            }
+            el.hidden = false;
+        }
+
+        // Refreshes every minute while the Dashboard is on screen, and right away when it comes back.
+        let _dashRefreshTimer = null;
+        let _dashLastLoad = 0;
+        function scStartDashboardRefresh() {
+            if (typeof loadDashboard !== 'function' || _dashRefreshTimer) return;
+            const tick = () => {
+                if (document.visibilityState === 'hidden') return;
+                _dashLastLoad = Date.now();
+                loadDashboard();
+            };
+            tick();
+            _dashRefreshTimer = setInterval(tick, 60000);
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible' && Date.now() - _dashLastLoad >= 60000) tick();
+            });
+        }
+
         let _appInitialized = false;
         function initOriginalApp() {
             if (_appInitialized) return;
@@ -1359,19 +1451,12 @@
             const splash = document.querySelector('.splash-screen');
             const loginOverlay = document.getElementById('loginOverlay');
             const mainContent = document.querySelector('main');
-            const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true' || sessionStorage.getItem('isLoggedIn') === 'true';
+            const isLoggedIn = scIsLoggedIn();
             const loader = typeof ComponentLoader !== 'undefined' ? ComponentLoader.state : null;
             const duration = loader ? Math.max(0, (loader.splashHold || 0) - (Date.now() - loader.loadStartTime)) : 0;
 
-            // Show suspended notice if redirected from force-logout
-            if (new URLSearchParams(window.location.search).get('revoked') === '1') {
-                const notice = document.createElement('div');
-                notice.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#b91c1c;color:#fff;padding:12px 22px;border-radius:99px;font-size:0.88rem;font-weight:700;z-index:99999;box-shadow:0 8px 24px rgba(0,0,0,0.3);';
-                notice.textContent = 'Your session was ended by a manager. Please log back in.';
-                document.body.appendChild(notice);
-                setTimeout(() => notice.remove(), 6000);
-                history.replaceState({}, '', window.location.pathname);
-            }
+            const notice = SC_NOTICES[SC_SIGNED_OUT_REASON];
+            if (notice) showLoginNotice(notice.title, notice.body, notice.warn);
 
             setTimeout(() => {
                 if (splash) splash.classList.add('exiting');
@@ -1405,12 +1490,7 @@
 
         // Only pre-load dashboard data if the user is already logged in
         // (prevents job data appearing in the DOM before authentication)
-        const _alreadyLoggedIn = localStorage.getItem('isLoggedIn') === 'true' ||
-            sessionStorage.getItem('isLoggedIn') === 'true';
-        if (_alreadyLoggedIn) {
-            loadDashboard();
-            setInterval(loadDashboard, 60000);
-        }
+        if (scIsLoggedIn()) scStartDashboardRefresh();
 
         function togglePassVis() {
             const input = document.getElementById('passInput');
@@ -1432,28 +1512,23 @@
 
             if (!user || !pass) return;
 
-            // ── Rate limiting: max 3 attempts per username, 20 min lockout ──
-            const lockKey    = 'sc_login_lock_' + user.toLowerCase();
-            const attemptsKey = 'sc_login_attempts_' + user.toLowerCase();
-            const lockData   = JSON.parse(localStorage.getItem(lockKey) || 'null');
-            if (lockData && Date.now() < lockData.until) {
-                const mins = Math.ceil((lockData.until - Date.now()) / 60000);
-                btn.textContent = 'Try again in ' + mins + ' min';
-                btn.disabled = true;
-                setTimeout(() => { btn.textContent = 'Sign In'; btn.disabled = false; }, 3000);
-                return;
-            }
-
             btn.textContent = "Verifying...";
             btn.disabled = true;
 
             try {
-                const data = await apiPost({ action: 'login', username: user, password: pass });
+                // Wrong-password limits are enforced by the server (5 tries, then a 15-minute wait).
+                const data = await apiPost({ action: 'login', username: user, password: pass, remember: remember ? '1' : '0' });
 
-                if (data.success) {
+                if (data.success && data.token) {
+                    ['isLoggedIn', 'scUser', 'scRole', 'scDisplayName', 'scSession', 'scSignedOutReason'].forEach(k => {
+                        localStorage.removeItem(k);
+                        sessionStorage.removeItem(k);
+                    });
+                    showLoginNotice('');
                     const storage = remember ? localStorage : sessionStorage;
+                    storage.setItem('scSession', data.token);
                     storage.setItem('isLoggedIn', 'true');
-                    storage.setItem('scUser', user);
+                    storage.setItem('scUser', data.username || user);
                     // Store display name from the users table if provided
                     if (data.displayName) storage.setItem('scDisplayName', data.displayName);
 
@@ -1487,33 +1562,30 @@
                     loginOverlay.classList.remove('show');
                     setTimeout(() => {
                         loginOverlay.style.display = 'none';
-                        // Clear lockout on successful login
-                        localStorage.removeItem(lockKey);
-                        localStorage.removeItem(attemptsKey);
-                        if (typeof loadDashboard === 'function') {
-                            loadDashboard();
-                            setInterval(loadDashboard, 60000);
-                        }
+                        scStartDashboardRefresh();
                     }, 400);
                 } else {
-                    // Track failed attempts
-                    let attempts = parseInt(localStorage.getItem(attemptsKey) || '0') + 1;
-                    localStorage.setItem(attemptsKey, attempts);
                     if (data.revoked) {
-                        alert('Your account has been suspended. Please contact your manager.');
-                    } else if (attempts >= 3) {
-                        localStorage.setItem(lockKey, JSON.stringify({ until: Date.now() + 20 * 60 * 1000 }));
-                        localStorage.removeItem(attemptsKey);
-                        alert('Too many failed attempts. Try again in 20 minutes.');
+                        showLoginNotice('Account suspended', 'Please contact your manager.', true);
+                    } else if (data.locked) {
+                        const mins = data.minutes || 15;
+                        showLoginNotice('Too many tries', 'For safety, this username is paused. Try again in ' + mins + ' minute' + (mins === 1 ? '' : 's') + '.', true);
+                    } else if (data.remaining && data.remaining <= 2) {
+                        showLoginNotice('Incorrect username or password',
+                            data.remaining + ' more tr' + (data.remaining === 1 ? 'y' : 'ies') + ' before a 15-minute pause.', true);
+                    } else if (data.error && !/Signed out/.test(data.error)) {
+                        showLoginNotice('Couldn’t sign in', data.error, true);
                     } else {
-                        alert('Incorrect username or password. ' + (3 - attempts) + ' attempt' + (3 - attempts === 1 ? '' : 's') + ' remaining.');
+                        showLoginNotice('Incorrect username or password', 'Check both and try again.', true);
                     }
+                    const passInput = document.getElementById('passInput');
+                    if (passInput) { passInput.value = ''; passInput.focus(); }
                     btn.textContent = "Unlock System";
                     btn.disabled = false;
                 }
             } catch (e) {
                 console.error('[LOGIN ERROR]', e);
-                alert("Connection Error: " + (e.message || e.toString()));
+                showLoginNotice('Can’t reach the server', 'Check the internet connection and try again.', true);
                 btn.disabled = false;
                 btn.textContent = "Unlock System";
             }

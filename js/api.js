@@ -143,84 +143,32 @@ function compressDataUrl(dataUrl, maxPx, quality) {
     });
 }
 
-async function _jobHasImageUrl(repairId, url) {
-    const data = await apiGet({ action: 'list' });
-    const job = (data.jobs || []).find(j => String(j.id) === String(repairId));
-    if (!job) return false;
-    const needle = String(url).trim();
-    return (job.inspectionImages || []).some(u => String(u).trim() === needle);
-}
-
-async function _attachImageUrlToJob(repairId, driveUrl) {
-    let lastErr = 'Could not save image URL to job';
-    for (let attempt = 1; attempt <= 3; attempt++) {
-        const saved = await apiPost({ action: 'addimage', repairId, imageUrl: driveUrl });
-        if (saved && saved.success === false) {
-            lastErr = saved.error || lastErr;
-        } else {
-            try {
-                if (await _jobHasImageUrl(repairId, driveUrl)) return;
-            } catch (_) {
-                return;
-            }
-            lastErr = 'Image URL not found on job after save';
-        }
-        if (attempt < 3) {
-            await new Promise(r => setTimeout(r, 400 * attempt));
-        }
-    }
-    throw new Error(lastErr);
-}
-
-const REPAIR_PHOTOS_BUCKET = 'repair-photos';
 const INSPECTION_PHOTO_STAGES = ['front', 'back', 'accessories'];
 
-async function _uploadToRepairPhotosBucket(repairId, compressedDataUrl, imageIndex) {
-    const client = typeof window !== 'undefined' ? window.supabase : null;
-    if (!client || !client.storage) {
-        throw new Error('Supabase Storage is not available on this page');
-    }
-    const blob = await fetch(compressedDataUrl).then(r => {
-        if (!r.ok) throw new Error('Could not read compressed image');
-        return r.blob();
-    });
-    const stage = INSPECTION_PHOTO_STAGES[imageIndex - 1] || `photo-${imageIndex}`;
-    const fileName = `job-${repairId}-${stage}-${Date.now()}.jpg`;
-    const { error: uploadError } = await client.storage
-        .from(REPAIR_PHOTOS_BUCKET)
-        .upload(fileName, blob, { contentType: 'image/jpeg' });
-    if (uploadError) throw new Error(uploadError.message || 'Storage upload failed');
-    const { data: urlData } = client.storage.from(REPAIR_PHOTOS_BUCKET).getPublicUrl(fileName);
-    const publicUrl = urlData && urlData.publicUrl;
-    if (!publicUrl) throw new Error('Storage returned no public URL');
-    return publicUrl;
-}
-
 /**
- * Upload one inspection photo to Supabase Storage and attach URL to the job row.
+ * Upload one inspection photo. The server stores it and attaches it to the job in one step,
+ * and records who uploaded it.
  * @returns {Promise<string>} Public object URL
  */
 async function uploadAndAttachJobImage(repairId, dataUrl, imageIndex) {
     const compressed = await compressDataUrl(dataUrl, 1200, 0.8);
-    let publicUrl;
-    let lastError;
+    const stage = INSPECTION_PHOTO_STAGES[imageIndex - 1] || `additional-${imageIndex}`;
+    let lastError = 'Photo upload failed';
     for (let attempt = 1; attempt <= 3; attempt++) {
         try {
-            publicUrl = await _uploadToRepairPhotosBucket(repairId, compressed, imageIndex);
-            break;
+            const res = await apiPost({ action: 'uploadphoto', repairId, stage, image: compressed });
+            if (res && res.success !== false && res.url) return res.url;
+            lastError = (res && res.error) || lastError;
+            if (res && (res.forbidden || res.signedOut)) break;
         } catch (error) {
-            lastError = error;
-            console.warn(`[API] Storage upload attempt ${attempt}/3 failed:`, error.message);
-            if (attempt < 3) {
-                await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt - 1) * 1000));
-            }
+            lastError = error.message || lastError;
+        }
+        console.warn(`[API] Photo upload attempt ${attempt}/3 failed:`, lastError);
+        if (attempt < 3) {
+            await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt - 1) * 1000));
         }
     }
-    if (!publicUrl) {
-        throw new Error(lastError ? lastError.message : 'Storage upload failed');
-    }
-    await _attachImageUrlToJob(repairId, publicUrl);
-    return publicUrl;
+    throw new Error(lastError);
 }
 
 /**

@@ -2058,7 +2058,7 @@
 
         function clearCache() {
             if (!confirm('Clear all cached data? You will stay logged in.')) return;
-            const keep = ['isLoggedIn', 'scUser', 'scTheme', 'scCompact', 'scNotif', 'appVersion', 'scToursSeen', 'scV5Welcome', 'scJobsView', 'scSplash', 'scSidebarCollapsed',
+            const keep = ['isLoggedIn', 'scUser', 'scSession', 'scRole', 'scDisplayName', 'scTheme', 'scCompact', 'scNotif', 'appVersion', 'scToursSeen', 'scV5Welcome', 'scV5Welcome2', 'scJobsView', 'scSplash', 'scSidebarCollapsed',
                 'scNotif_received', 'scNotif_ready', 'scNotif_abandoned',
                 'scNotif_specialorder', 'scNotif_update', 'scNotif_jobstatus'];
             const user = localStorage.getItem('scUser');

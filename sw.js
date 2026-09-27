@@ -3,7 +3,7 @@
 // Network-first strategy for fast security updates
 // ─────────────────────────────────────────────────────────────────────────────
 
-const CACHE_DATE = '2026-09-27c'; // ← change this to today's date on each deploy
+const CACHE_DATE = '2026-09-27-p2'; // ← change this to today's date on each deploy
 const CACHE_NAME = 'servicell-' + CACHE_DATE;
 const BASE = (function () {
     try {
@@ -85,6 +85,9 @@ self.addEventListener('fetch', event => {
 
     // Ignore non-http requests (chrome-extension, data, etc.)
     if (!url.protocol.startsWith('http')) return;
+
+    // API calls are POSTs (some sent as the page closes); the browser handles them directly.
+    if (event.request.method !== 'GET') return;
 
     // Always go network-first for Supabase API calls and Google Fonts
     if (url.hostname.endsWith('.supabase.co') || url.hostname === 'fonts.googleapis.com') {

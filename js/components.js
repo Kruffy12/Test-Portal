@@ -33,7 +33,7 @@ window.getUserRole = getUserRole;
 
 const SC_PREF_KEYS = [
     'scTheme', 'scCompact', 'scHaptics', 'scNotif', 'scNotifSound',
-    'scNotifSoundType', 'scAutoPrintReceipt', 'appVersion', 'scSidebarCollapsed', 'scToursSeen', 'scV5Welcome',
+    'scNotifSoundType', 'scAutoPrintReceipt', 'appVersion', 'scSidebarCollapsed', 'scToursSeen', 'scV5Welcome', 'scV5Welcome2',
     'scJobsView', 'scSplash'
 ];
 
@@ -75,6 +75,7 @@ const NAV_LINKS = [
 
 // ── Auth helpers (global) ─────────────────────────────────────────────────────
 function logOut() {
+    if (typeof scBeacon === 'function') scBeacon('logout');
     const prefs = {};
     SC_PREF_KEYS.forEach(k => {
         const v = localStorage.getItem(k);
@@ -85,6 +86,69 @@ function logOut() {
     Object.entries(prefs).forEach(([k, v]) => localStorage.setItem(k, v));
     window.location.href = 'index.html';
 }
+
+// ── Maintenance screen ────────────────────────────────────────────────────────
+// Shown when the server says an upgrade is in progress. Checks back every 20s and
+// reloads the page by itself once the portal is available again.
+function scShowMaintenance() {
+    if (document.getElementById('scMaintenance')) return;
+    const style = document.createElement('style');
+    style.textContent = `
+        #scMaintenance { position: fixed; inset: 0; z-index: 2147483000; display: flex; align-items: center;
+            justify-content: center; padding: 24px; background: rgba(15, 23, 42, 0.55);
+            -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4);
+            animation: scMaintIn 0.35s ease both; font-family: var(--font-family, system-ui, sans-serif); }
+        #scMaintenance .sc-maint-card { max-width: 380px; width: 100%; text-align: center; padding: 32px 28px;
+            border-radius: 24px; background: var(--glass-strong, #fff); color: var(--text-main, #0f172a);
+            border: 1px solid var(--glass-border, rgba(0,0,0,0.08)); box-shadow: 0 24px 60px rgba(0,0,0,0.25); }
+        #scMaintenance h2 { font-size: 1.2rem; font-weight: 800; letter-spacing: -0.3px; margin: 14px 0 6px; }
+        #scMaintenance p { font-size: 0.88rem; line-height: 1.5; color: var(--text-dim, #475569); margin: 0; }
+        #scMaintenance .sc-maint-spin { width: 34px; height: 34px; margin: 0 auto; border-radius: 50%;
+            border: 3px solid rgba(var(--primary-rgb, 37, 99, 235), 0.18); border-top-color: var(--primary, #2563eb);
+            animation: scMaintSpin 0.9s linear infinite; }
+        #scMaintenance .sc-maint-status { margin-top: 14px; font-size: 0.78rem; color: var(--text-light, #94a3b8); }
+        @keyframes scMaintIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes scMaintSpin { to { transform: rotate(360deg); } }
+        @media (prefers-reduced-motion: reduce) { #scMaintenance, #scMaintenance .sc-maint-spin { animation: none; } }`;
+    document.head.appendChild(style);
+
+    const wrap = document.createElement('div');
+    wrap.id = 'scMaintenance';
+    wrap.setAttribute('role', 'alertdialog');
+    wrap.setAttribute('aria-modal', 'true');
+    wrap.setAttribute('aria-labelledby', 'scMaintTitle');
+    wrap.innerHTML = `
+        <div class="sc-maint-card">
+            <div class="sc-maint-spin" aria-hidden="true"></div>
+            <h2 id="scMaintTitle">ServiCell is being upgraded</h2>
+            <p>The portal is getting a security upgrade and will be back shortly. This page will reload by itself when it’s ready.</p>
+            <div class="sc-maint-status" id="scMaintStatus">Checking again in a moment…</div>
+        </div>`;
+    (document.body || document.documentElement).appendChild(wrap);
+    document.body && (document.body.style.overflow = 'hidden');
+
+    const status = wrap.querySelector('#scMaintStatus');
+    async function check() {
+        if (document.visibilityState === 'hidden' || !navigator.onLine) return;
+        try {
+            const res = await fetch(SC_API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+                body: JSON.stringify({ action: 'ping' })
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.api === 2 && !data.maintenance) {
+                status.textContent = 'All done — reloading…';
+                setTimeout(() => window.location.reload(), 600);
+                return;
+            }
+        } catch (_) { }
+        status.textContent = 'Still upgrading. Last checked ' +
+            new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) + '.';
+    }
+    setInterval(check, 20000);
+}
+window.scShowMaintenance = scShowMaintenance;
 
 function toggleAccountMenu(e) {
     e.stopPropagation();
@@ -432,32 +496,12 @@ if (document.readyState === 'loading') {
     }, 800);
 }
 
-// Poll every 30 seconds for new notifications — paused when tab is hidden
+// Poll for new notifications — paused when tab is hidden.
+// A suspended or expired session is caught by this (and every other) call: the server answers
+// "signed out" and the page returns to the sign-in screen.
 setInterval(() => {
     if (document.visibilityState !== 'hidden') InAppNotif.syncFromServer();
-}, 30000);
-
-// ── Revoke check — runs every 60s ────────────────────────────────────────────
-async function checkRevoked() {
-    const username = getLoggedInUser();
-    if (!username || !navigator.onLine) return;
-    // Skip on login page — check both pathname and hash
-    const path = window.location.pathname + window.location.href;
-    if (path.includes('index.html') && !localStorage.getItem('isLoggedIn') && !sessionStorage.getItem('isLoggedIn')) return;
-    try {
-        const data = await apiGet({ action: 'checkrole', username });
-        if (data.revoked) {
-            localStorage.clear();
-            sessionStorage.clear();
-            window.location.replace('index.html?revoked=1');
-        }
-    } catch (_) {}
-}
-setInterval(checkRevoked, 60000);
-window.addEventListener('sc-back-online', checkRevoked);
-document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') checkRevoked();
-});
+}, 45000);
 
 // Also sync when coming back online or tab becomes visible
 window.addEventListener('sc-back-online', () => InAppNotif.syncFromServer());

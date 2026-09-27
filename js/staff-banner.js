@@ -3,7 +3,7 @@
  */
 (function () {
   const DISMISS_KEY = 'sc_broadcast_dismissed';
-  const POLL_MS = 60000;
+  const POLL_MS = 90000;
   const TITLE_CHAR_HINT = 72;
   const MESSAGE_CHAR_HINT = 140;
 
@@ -205,10 +205,23 @@
     showCard(active);
   }
 
+  let _lastRefresh = 0;
+  function pollTick() {
+    if (document.visibilityState === 'hidden') return;
+    _lastRefresh = Date.now();
+    refresh();
+  }
+
   function startPoll() {
     if (_pollTimer) clearInterval(_pollTimer);
-    _pollTimer = setInterval(refresh, POLL_MS);
+    _lastRefresh = Date.now();
+    _pollTimer = setInterval(pollTick, POLL_MS);
   }
+
+  document.addEventListener('visibilitychange', () => {
+    if (!_pollTimer || document.visibilityState !== 'visible') return;
+    if (Date.now() - _lastRefresh >= POLL_MS) pollTick();
+  });
 
   function stopPoll() {
     if (_pollTimer) {

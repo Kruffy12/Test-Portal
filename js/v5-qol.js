@@ -1125,8 +1125,8 @@
     // (resumes on next load), 'done'. Page tips are per device and only run once the welcome is done,
     // and the page toured during onboarding is marked seen so its tip never repeats.
     // Changing this key shows the welcome to everyone once more; list the old key below so it's cleared
-    var ONBOARD_KEY = 'scV5Welcome';
-    try { localStorage.removeItem('scV5Onboard'); } catch (_) {}
+    var ONBOARD_KEY = 'scV5Welcome2';
+    try { localStorage.removeItem('scV5Onboard'); localStorage.removeItem('scV5Welcome'); } catch (_) {}
 
     function onboardStage() {
         try { return (JSON.parse(localStorage.getItem(ONBOARD_KEY) || '{}') || {})[currentUser()] || ''; } catch (_) { return ''; }

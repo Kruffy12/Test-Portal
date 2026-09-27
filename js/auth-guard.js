@@ -14,9 +14,13 @@
         return localStorage.getItem('scUser') || sessionStorage.getItem('scUser') || '';
     }
 
-    function isLoggedIn() {
+    function hasOldLogin() {
         return localStorage.getItem('isLoggedIn') === 'true' ||
                sessionStorage.getItem('isLoggedIn') === 'true';
+    }
+
+    function isLoggedIn() {
+        return hasOldLogin() && !!(localStorage.getItem('scSession') || sessionStorage.getItem('scSession'));
     }
 
     function deriveRole(username) {
@@ -35,9 +39,10 @@
 
     const page = window.location.pathname.split('/').pop() || 'index.html';
 
-    // Not logged in → back to login
+    // Not logged in → back to login. A login from before the security upgrade has no session
+    // token; the sign-in page explains why they need to sign in again.
     if (!isLoggedIn() && page !== 'index.html') {
-        window.location.replace('index.html');
+        window.location.replace(hasOldLogin() ? 'index.html?signedout=upgrade' : 'index.html');
         throw new Error('Auth guard: not logged in.');
     }
 
