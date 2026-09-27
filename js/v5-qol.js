@@ -742,30 +742,31 @@
     var TOUR_KEY = 'scToursSeen';
 
     // Each step: sel (desktop) / msel (phone, optional), title, body. Steps whose target isn't visible are skipped.
+    // tour: true marks the one or two steps the welcome tour shows; page tips (and Replay) show them all.
     var TOURS = {
         'index.html': [
-            { sel: '[data-tour="search"]', msel: '.sc-topbar-search', title: 'Find anything fast', body: 'Search any job by number, customer name or phone — plus special orders and pages. On a keyboard, press ' + (IS_MAC ? '⌘' : 'Ctrl') + '+K from anywhere.', mbody: 'Tap here on any page to find a job by number, customer name or phone — plus special orders and pages.' },
+            { tour: true, sel: '[data-tour="search"]', msel: '.sc-topbar-search', title: 'Find anything fast', body: 'Search any job by number, customer name or phone — plus special orders and pages. On a keyboard, press ' + (IS_MAC ? '⌘' : 'Ctrl') + '+K from anywhere.', mbody: 'Tap here on any page to find a job by number, customer name or phone — plus special orders and pages.' },
             { sel: '#scV5HeroActions', title: 'Your shortcuts', body: 'Start a sale, log a repair, open the jobs board or count the drawer at end of day.' },
-            { sel: '.stats', title: 'Tap a number', body: 'Every card opens Current Jobs already filtered to what it counts.' },
+            { tour: true, sel: '.stats', title: 'Tap a number', body: 'Every card opens Current Jobs already filtered to what it counts.' },
             { sel: '#recentTabs', title: 'Recent jobs, your way', body: 'Switch between the latest jobs, jobs you own, pickups, ones about to expire and stale repairs. Tap any job to open it.' },
             { sel: '[data-tour="tab-more"]', title: 'Everything else', body: 'Special orders, inventory, settings and more live under More.', mobileOnly: true }
         ],
         'current-jobs.html': [
             { sel: '#searchInput', title: 'Search this board', body: 'Type a job number, name, phone, device or technician to narrow the list instantly.' },
-            { sel: '#statusFilter', title: 'Filter by status', body: 'Show only pickups, jobs in progress, ones expiring soon, stale repairs or your own jobs.' },
-            { sel: '#jobsList .job-row', title: 'Open a job', body: 'Use the eye to see full details, the pencil to update status or invoice, and the bin to delete — you’ll get a few seconds to undo.' },
+            { tour: true, sel: '#statusFilter', title: 'Filter by status', body: 'Show only pickups, jobs in progress, ones expiring soon, stale repairs or your own jobs.' },
+            { tour: true, sel: '#jobsList .job-row', title: 'Open a job', body: 'Use the eye to see full details, the pencil to update status or invoice, and the bin to delete — you’ll get a few seconds to undo.' },
             { sel: '#refreshBtn', title: 'Always up to date', body: 'The board refreshes every minute. On a phone, you can also pull down from the top to refresh.' }
         ],
         'new-job.html': [
-            { sel: '#njStepper', title: 'Four quick steps', body: 'Customer, device, condition, then review. Your progress is saved if you leave the page.' },
+            { tour: true, sel: '#njStepper', title: 'Four quick steps', body: 'Customer, device, condition, then review. Your progress is saved if you leave the page.' },
             { sel: '#customerName', title: 'Start with the customer', body: 'Name and phone are all you need here — errors show right next to the field.' }
         ],
         'sales.html': [
-            { sel: '[data-tour="sales-hero"]', title: 'Start here', body: 'New Sale rings up a walk-in; Pickup collects payment for a finished repair.' },
+            { tour: true, sel: '[data-tour="sales-hero"]', title: 'Start here', body: 'New Sale rings up a walk-in; Pickup collects payment for a finished repair.' },
             { sel: '[data-tour="tab-more"]', title: 'Other pages', body: 'Jobs, orders and inventory are one tap away under More.', mobileOnly: true }
         ],
         'special-orders.html': [
-            { sel: '.btn-new-order', title: 'Log a request', body: 'Record a part or accessory a customer asked for, with their phone so you can call when it arrives.' },
+            { tour: true, sel: '.btn-new-order', title: 'Log a request', body: 'Record a part or accessory a customer asked for, with their phone so you can call when it arrives.' },
             { sel: '#filterStatus', title: 'Open orders first', body: 'Closed orders are hidden by default. Switch to “All statuses” to see the full history.' }
         ],
         'inventory.html': [
@@ -776,7 +777,7 @@
             { sel: '.date-bar', title: 'Pick a period', body: 'Switch between today, this week, this month or a custom range. Everything below updates.' }
         ],
         'settings.html': [
-            { sel: '#tipsRow', title: 'Tips any time', body: 'Replay the page tips — or this whole tour — whenever you like.' }
+            { tour: true, sel: '#tipsRow', title: 'Tips any time', body: 'Replay the page tips — or this whole tour — whenever you like.' }
         ]
     };
 
@@ -972,7 +973,8 @@
         if (!force && toursSeen()[page]) return false;
         if (!opts.layer && doc.querySelector('.sc-tour-layer, .sc-intro')) return false;
         var steps = [];
-        defs.forEach(function (d) {
+        var picked = opts.chapter ? defs.filter(function (d) { return d.tour; }) : defs;
+        (picked.length ? picked : defs).forEach(function (d) {
             var target = findTarget(d);
             if (target) steps.push({ title: d.title, body: (isMobile() && d.mbody) || d.body, target: target });
         });
@@ -1058,10 +1060,12 @@
     }
 
     // ── V5 welcome: animated intro, then an onboarding tour ──────────────────────
-    // Stage per user in scV5Onboard: missing = never welcomed, 'tour' = intro seen but tour not finished
+    // Stage per user in scV5Welcome: missing = never welcomed, 'tour' = intro seen but tour not finished
     // (resumes on next load), 'done'. Page tips are per device and only run once the welcome is done,
     // and the page toured during onboarding is marked seen so its tip never repeats.
-    var ONBOARD_KEY = 'scV5Onboard';
+    // Changing this key shows the welcome to everyone once more; list the old key below so it's cleared
+    var ONBOARD_KEY = 'scV5Welcome';
+    try { localStorage.removeItem('scV5Onboard'); } catch (_) {}
 
     function onboardStage() {
         try { return (JSON.parse(localStorage.getItem(ONBOARD_KEY) || '{}') || {})[currentUser()] || ''; } catch (_) { return ''; }
@@ -1303,18 +1307,31 @@
         if (role === 'manager' && !seen['statistics.html']) extra.push('Statistics');
         var onHome = currentPage() === 'index.html';
 
+        var mod = IS_MAC ? '⌘' : 'Ctrl';
+        var rows = [
+            { ic: 'search', title: 'Search from anywhere', body: isMobile()
+                ? 'Tap the magnifier at the top of any page to find a job, customer, order or page.'
+                : 'Press <kbd class="sc-kbd">' + mod + '</kbd><kbd class="sc-kbd">K</kbd> or <kbd class="sc-kbd">/</kbd> on any page to find a job, customer, order or page.' },
+            { ic: 'help', title: 'More tips on every page', body: 'The tour showed the essentials. For the rest, open search and choose “Show tips for this page”.' }
+        ];
+        if (extra.length) {
+            rows.push({ ic: 'package', title: 'Still to discover', body: esc(extra.join(' and ')) + ' will show a quick tip the first time you open ' + (extra.length > 1 ? 'them' : 'it') + '.' });
+        }
+        rows.push({ ic: 'settings', title: 'Replay any time', body: 'Settings → Page Tips has this tour and every page’s tips.' });
+
         var ch = layer.querySelector('.sc-tour-chapter');
         var spot = layer.querySelector('.sc-tour-spot');
         var spotShown = !layer.classList.contains('is-chapter');
         layer.classList.add('is-chapter');
         layer.querySelector('.sc-tour-card').classList.remove('in');
-        ch.className = 'sc-tour-chapter';
+        ch.className = 'sc-tour-chapter is-finish';
         ch.innerHTML =
             '<div class="sc-tour-done-mark" aria-hidden="true"><svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="23"/><path d="M15 27l7 7 15-16"/></svg></div>' +
             '<div class="sc-tour-chapter-title">You’re all set</div>' +
-            '<p class="sc-tour-chapter-blurb">' +
-            (extra.length ? esc(extra.join(' and ')) + ' will show a quick tip the first time you open ' + (extra.length > 1 ? 'them' : 'it') + '. ' : '') +
-            'Replay this tour any time from Settings.</p>' +
+            '<ul class="sc-tour-done-list">' + rows.map(function (r) {
+                return '<li><span class="sc-tour-done-ic" aria-hidden="true">' + icon(r.ic, 16) + '</span>' +
+                    '<span><b>' + esc(r.title) + '</b><span>' + r.body + '</span></span></li>';
+            }).join('') + '</ul>' +
             '<div class="sc-tour-done-actions">' +
             '<button type="button" class="sc-tour-done-go">' + (onHome ? 'Start using V5' : 'Go to Dashboard') + '</button>' +
             (onHome ? '' : '<button type="button" class="sc-tour-done-stay">Stay here</button>') +

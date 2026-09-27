@@ -665,7 +665,32 @@ body:not(.sc-logged-in) .sc-ptr { display: none; }
 .sc-tour-chapter.in > .sc-tour-done-mark { animation: sc-tour-pop 0.6s cubic-bezier(0.2, 1.3, 0.3, 1) both; }
 @keyframes sc-tour-draw { to { stroke-dashoffset: 0; } }
 
-.sc-tour-done-actions { display: flex; flex-direction: column; gap: 4px; margin-top: 20px; }
+.sc-tour-chapter.is-finish { width: min(400px, calc(100vw - 32px)); max-height: calc(100vh - 32px); overflow-y: auto; }
+
+.sc-tour-done-list { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; gap: 2px; text-align: left; }
+.sc-tour-done-list li { display: flex; gap: 12px; align-items: flex-start; padding: 9px 4px; }
+.sc-tour-done-list li + li { border-top: 1px solid var(--sc-v5-glass-border); }
+.sc-tour-done-list li > span:last-child { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.sc-tour-done-list b { font-size: 0.86rem; font-weight: 700; color: var(--text-main); }
+.sc-tour-done-list li > span:last-child > span { font-size: 0.8rem; line-height: 1.45; color: var(--text-dim); }
+.sc-tour-done-list .sc-kbd { font-size: 0.7rem; }
+.sc-tour-done-ic {
+    flex-shrink: 0;
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    display: grid;
+    place-items: center;
+    background: rgba(var(--primary-rgb), 0.1);
+    color: var(--primary);
+}
+.sc-tour-chapter.in .sc-tour-done-list li { animation: sc-tour-rise 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.sc-tour-chapter.in .sc-tour-done-list li:nth-child(1) { animation-delay: 0.2s; }
+.sc-tour-chapter.in .sc-tour-done-list li:nth-child(2) { animation-delay: 0.26s; }
+.sc-tour-chapter.in .sc-tour-done-list li:nth-child(3) { animation-delay: 0.32s; }
+.sc-tour-chapter.in .sc-tour-done-list li:nth-child(4) { animation-delay: 0.38s; }
+
+.sc-tour-done-actions { display: flex; flex-direction: column; gap: 4px; margin-top: 16px; }
 .sc-tour-done-actions button {
     min-height: 46px;
     border: none;
@@ -749,6 +774,7 @@ body.sc-v5.sc-logged-in .sc-tour-resume { bottom: calc(var(--sc-tabbar-h, 0px) +
     .sc-tour-content.back,
     .sc-tour-spot::after,
     .sc-tour-chapter.in > *,
+    .sc-tour-chapter.in .sc-tour-done-list li,
     .sc-tour-chapter-bar .cur b { animation: none; }
     .sc-tour-done-mark path { animation: none; stroke-dashoffset: 0; }
 }
