@@ -181,6 +181,7 @@ html.sc-search-lock body { overflow: hidden; }
     overscroll-behavior: contain;
     padding: 6px 8px 8px;
     -webkit-overflow-scrolling: touch;
+    contain: layout paint;
 }
 
 .sc-search-group {
@@ -237,7 +238,6 @@ html.sc-search-lock body { overflow: hidden; }
 .sc-search-item-go {
     color: var(--text-light);
     opacity: 0;
-    transition: opacity 0.15s ease;
 }
 
 .sc-search-item.active .sc-search-item-go { opacity: 1; }
@@ -280,6 +280,7 @@ html.sc-search-lock body { overflow: hidden; }
 
 @media (max-width: 900px) {
     .sc-search { padding: 0; align-items: stretch; }
+    .sc-search-backdrop { backdrop-filter: none; -webkit-backdrop-filter: none; }
     .sc-search-panel {
         width: 100%;
         max-height: none;

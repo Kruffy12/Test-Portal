@@ -193,10 +193,20 @@
     }
 
     function initScrollLock() {
-        new MutationObserver(scheduleLockSync).observe(doc.body, {
+        // Row highlights and result lists change constantly and never open or close a layer; re-checking
+        // for them forces a style and layout pass over the whole page on every key press.
+        new MutationObserver(function (records) {
+            for (var i = 0; i < records.length; i++) {
+                var t = records[i].target;
+                if (t.nodeType !== 1 || !t.closest('.sc-search-list, .sc-tip')) { scheduleLockSync(); return; }
+            }
+        }).observe(doc.body, {
             subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'style', 'hidden', 'open']
         });
-        doc.addEventListener('transitionend', scheduleLockSync, true);
+        doc.addEventListener('transitionend', function (e) {
+            if (e.target.nodeType === 1 && e.target.closest('.sc-search-list, .sc-tip')) return;
+            scheduleLockSync();
+        }, true);
         scheduleLockSync();
 
         // Older iOS ignores overflow:hidden on the page, so drags that would reach the page behind a
@@ -422,7 +432,7 @@
             S.jobs = (d && d.jobs) || S.jobs;
             S.jobsAt = Date.now();
             try { localStorage.setItem('sc_cache_jobs', JSON.stringify(S.jobs)); } catch (_) {}
-            if (S.el && S.el.classList.contains('open')) renderSearch();
+            if (S.el && S.el.classList.contains('open')) renderSearch(true);
         }).catch(function () {}).then(function () { S.jobsLoading = null; });
     }
 
@@ -430,7 +440,7 @@
         if (S.orders || S.ordersLoading || typeof global.apiGet !== 'function') return;
         S.ordersLoading = global.apiGet({ action: 'listorders' }).then(function (d) {
             S.orders = (d && d.orders) || [];
-            if (S.el && S.el.classList.contains('open')) renderSearch();
+            if (S.el && S.el.classList.contains('open')) renderSearch(true);
         }).catch(function () { S.orders = []; }).then(function () { S.ordersLoading = null; });
     }
 
@@ -511,8 +521,11 @@
         });
     }
 
-    function renderSearch() {
+    // fromData: a background refresh finished, so keep the list steady instead of jumping to the top
+    function renderSearch(fromData) {
         var q = S.input.value.trim().toLowerCase();
+        var keepKey = fromData === true ? resultKey(S.results[S.active]) : '';
+        var keepScroll = fromData === true ? S.list.scrollTop : 0;
         var groups = [];
         if (!q) {
             groups.push({ label: 'Quick actions', items: pageCommands() });
@@ -560,25 +573,47 @@
                 ? 'Searching…'
                 : 'No matches for “' + esc(S.input.value.trim()) + '”. Try a job number, name or phone.') + '</div>';
         }
+        if (fromData === true && html === S.lastHtml) return;
+        S.lastHtml = html;
         S.list.innerHTML = html;
         S.active = 0;
-        highlightSearch();
+        if (keepKey) {
+            for (var k = 0; k < S.results.length; k++) {
+                if (resultKey(S.results[k]) === keepKey) { S.active = k; break; }
+            }
+            S.list.scrollTop = keepScroll;
+            highlightSearch(S.active > 0);
+            return;
+        }
+        S.list.scrollTop = 0;
+        highlightSearch(false);
     }
 
-    function highlightSearch() {
-        var items = S.list.querySelectorAll('.sc-search-item');
-        for (var i = 0; i < items.length; i++) {
-            var on = i === S.active;
-            items[i].classList.toggle('active', on);
-            items[i].setAttribute('aria-selected', on ? 'true' : 'false');
-            if (on) {
-                S.input.setAttribute('aria-activedescendant', items[i].id);
-                var top = items[i].offsetTop, bottom = top + items[i].offsetHeight;
-                if (top < S.list.scrollTop + 28) S.list.scrollTop = Math.max(0, top - 28);
-                else if (bottom > S.list.scrollTop + S.list.clientHeight) S.list.scrollTop = bottom - S.list.clientHeight;
-            }
+    // Only the old and new rows are touched, and the list scrolls just enough to keep the row in view
+    // (the group label above the first row of a group stays visible too).
+    function highlightSearch(keepInView) {
+        var prev = S.list.querySelector('.sc-search-item.active');
+        var row = S.list.querySelector('#scSearchOpt' + S.active);
+        if (prev && prev !== row) {
+            prev.classList.remove('active');
+            prev.setAttribute('aria-selected', 'false');
         }
+        if (!row) { S.input.removeAttribute('aria-activedescendant'); return; }
+        row.classList.add('active');
+        row.setAttribute('aria-selected', 'true');
+        S.input.setAttribute('aria-activedescendant', row.id);
+        if (keepInView === false) return;
+        var list = S.list;
+        var lr = list.getBoundingClientRect(), rr = row.getBoundingClientRect();
+        var head = row.previousElementSibling && row.previousElementSibling.classList.contains('sc-search-group')
+            ? row.previousElementSibling.offsetHeight : 0;
+        var pad = 6;
+        if (S.active === 0) list.scrollTop = 0;
+        else if (rr.top - head - pad < lr.top) list.scrollTop += rr.top - head - pad - lr.top;
+        else if (rr.bottom + pad > lr.bottom) list.scrollTop += rr.bottom + pad - lr.bottom;
     }
+
+    function resultKey(it) { return it ? it.kind + ':' + (it.id || it.href || it.title) : ''; }
 
     function chooseResult(it) {
         if (!it) return;
@@ -622,17 +657,20 @@
             var row = e.target.closest('.sc-search-item');
             if (row) chooseResult(S.results[Number(row.getAttribute('data-idx'))]);
         });
+        // Scrolling (wheel or arrow keys) slides rows under a still pointer and the browser reports that as
+        // mousemove; only a pointer that actually moved may take the highlight.
+        var lastPt = null;
         S.list.addEventListener('mousemove', function (e) {
+            var moved = !lastPt || lastPt.x !== e.clientX || lastPt.y !== e.clientY;
+            lastPt = { x: e.clientX, y: e.clientY };
+            if (!moved) return;
             var row = e.target.closest('.sc-search-item');
             if (!row) return;
             var idx = Number(row.getAttribute('data-idx'));
-            if (idx !== S.active) { S.active = idx; highlightSearch(); }
+            if (idx !== S.active) { S.active = idx; highlightSearch(false); }
         });
-        var t = null;
-        S.input.addEventListener('input', function () {
-            clearTimeout(t);
-            t = setTimeout(renderSearch, 60);
-        });
+        S.list.addEventListener('mouseleave', function () { lastPt = null; });
+        S.input.addEventListener('input', function () { renderSearch(); });
         S.input.addEventListener('keydown', function (e) {
             if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
                 e.preventDefault();
@@ -659,6 +697,7 @@
         ensureJobs();
         ensureOrders();
         S.input.value = '';
+        S.lastHtml = null;
         renderSearch();
         S.el.classList.add('open');
         doc.documentElement.classList.add('sc-search-lock');
