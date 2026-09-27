@@ -129,6 +129,9 @@ async function handleAction(action, id, data) {
     return res == null ? { success: true } : res;
   } catch (err) {
     console.error(`[API] ${action} failed:`, err.message);
+    if (typeof scLooksLikeLockdown === 'function' && scLooksLikeLockdown(err) && typeof scShowMaintenance === 'function') {
+      scShowMaintenance();
+    }
     return { success: false, error: err.message || 'Request failed' };
   }
 }
