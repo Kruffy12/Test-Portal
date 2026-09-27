@@ -723,6 +723,20 @@ html.sc-scroll-locked body { overflow: hidden !important; }
     padding: 0 0.02em;
 }
 
+.sc-intro-version {
+    margin: 0 0 18px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(var(--primary-rgb), 0.35);
+    background: rgba(var(--primary-rgb), 0.12);
+    color: var(--primary);
+    font-size: 0.8rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0;
+}
+
 .sc-intro-sub {
     max-width: 30ch;
     margin: 0 0 30px;
@@ -776,7 +790,8 @@ html.sc-scroll-locked body { overflow: hidden !important; }
 .sc-intro.play .sc-intro-eyebrow { animation: sc-intro-rise 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) 1.05s forwards; }
 .sc-intro.play .sc-intro-v { animation: sc-intro-v 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 1.2s forwards, sc-intro-shine 1.4s ease-in-out 2.05s forwards; }
 .sc-intro.play .sc-intro-5 { animation: sc-intro-5 0.9s cubic-bezier(0.2, 0.9, 0.25, 1.15) 1.34s forwards, sc-intro-shine 1.4s ease-in-out 2.15s forwards; }
-.sc-intro.play .sc-intro-sub { animation: sc-intro-rise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) 1.65s forwards; }
+.sc-intro.play .sc-intro-version { animation: sc-intro-rise 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) 1.55s forwards; }
+.sc-intro.play .sc-intro-sub { animation: sc-intro-rise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) 1.7s forwards; }
 .sc-intro.play .sc-intro-actions { animation: sc-intro-rise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) 1.95s forwards; }
 
 @keyframes sc-intro-fade { to { opacity: 1; } }
@@ -822,6 +837,7 @@ html.sc-scroll-locked body { overflow: hidden !important; }
     .sc-intro.play .sc-intro-eyebrow,
     .sc-intro.play .sc-intro-v,
     .sc-intro.play .sc-intro-5,
+    .sc-intro.play .sc-intro-version,
     .sc-intro.play .sc-intro-sub,
     .sc-intro.play .sc-intro-actions { animation: sc-intro-fade 0.3s ease forwards; }
     .sc-intro-mark { transform: rotate(45deg); }

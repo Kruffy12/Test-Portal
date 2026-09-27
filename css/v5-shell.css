@@ -389,6 +389,33 @@ body.sc-v5.sc-sidebar-collapsed .sc-sidebar .account-chip {
     min-height: 44px;
 }
 
+.sc-topbar .bell-btn {
+    border: none;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--text-main);
+    -webkit-tap-highlight-color: transparent;
+}
+
+.sc-topbar .bell-btn svg {
+    width: 21px;
+    height: 21px;
+}
+
+.sc-topbar .bell-btn:hover {
+    background: transparent;
+    color: var(--text-main);
+}
+
+.sc-topbar .bell-btn:active {
+    background: rgba(var(--primary-rgb), 0.1);
+}
+
+.sc-topbar .bell-btn .notif-badge {
+    top: 4px;
+    right: 4px;
+}
+
 .sc-topbar .account-name,
 .sc-topbar .account-caret {
     display: none;

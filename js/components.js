@@ -743,12 +743,68 @@ window.isOffline = () => !navigator.onLine;
     const FRESH_LOAD_WINDOW_MS = 20000;
     function pageIsFresh() { return Date.now() - PAGE_OPENED_AT < FRESH_LOAD_WINDOW_MS; }
 
+    // Navigating triggers an update check, so the new worker often installs while the old page is
+    // still on screen. A page that is on its way out applies the update silently instead.
+    const UPDATE_SHOW_DELAY_MS = 1500;
+    const LEAVING_WINDOW_MS = 6000;
+    let leavingAt = 0;
+    let showNoticeTimer = null;
+    let waitingForVisible = false;
+    function pageIsLeaving() { return leavingAt && Date.now() - leavingAt < LEAVING_WINDOW_MS; }
+    function applyPendingSilently() {
+        if (pendingWorker && pendingWorker.state === 'installed') pendingWorker.postMessage({ type: 'SKIP_WAITING' });
+    }
+    function markLeaving() {
+        leavingAt = Date.now();
+        clearTimeout(showNoticeTimer);
+        showNoticeTimer = null;
+        applyPendingSilently();
+        const card = document.getElementById('sc-app-update-card');
+        if (card && card.classList.contains('is-visible')) {
+            clearUpdateDismissTimer(card);
+            card.style.transition = 'none';
+            card.classList.remove('is-visible', 'is-paused');
+        }
+    }
+    window.addEventListener('beforeunload', markLeaving);
+    window.addEventListener('pagehide', markLeaving);
+    window.addEventListener('pageshow', (e) => { if (e.persisted) leavingAt = 0; });
+    document.addEventListener('click', (e) => {
+        if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        const a = e.target.closest && e.target.closest('a[href]');
+        if (!a || (a.target && a.target !== '_self') || a.hasAttribute('download')) return;
+        const href = a.getAttribute('href') || '';
+        if (!href || href.charAt(0) === '#' || /^(javascript|mailto|tel|sms):/i.test(href)) return;
+        if (a.origin === window.location.origin) markLeaving();
+    });
+
     function showUpdateNotice(worker) {
         if (worker) pendingWorker = worker;
-        if (pageIsFresh()) {
-            if (pendingWorker && pendingWorker.state === 'installed') pendingWorker.postMessage({ type: 'SKIP_WAITING' });
+        if (pageIsFresh() || pageIsLeaving()) {
+            applyPendingSilently();
             return;
         }
+        if (document.visibilityState !== 'visible') {
+            if (waitingForVisible) return;
+            waitingForVisible = true;
+            const onVisible = () => {
+                if (document.visibilityState !== 'visible') return;
+                document.removeEventListener('visibilitychange', onVisible);
+                waitingForVisible = false;
+                showUpdateNotice(null);
+            };
+            document.addEventListener('visibilitychange', onVisible);
+            return;
+        }
+        if (showNoticeTimer) return;
+        showNoticeTimer = setTimeout(() => {
+            showNoticeTimer = null;
+            if (pageIsLeaving() || document.visibilityState !== 'visible') return;
+            revealUpdateNotice();
+        }, UPDATE_SHOW_DELAY_MS);
+    }
+
+    function revealUpdateNotice() {
         ensureNoticeStyles();
 
         let card = document.getElementById('sc-app-update-card');
@@ -777,12 +833,15 @@ window.isOffline = () => !navigator.onLine;
                 window.location.reload();
             });
             document.body.appendChild(card);
-            requestAnimationFrame(() => requestAnimationFrame(() => {
+            void card.offsetWidth;
+            setTimeout(() => {
+                if (pageIsLeaving()) return;
                 card.classList.add('is-visible');
                 restartUpdateDismissTimer(card);
                 syncNoticeStack();
-            }));
+            }, 20);
         } else {
+            card.style.transition = '';
             card.classList.add('is-visible');
             card.classList.remove('is-paused');
             restartUpdateDismissTimer(card);

@@ -990,7 +990,8 @@
             '<div class="sc-intro-stage">' +
             '<div class="sc-intro-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></div>' +
             '<div class="sc-intro-eyebrow">ServiCell Staff Portal</div>' +
-            '<h1 class="sc-intro-title" id="scIntroTitle"><span class="sc-intro-v">V</span><span class="sc-intro-5">5</span></h1>' +
+            '<h1 class="sc-intro-title" id="scIntroTitle" aria-label="Version 5.0"><span class="sc-intro-v" aria-hidden="true">V</span><span class="sc-intro-5" aria-hidden="true">5</span></h1>' +
+            '<div class="sc-intro-version" aria-hidden="true">Version 5.0</div>' +
             '<p class="sc-intro-sub">Everything you use every day — faster, calmer and built for the counter.</p>' +
             '<div class="sc-intro-actions">' +
             '<button type="button" class="sc-intro-go">Show me around</button>' +
