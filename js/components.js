@@ -84,7 +84,7 @@ const ComponentLoader = {
         footerPath: 'components/footer.html',
         // First open of the app this session gets a short branded moment; moving between pages
         // only covers the page while it's actually loading
-        minSplashTime: 700,
+        minSplashTime: 1200,
     },
 
     state: {

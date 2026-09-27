@@ -1360,7 +1360,7 @@
             const loginOverlay = document.getElementById('loginOverlay');
             const mainContent = document.querySelector('main');
             const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true' || sessionStorage.getItem('isLoggedIn') === 'true';
-            const duration = splash && splash.classList.contains('is-cold') ? 700 : 0;
+            const duration = splash && splash.classList.contains('is-cold') ? 1200 : 0;
 
             // Show suspended notice if redirected from force-logout
             if (new URLSearchParams(window.location.search).get('revoked') === '1') {
