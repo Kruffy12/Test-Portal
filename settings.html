@@ -1134,6 +1134,13 @@
 
         /* Change Password Button (in About section) */
         .change-password-btn.tips-btn { margin-top: 0; flex-shrink: 0; white-space: nowrap; }
+        .tips-actions { display: flex; flex-direction: column; align-items: stretch; gap: 4px; flex-shrink: 0; }
+        .tips-link-btn {
+            min-height: 32px; padding: 0 10px; border: none; background: none; cursor: pointer;
+            color: var(--primary); font-family: var(--font-family); font-size: 0.78rem; font-weight: 700;
+            white-space: nowrap; border-radius: 99px;
+        }
+        .tips-link-btn:hover { background: rgba(var(--primary-rgb), 0.08); }
         .shortcut-hint { margin-top: 8px; }
         @media (max-width: 900px) { .shortcut-hint { display: none; } }
 
@@ -1325,7 +1332,10 @@
                         <div class="setting-desc">Short walkthroughs that point out the key features on each page. They show once per page; replay them whenever you like.</div>
                         <div class="setting-desc shortcut-hint" id="shortcutHint">Tip: press <kbd class="sc-kbd" id="shortcutMod">Ctrl</kbd><kbd class="sc-kbd">K</kbd> or <kbd class="sc-kbd">/</kbd> on any page to search jobs, customers and orders.</div>
                     </div>
-                    <button type="button" class="change-password-btn tips-btn" onclick="replayPageTips()" data-icon="help">Replay tips</button>
+                    <div class="tips-actions">
+                        <button type="button" class="change-password-btn tips-btn" onclick="replayPageTips()" data-icon="help">Replay tips</button>
+                        <button type="button" class="tips-link-btn" onclick="window.SCQol && SCQol.replayIntro()">Watch the V5 intro</button>
+                    </div>
                 </div>
 
                 <!-- Haptics — Android only, hidden on other platforms -->
@@ -1359,8 +1369,24 @@
 
                     <div class="changelog-entry">
                         <div class="changelog-version">
-                            v5.0.0-beta.5
+                            v5.0.0-beta.6
                             <span class="changelog-badge badge-current">Beta</span>
+                        </div>
+                        <div class="changelog-date">September 26, 2026</div>
+                        <ul class="changelog-changes">
+                            <li>Welcome to V5 — a short animated intro and a guided tour the first time each person signs in</li>
+                            <li>The page behind a pop-up no longer scrolls or jumps</li>
+                            <li>Feels like an app: no accidental text highlighting, long-press menus or image dragging (form fields and customer details can still be copied)</li>
+                            <li>Themed tooltips on buttons instead of the browser’s</li>
+                            <li>The update notice only appears on pages that were open before an update — refreshing or opening a page is enough</li>
+                            <li>Collapsed sidebar icons are perfectly centred</li>
+                        </ul>
+                    </div>
+
+                    <div class="changelog-entry">
+                        <div class="changelog-version">
+                            v5.0.0-beta.5
+                            <span class="changelog-badge badge-legacy">Beta</span>
                         </div>
                         <div class="changelog-date">September 26, 2026</div>
                         <ul class="changelog-changes">
@@ -2034,7 +2060,7 @@
 
         function clearCache() {
             if (!confirm('Clear all cached data? You will stay logged in.')) return;
-            const keep = ['isLoggedIn', 'scUser', 'scTheme', 'scCompact', 'scNotif', 'appVersion', 'scToursSeen', 'scSidebarCollapsed',
+            const keep = ['isLoggedIn', 'scUser', 'scTheme', 'scCompact', 'scNotif', 'appVersion', 'scToursSeen', 'scV5Onboard', 'scSidebarCollapsed',
                 'scNotif_received', 'scNotif_ready', 'scNotif_abandoned',
                 'scNotif_specialorder', 'scNotif_update', 'scNotif_jobstatus'];
             const user = localStorage.getItem('scUser');

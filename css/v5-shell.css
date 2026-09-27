@@ -221,6 +221,16 @@ body.sc-v5 nav.sc-tabbar::after {
     font-family: var(--font-family);
     font-weight: 700;
     font-size: 0.78rem;
+    transition: gap 0.22s ease;
+}
+
+.sc-sidebar-toggle svg { flex-shrink: 0; }
+
+body.sc-v5.sc-sidebar-collapsed .sc-sidebar-toggle,
+body.sc-v5.sc-sidebar-collapsed .sc-sidebar-link {
+    justify-content: center;
+    gap: 0;
+    padding: 0;
 }
 
 .sc-sidebar .nav-account,

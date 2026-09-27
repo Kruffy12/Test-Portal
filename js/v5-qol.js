@@ -5,7 +5,9 @@
  *   SCQol.pullToRefresh(fn)           mobile pull-down gesture that awaits fn()
  *   SCQol.skeletonRows(n)             placeholder rows while a list loads
  *   SCQol.openSearch() / closeSearch  global search (Ctrl/⌘+K or "/")
- *   SCQol.startTour(force) / resetTours
+ *   SCQol.startTour(force, opts) / resetTours
+ *   SCQol.replayIntro()               V5 welcome intro + onboarding tour
+ * Also on every page: pop-up scroll lock, themed tooltips, and no page-style selection/callouts/drags.
  */
 (function (global) {
     'use strict';
@@ -136,15 +138,168 @@
         return '<div class="sc-skel-list" role="status" aria-label="Loading">' + html + '</div>';
     }
 
+    // ── Modal scroll lock ────────────────────────────────────────────────────────
+    // Pages open pop-ups several ways (.modal-overlay.open, inline display:flex, lightboxes, webcam
+    // overlays), so any shown layer matching OVERLAY_SEL counts. Closed layers are display:none or
+    // pointer-events:none on every page, which is what isShownLayer relies on.
+    var OVERLAY_SEL = '.modal-overlay, [id$="Modal"], [id$="Overlay"], [id$="overlay"], #photoLightbox, ' +
+        '.sc-more-sheet.open, .sc-search.open, .sc-tour-layer, .sc-intro';
+
+    function isShownLayer(el) {
+        var cs = global.getComputedStyle(el);
+        if (cs.display === 'none' || cs.visibility === 'hidden' || cs.pointerEvents === 'none') return false;
+        var r = el.getBoundingClientRect();
+        return r.width > 0 && r.height > 0;
+    }
+
+    function overlayOpen() {
+        var nodes = doc.querySelectorAll(OVERLAY_SEL);
+        for (var i = 0; i < nodes.length; i++) if (isShownLayer(nodes[i])) return true;
+        return false;
+    }
+
+    // A timer rather than requestAnimationFrame: rAF can be throttled (embedded views, low-power mode)
+    // and a lock that never re-checks would leave the page frozen after a pop-up closes.
+    var _locked = false, _lockTimer = 0;
+    function syncScrollLock() {
+        _lockTimer = 0;
+        var want = overlayOpen() || doc.body.style.overflow === 'hidden';
+        if (want === _locked) return;
+        _locked = want;
+        doc.documentElement.classList.toggle('sc-scroll-locked', want);
+        if (want) hideTip();
+    }
+    function scheduleLockSync() {
+        if (!_lockTimer) _lockTimer = setTimeout(syncScrollLock, 32);
+    }
+
+    function scrollableAncestor(el, dy) {
+        for (; el && el !== doc.body && el !== doc.documentElement; el = el.parentElement) {
+            if (el.nodeType !== 1) continue;
+            var tag = el.tagName;
+            if (tag === 'TEXTAREA' || (tag === 'INPUT' && el.type === 'range')) return el;
+            var cs = global.getComputedStyle(el);
+            var canY = (cs.overflowY === 'auto' || cs.overflowY === 'scroll') && el.scrollHeight > el.clientHeight + 1;
+            var canX = (cs.overflowX === 'auto' || cs.overflowX === 'scroll') && el.scrollWidth > el.clientWidth + 1;
+            if (canX) return el;
+            if (canY) {
+                var atTop = el.scrollTop <= 0;
+                var atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
+                if ((dy > 0 && atTop) || (dy < 0 && atBottom)) continue;
+                return el;
+            }
+        }
+        return null;
+    }
+
+    function initScrollLock() {
+        new MutationObserver(scheduleLockSync).observe(doc.body, {
+            subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'style', 'hidden', 'open']
+        });
+        doc.addEventListener('transitionend', scheduleLockSync, true);
+        scheduleLockSync();
+
+        // Older iOS ignores overflow:hidden on the page, so drags that would reach the page behind a
+        // pop-up are cancelled here. Drags inside a scrollable panel still work.
+        var lastY = 0;
+        doc.addEventListener('touchstart', function (e) {
+            if (e.touches.length === 1) lastY = e.touches[0].clientY;
+        }, { passive: true });
+        doc.addEventListener('touchmove', function (e) {
+            if (!_locked || e.touches.length !== 1 || !e.cancelable) return;
+            var y = e.touches[0].clientY;
+            var dy = y - lastY;
+            lastY = y;
+            if (!scrollableAncestor(e.target, dy)) e.preventDefault();
+        }, { passive: false });
+    }
+
+    // ── App feel: no page-style selection, callouts, drags, zoom or native tooltips ─
+    var SELECTABLE_SEL = 'input, textarea, [contenteditable]:not([contenteditable="false"]), .sc-selectable, .view-field-value, .view-value';
+
+    function initAppFeel() {
+        doc.addEventListener('contextmenu', function (e) {
+            if (e.shiftKey) return;
+            if (e.target.closest && e.target.closest(SELECTABLE_SEL)) return;
+            e.preventDefault();
+        });
+        doc.addEventListener('dragstart', function (e) {
+            var t = e.target;
+            if (t && t.nodeType === 1 && (t.tagName === 'IMG' || t.tagName === 'A') && t.getAttribute('draggable') !== 'true') e.preventDefault();
+        });
+        // iOS ignores user-scalable=no; photo lightboxes keep pinch so staff can inspect damage
+        doc.addEventListener('gesturestart', function (e) {
+            if (!(e.target.closest && e.target.closest('#photoLightbox, .lightbox'))) e.preventDefault();
+        });
+        initTooltips();
+    }
+
+    // Native title tooltips look like a web page; show a themed one instead (mouse only)
+    var _tip = { el: null, timer: null, target: null };
+
+    function hideTip() {
+        clearTimeout(_tip.timer);
+        _tip.target = null;
+        if (_tip.el) _tip.el.classList.remove('show');
+    }
+
+    function showTip(target) {
+        var text = target.getAttribute('data-sc-tip');
+        if (!text || !doc.contains(target)) return;
+        if (!_tip.el) {
+            _tip.el = doc.createElement('div');
+            _tip.el.className = 'sc-tip';
+            _tip.el.setAttribute('aria-hidden', 'true');
+            doc.body.appendChild(_tip.el);
+        }
+        var el = _tip.el;
+        el.textContent = text;
+        el.classList.remove('show', 'below');
+        var r = target.getBoundingClientRect();
+        var w = el.offsetWidth, h = el.offsetHeight;
+        var top = r.top - h - 8;
+        if (top < 8) { top = r.bottom + 8; el.classList.add('below'); }
+        var left = Math.min(Math.max(8, r.left + r.width / 2 - w / 2), global.innerWidth - w - 8);
+        el.style.top = top + 'px';
+        el.style.left = left + 'px';
+        void el.offsetWidth;
+        el.classList.add('show');
+    }
+
+    function initTooltips() {
+        doc.addEventListener('pointerover', function (e) {
+            if (e.pointerType && e.pointerType !== 'mouse') return;
+            var t = e.target.closest && e.target.closest('[title], [data-sc-tip]');
+            if (!t || t === _tip.target) return;
+            if (t.hasAttribute('title')) {
+                var title = t.getAttribute('title');
+                t.removeAttribute('title');
+                if (!title) return;
+                t.setAttribute('data-sc-tip', title);
+                if (!t.hasAttribute('aria-label') && !t.textContent.trim()) t.setAttribute('aria-label', title);
+            }
+            hideTip();
+            _tip.target = t;
+            _tip.timer = setTimeout(function () { if (_tip.target === t) showTip(t); }, 450);
+        });
+        doc.addEventListener('pointerout', function (e) {
+            if (!_tip.target) return;
+            if (e.relatedTarget && _tip.target.contains(e.relatedTarget)) return;
+            hideTip();
+        });
+        doc.addEventListener('pointerdown', hideTip, true);
+        doc.addEventListener('keydown', hideTip, true);
+        global.addEventListener('scroll', hideTip, { passive: true, capture: true });
+    }
+
     // ── Pull to refresh (touch screens only) ─────────────────────────────────────
     var PTR_THRESHOLD = 72;
     var PTR_MAX = 120;
 
     function somethingModalOpen() {
-        return !!doc.querySelector(
-            '.modal-overlay.open, .modal-overlay.show, .modal.open, .sc-more-sheet.open, ' +
-            '.sc-search.open, .sc-tour-layer, .notif-panel.open, .account-dropdown.open'
-        ) || doc.body.style.overflow === 'hidden';
+        return _locked || overlayOpen() ||
+            !!doc.querySelector('.notif-panel.open, .account-dropdown.open') ||
+            doc.body.style.overflow === 'hidden';
     }
 
     function pullToRefresh(onRefresh) {
@@ -496,7 +651,7 @@
 
     var _searchReturnFocus = null;
     function openSearch() {
-        if (!isLoggedIn()) return;
+        if (!isLoggedIn() || T || doc.querySelector('.sc-intro')) return;
         if (!S.el) buildSearch();
         if (S.el.classList.contains('open')) { S.input.focus(); return; }
         _searchReturnFocus = doc.activeElement;
@@ -550,7 +705,7 @@
     // Each step: sel (desktop) / msel (phone, optional), title, body. Steps whose target isn't visible are skipped.
     var TOURS = {
         'index.html': [
-            { sel: '[data-tour="search"]', msel: '.sc-topbar-search', title: 'Find anything fast', body: 'Search any job by number, customer name or phone — plus special orders and pages. On a keyboard, press ' + (IS_MAC ? '⌘' : 'Ctrl') + '+K from anywhere.' },
+            { sel: '[data-tour="search"]', msel: '.sc-topbar-search', title: 'Find anything fast', body: 'Search any job by number, customer name or phone — plus special orders and pages. On a keyboard, press ' + (IS_MAC ? '⌘' : 'Ctrl') + '+K from anywhere.', mbody: 'Tap here on any page to find a job by number, customer name or phone — plus special orders and pages.' },
             { sel: '#scV5HeroActions', title: 'Your shortcuts', body: 'Start a sale, log a repair, open the jobs board or count the drawer at end of day.' },
             { sel: '.stats', title: 'Tap a number', body: 'Every card opens Current Jobs already filtered to what it counts.' },
             { sel: '#recentTabs', title: 'Recent jobs, your way', body: 'Switch between the latest jobs, jobs you own, pickups, ones about to expire and stale repairs. Tap any job to open it.' },
@@ -616,8 +771,9 @@
 
     var T = null;
 
-    function endTour(markAll) {
+    function endTour(markAll, finished) {
         if (!T) return;
+        var onEnd = T.onEnd;
         if (markAll) {
             var seen = toursSeen();
             Object.keys(TOURS).forEach(function (p) { seen[p] = 1; });
@@ -632,6 +788,16 @@
         layer.classList.remove('show');
         setTimeout(function () { if (layer.parentNode) layer.parentNode.removeChild(layer); }, 220);
         T = null;
+        if (typeof onEnd === 'function') onEnd(!!finished);
+    }
+
+    function nudgeTour() {
+        if (!T) return;
+        var card = T.layer.querySelector('.sc-tour-card');
+        card.classList.remove('nudge');
+        void card.offsetWidth;
+        card.classList.add('nudge');
+        tap('light');
     }
 
     function placeTour() {
@@ -663,12 +829,14 @@
         T.i = i;
         var step = T.steps[i];
         var card = T.layer.querySelector('.sc-tour-card');
-        card.querySelector('.sc-tour-count').textContent = (i + 1) + ' of ' + T.steps.length;
+        card.querySelector('.sc-tour-count').textContent = T.onboarding ? 'Welcome to V5' : (i + 1) + ' of ' + T.steps.length;
+        var dots = card.querySelectorAll('.sc-tour-dots i');
+        for (var d = 0; d < dots.length; d++) dots[d].classList.toggle('on', d === i);
         card.querySelector('.sc-tour-title').textContent = step.title;
         card.querySelector('.sc-tour-body').textContent = step.body;
         card.querySelector('.sc-tour-back').style.visibility = i === 0 ? 'hidden' : 'visible';
         var next = card.querySelector('.sc-tour-next');
-        next.textContent = i === T.steps.length - 1 ? 'Done' : 'Next';
+        next.textContent = i === T.steps.length - 1 ? (T.onboarding ? 'Finish' : 'Done') : 'Next';
         var r = step.target.getBoundingClientRect();
         if (r.top < 70 || r.bottom > global.innerHeight - 90) {
             step.target.scrollIntoView({ block: 'center', behavior: 'auto' });
@@ -680,7 +848,10 @@
         next.focus({ preventScroll: true });
     }
 
-    function startTour(force) {
+    // opts.onboarding: the V5 welcome tour — can't be dismissed by a stray tap or Esc, only Skip or Finish.
+    // opts.onEnd(finished) runs once the layer is gone.
+    function startTour(force, opts) {
+        opts = opts || {};
         var page = currentPage();
         var defs = TOURS[page];
         if (!defs || T || !isLoggedIn()) return false;
@@ -688,16 +859,30 @@
         var steps = [];
         defs.forEach(function (d) {
             var target = findTarget(d);
-            if (target) steps.push({ title: d.title, body: d.body, target: target });
+            if (target) steps.push({ title: d.title, body: (isMobile() && d.mbody) || d.body, target: target });
         });
+        if (opts.onboarding && steps.length) {
+            steps[steps.length - 1] = {
+                title: steps[steps.length - 1].title,
+                body: steps[steps.length - 1].body + ' The first time you open any other page, you’ll get a short tip like this.',
+                target: steps[steps.length - 1].target
+            };
+        }
         if (!steps.length) {
-            if (force) toast('No tips for this page yet.', 'info');
+            if (force && !opts.onboarding) toast('No tips for this page yet.', 'info');
             return false;
         }
         closeSearch();
 
+        var dotsHtml = '';
+        if (opts.onboarding) {
+            dotsHtml = '<span class="sc-tour-dots" aria-hidden="true">';
+            for (var n = 0; n < steps.length; n++) dotsHtml += '<i></i>';
+            dotsHtml += '</span>';
+        }
+
         var layer = doc.createElement('div');
-        layer.className = 'sc-tour-layer';
+        layer.className = 'sc-tour-layer' + (opts.onboarding ? ' is-onboarding' : '');
         layer.innerHTML =
             '<div class="sc-tour-block"></div>' +
             '<div class="sc-tour-spot"></div>' +
@@ -706,64 +891,191 @@
             '<div class="sc-tour-title" id="scTourTitle"></div>' +
             '<div class="sc-tour-body"></div>' +
             '<div class="sc-tour-actions">' +
-            '<button type="button" class="sc-tour-off">Turn off tips</button>' +
+            '<button type="button" class="sc-tour-off">' + (opts.onboarding ? 'Skip tour' : 'Turn off tips') + '</button>' +
+            dotsHtml +
             '<span class="sc-tour-spacer"></span>' +
             '<button type="button" class="sc-tour-back">Back</button>' +
             '<button type="button" class="sc-tour-next">Next</button>' +
             '</div></div>';
         doc.body.appendChild(layer);
 
-        T = { page: page, steps: steps, i: 0, layer: layer };
+        T = { page: page, steps: steps, i: 0, layer: layer, onboarding: !!opts.onboarding, onEnd: opts.onEnd };
         T.onMove = function () { if (T) placeTour(); };
         T.onKey = function (e) {
             if (!T) return;
-            if (e.key === 'Escape') { e.preventDefault(); endTour(false); }
+            if (e.key === 'Escape') { e.preventDefault(); if (T.onboarding) nudgeTour(); else endTour(false); }
             else if (e.key === 'ArrowRight') { e.preventDefault(); layer.querySelector('.sc-tour-next').click(); }
             else if (e.key === 'ArrowLeft' && T.i > 0) { e.preventDefault(); showStep(T.i - 1); }
+            else if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) { e.preventDefault(); e.stopPropagation(); }
         };
         layer.querySelector('.sc-tour-next').addEventListener('click', function () {
             if (!T) return;
-            if (T.i >= T.steps.length - 1) { tap('success'); endTour(false); }
+            if (T.i >= T.steps.length - 1) { tap('success'); endTour(false, true); }
             else { tap('light'); showStep(T.i + 1); }
         });
         layer.querySelector('.sc-tour-back').addEventListener('click', function () { if (T && T.i > 0) showStep(T.i - 1); });
         layer.querySelector('.sc-tour-off').addEventListener('click', function () {
+            if (T && T.onboarding) { endTour(false, false); return; }
             endTour(true);
             toast('Tips turned off. Replay them any time from Settings.', 'info');
         });
-        layer.querySelector('.sc-tour-block').addEventListener('click', function () { endTour(false); });
+        layer.querySelector('.sc-tour-block').addEventListener('click', function () {
+            if (T && T.onboarding) nudgeTour(); else endTour(false);
+        });
         global.addEventListener('resize', T.onMove, { passive: true });
         global.addEventListener('scroll', T.onMove, { passive: true, capture: true });
         doc.addEventListener('keydown', T.onKey, true);
 
-        requestAnimationFrame(function () {
+        void layer.offsetWidth;
+        setTimeout(function () {
             layer.classList.add('show');
             showStep(0);
-        });
+        }, 16);
         return true;
     }
 
-    function autoStartTour() {
-        if (!isLoggedIn() || toursSeen()[currentPage()]) return;
+    // Runs fn once the splash, login screen, pop-ups and loading placeholders are all gone
+    function whenIdle(fn) {
         var tries = 0;
         (function wait() {
             tries++;
-            var splash = doc.getElementById('splash-screen') || doc.querySelector('.splash-screen');
+            var splash = doc.getElementById('splash-screen');
             var splashUp = splash && !splash.classList.contains('hidden');
-            var login = doc.getElementById('loginOverlay');
-            var loginUp = login && global.getComputedStyle(login).display !== 'none';
-            var busy = splashUp || loginUp || somethingModalOpen() || doc.querySelector('.sc-skel-list');
+            var busy = !isLoggedIn() || splashUp || somethingModalOpen() || doc.querySelector('.sc-skel-list');
             if (busy) { if (tries < 450) setTimeout(wait, tries < 40 ? 400 : 1500); return; }
             setTimeout(function () {
-                if (!somethingModalOpen() && !toursSeen()[currentPage()]) startTour(false);
-                else wait();
+                if (isLoggedIn() && !somethingModalOpen()) fn(); else wait();
             }, 500);
         })();
     }
 
+    function autoStartTour() {
+        if (toursSeen()[currentPage()]) return;
+        whenIdle(function () { if (!toursSeen()[currentPage()]) startTour(false); });
+    }
+
+    // ── V5 welcome: animated intro, then an onboarding tour ──────────────────────
+    // Stage per user in scV5Onboard: missing = never welcomed, 'tour' = intro seen but tour not finished
+    // (resumes on next load), 'done'. Page tips are per device and only run once the welcome is done,
+    // and the page toured during onboarding is marked seen so its tip never repeats.
+    var ONBOARD_KEY = 'scV5Onboard';
+
+    function onboardStage() {
+        try { return (JSON.parse(localStorage.getItem(ONBOARD_KEY) || '{}') || {})[currentUser()] || ''; } catch (_) { return ''; }
+    }
+
+    function setOnboardStage(stage) {
+        var user = currentUser();
+        if (!user) return;
+        var all;
+        try { all = JSON.parse(localStorage.getItem(ONBOARD_KEY) || '{}') || {}; } catch (_) { all = {}; }
+        all[user] = stage;
+        try { localStorage.setItem(ONBOARD_KEY, JSON.stringify(all)); } catch (_) {}
+    }
+
+    function prefersReducedMotion() {
+        return global.matchMedia && global.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    }
+
+    function playIntro(onChoice) {
+        if (doc.querySelector('.sc-intro')) return;
+        closeSearch();
+        var el = doc.createElement('div');
+        el.className = 'sc-intro';
+        el.setAttribute('role', 'dialog');
+        el.setAttribute('aria-modal', 'true');
+        el.setAttribute('aria-labelledby', 'scIntroTitle');
+        el.innerHTML =
+            '<div class="sc-intro-glow" aria-hidden="true"><span></span><span></span><span></span></div>' +
+            '<div class="sc-intro-stage">' +
+            '<div class="sc-intro-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></div>' +
+            '<div class="sc-intro-eyebrow">ServiCell Staff Portal</div>' +
+            '<h1 class="sc-intro-title" id="scIntroTitle"><span class="sc-intro-v">V</span><span class="sc-intro-5">5</span></h1>' +
+            '<p class="sc-intro-sub">Everything you use every day — faster, calmer and built for the counter.</p>' +
+            '<div class="sc-intro-actions">' +
+            '<button type="button" class="sc-intro-go">Show me around</button>' +
+            '<button type="button" class="sc-intro-skip">Skip for now</button>' +
+            '</div></div>';
+        doc.body.appendChild(el);
+
+        var chosen = false;
+        function choose(go) {
+            if (chosen) return;
+            chosen = true;
+            tap(go ? 'success' : 'light');
+            el.classList.add('leaving');
+            setTimeout(function () {
+                if (el.parentNode) el.parentNode.removeChild(el);
+                if (typeof onChoice === 'function') onChoice(go);
+            }, prefersReducedMotion() ? 120 : 520);
+        }
+        var go = el.querySelector('.sc-intro-go');
+        go.addEventListener('click', function () { choose(true); });
+        el.querySelector('.sc-intro-skip').addEventListener('click', function () { choose(false); });
+        el.addEventListener('keydown', function (e) {
+            if (e.key === 'Tab') {
+                // Keep focus inside the intro
+                var skip = el.querySelector('.sc-intro-skip');
+                if (e.shiftKey && doc.activeElement === go) { e.preventDefault(); skip.focus(); }
+                else if (!e.shiftKey && doc.activeElement === skip) { e.preventDefault(); go.focus(); }
+            }
+        });
+
+        void el.offsetWidth;
+        setTimeout(function () {
+            el.classList.add('play');
+            setTimeout(function () { try { go.focus({ preventScroll: true }); } catch (_) {} }, prefersReducedMotion() ? 50 : 2100);
+        }, 20);
+    }
+
+    function runOnboardingTour() {
+        setOnboardStage('tour');
+        var started = startTour(true, {
+            onboarding: true,
+            onEnd: function (finished) {
+                setOnboardStage('done');
+                toast(finished ? 'You’re all set. Tips will pop up the first time you open each page.'
+                    : 'Tour skipped. You can replay it any time from Settings.', finished ? 'success' : 'info');
+            }
+        });
+        if (!started) setOnboardStage('done');
+    }
+
+    function startWelcome() {
+        var stage = onboardStage();
+        if (stage === 'done') { autoStartTour(); return; }
+        whenIdle(function () {
+            if (onboardStage() === 'done') { autoStartTour(); return; }
+            if (onboardStage() === 'tour') { runOnboardingTour(); return; }
+            playIntro(function (go) {
+                if (go) runOnboardingTour();
+                else { setOnboardStage('done'); autoStartTour(); }
+            });
+        });
+    }
+
+    // Settings → "Watch the V5 intro": plays the intro, then the welcome tour on the dashboard
+    function replayIntro() {
+        playIntro(function (go) {
+            if (!go) return;
+            setOnboardStage('tour');
+            if (currentPage() === 'index.html') runOnboardingTour();
+            else global.location.href = 'index.html';
+        });
+    }
+
     // ── Boot ─────────────────────────────────────────────────────────────────────
     function boot() {
-        autoStartTour();
+        initScrollLock();
+        initAppFeel();
+        if (isLoggedIn()) { startWelcome(); return; }
+        // Signing in on the dashboard doesn't reload the page; the shell re-renders and marks the body
+        var obs = new MutationObserver(function () {
+            if (!isLoggedIn() || !doc.body.classList.contains('sc-logged-in')) return;
+            obs.disconnect();
+            startWelcome();
+        });
+        obs.observe(doc.body, { attributes: true, attributeFilter: ['class'] });
     }
 
     if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', boot);
@@ -778,6 +1090,7 @@
         openSearch: openSearch,
         closeSearch: closeSearch,
         startTour: startTour,
-        resetTours: resetTours
+        resetTours: resetTours,
+        replayIntro: replayIntro
     };
 })(window);

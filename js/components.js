@@ -33,7 +33,7 @@ window.getUserRole = getUserRole;
 
 const SC_PREF_KEYS = [
     'scTheme', 'scCompact', 'scHaptics', 'scNotif', 'scNotifSound',
-    'scNotifSoundType', 'scAutoPrintReceipt', 'appVersion', 'scSidebarCollapsed', 'scToursSeen'
+    'scNotifSoundType', 'scAutoPrintReceipt', 'appVersion', 'scSidebarCollapsed', 'scToursSeen', 'scV5Onboard'
 ];
 
 function escH(s) {
@@ -737,8 +737,18 @@ window.isOffline = () => !navigator.onLine;
         card._dismissTimer = setTimeout(() => dismissUpdateNotice(), UPDATE_DISMISS_MS + 120);
     }
 
+    // HTML/JS/CSS are fetched network-first, so a page that just loaded is already on the new release.
+    // Only tabs that were open before the update landed need the Reload prompt.
+    const PAGE_OPENED_AT = Date.now();
+    const FRESH_LOAD_WINDOW_MS = 20000;
+    function pageIsFresh() { return Date.now() - PAGE_OPENED_AT < FRESH_LOAD_WINDOW_MS; }
+
     function showUpdateNotice(worker) {
         if (worker) pendingWorker = worker;
+        if (pageIsFresh()) {
+            if (pendingWorker && pendingWorker.state === 'installed') pendingWorker.postMessage({ type: 'SKIP_WAITING' });
+            return;
+        }
         ensureNoticeStyles();
 
         let card = document.getElementById('sc-app-update-card');

@@ -3917,8 +3917,10 @@
         async function loadJobs() {
             try {
                 const data = await apiGet({ action: 'list' });
-                allJobs = (data.jobs || []).filter(j => !_pendingDeletes.has(String(j.id)));
-                localStorage.setItem('sc_cache_jobs', JSON.stringify(allJobs));
+                const serverJobs = data.jobs || [];
+                allJobs = serverJobs.filter(j => !_pendingDeletes.has(String(j.id)));
+                // Cache the server's list: a delete still inside its undo window hasn't happened yet
+                localStorage.setItem('sc_cache_jobs', JSON.stringify(serverJobs));
                 filterAndRender();
                 updateStats(allJobs);
                 checkStaleJobs(allJobs);
@@ -3927,7 +3929,7 @@
                 console.error('loadJobs error:', error);
                 const cached = localStorage.getItem('sc_cache_jobs');
                 if (cached) {
-                    allJobs = JSON.parse(cached);
+                    allJobs = JSON.parse(cached).filter(j => !_pendingDeletes.has(String(j.id)));
                     filterAndRender();
                     updateStats(allJobs);
                     openJobFromUrl();
@@ -4776,7 +4778,8 @@
             // Auto-fill completion date when marking ready or resolved, if not already set
             const _dcInput = document.getElementById('edit-date-completed');
             if (['ready', 'resolved'].includes(status) && !_dcInput.value) {
-                _dcInput.value = new Date().toISOString().split('T')[0];
+                const _now = new Date();
+                _dcInput.value = _now.getFullYear() + '-' + String(_now.getMonth() + 1).padStart(2, '0') + '-' + String(_now.getDate()).padStart(2, '0');
             }
             const dateCompleted = _dcInput.value;
 
