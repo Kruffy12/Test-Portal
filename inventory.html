@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="css/perf.css">
     <link rel="stylesheet" href="css/nav.css">
     <link rel="stylesheet" href="css/v5-shell.css">
+    <link rel="stylesheet" href="css/v5-qol.css">
     <link rel="stylesheet" href="css/footer.css">
     <link rel="stylesheet" href="css/splash.css">
     <style>
@@ -65,6 +66,16 @@
         .stat-card.danger .stat-value { color: var(--danger); }
         .stat-card.warning .stat-value { color: var(--warning); }
         .stat-card.success .stat-value { color: var(--success); }
+        button.stat-card { display: block; width: 100%; text-align: left; font-family: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease; }
+        @media (hover: hover) {
+            button.stat-card:hover { transform: translateY(-2px); border-color: rgba(var(--primary-rgb), 0.3); box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12); }
+        }
+        button.stat-card:active { transform: scale(0.98); }
+        button.stat-card:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+        button.stat-card.is-active { border-color: currentColor; box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.14); }
+        button.stat-card.warning.is-active { border-color: var(--warning); box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.16); }
+        button.stat-card.danger.is-active { border-color: var(--danger); box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.16); }
+        @media (prefers-reduced-motion: reduce) { button.stat-card, button.stat-card:hover, button.stat-card:active { transform: none; } }
 
         /* -- Toolbar -- */
         .toolbar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; animation: fadeInUp 0.4s ease 0.08s both; }
@@ -225,11 +236,20 @@
             .inv-header { display: none; }
             .inv-table-wrap { background: transparent; border: none; box-shadow: none; }
 
-            .inv-row {
-                display: flex;
-                flex-direction: column;
-                gap: 0;
+            .inv-row,
+            .inv-table-wrap.bulk-mode .inv-row {
+                display: grid;
+                grid-template-columns: auto auto 1fr;
+                grid-template-areas:
+                    "name name name"
+                    "cat  qty  price"
+                    "act  act  act";
+                align-items: center;
+                column-gap: 12px;
                 padding: 0;
+                text-align: left;
+            }
+            .inv-row {
                 border-radius: 14px;
                 margin-bottom: 10px;
                 border: 1px solid var(--glass-border) !important;
@@ -240,35 +260,28 @@
             .inv-row.out-of-stock { border-top: 3px solid var(--danger)  !important; }
             .inv-row:hover { background: rgba(255,255,255,0.05); }
 
-            /* Name + status on top row */
             .inv-col-name {
-                flex-direction: row;
+                grid-area: name;
+                display: flex;
+                flex-direction: column;
                 align-items: flex-start;
-                justify-content: space-between;
-                padding: 14px 16px 8px;
-                gap: 10px;
+                gap: 3px;
+                padding: 14px 16px 10px;
+                min-width: 0;
             }
-            .inv-col-name > div { flex: 1; min-width: 0; }
-            .status-badge { white-space: nowrap; flex-shrink: 0; }
+            .inv-col-name .item-name { overflow-wrap: anywhere; }
+            .inv-col-name .item-sku { overflow-wrap: anywhere; }
 
-            /* Meta strip: category · qty · price */
-            .inv-col-cat, .inv-col-qty, .inv-col-price { padding: 0 16px 10px; }
-            .inv-col-cat::after  { content: '\00b7'; margin-left: 8px; color: var(--text-dim); font-size: 0.7rem; }
-            .inv-col-qty::after  { content: '\00b7'; margin-left: 8px; color: var(--text-dim); font-size: 0.7rem; }
-            .inv-col-cat, .inv-col-qty, .inv-col-price { display: inline-flex; align-items: center; }
-            /* Put cat/qty/price on one line */
-            .inv-col-cat  { padding-bottom: 0; }
-            .inv-col-qty  { padding-bottom: 0; }
-            .inv-col-price { padding-bottom: 10px; }
+            .inv-col-cat   { grid-area: cat;   padding: 0 0 12px 16px; min-width: 0; }
+            .inv-col-qty   { grid-area: qty;   padding: 0 0 12px; white-space: nowrap; }
+            .inv-col-price { grid-area: price; padding: 0 16px 12px 0; justify-self: end; white-space: nowrap; }
+            .inv-col-cat .category-badge { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; }
 
-            /* Hide status col — shown in name row instead */
+            /* Stock state is shown by the card's top border */
             .inv-col-status { display: none; }
 
-            /* Move status badge into name row */
-            .inv-col-name .status-badge { display: inline-flex !important; }
-
-            /* Actions bar */
             .inv-row .row-actions {
+                grid-area: act;
                 justify-content: flex-end;
                 padding: 10px 12px;
                 border-top: 1px solid var(--glass-border);
@@ -277,8 +290,8 @@
             .inv-row .row-btn { width: 36px; height: 36px; border-radius: 10px; font-size: 0.9rem; }
 
             .inv-table-wrap.bulk-mode .inv-row { position: relative; }
-            .inv-table-wrap.bulk-mode .inv-col-bulk { position: absolute; top: 12px; left: 10px; z-index: 1; }
-            .inv-table-wrap.bulk-mode .inv-col-name { padding-left: 28px !important; }
+            .inv-table-wrap.bulk-mode .inv-col-bulk { position: absolute; top: 14px; left: 14px; z-index: 1; }
+            .inv-table-wrap.bulk-mode .inv-col-name { padding-left: 44px !important; }
 
             .stats-row { grid-template-columns: repeat(2, 1fr); }
             .form-row, .form-row-3 { grid-template-columns: 1fr; }
@@ -335,8 +348,8 @@
         <!-- Stats -->
         <div class="stats-row" id="statsRow">
             <div class="stat-card"><div class="stat-label">Total Items</div><div class="stat-value" id="statTotal">—</div><div class="stat-sub">unique SKUs</div></div>
-            <div class="stat-card warning" id="statLowCard"><div class="stat-label">Low Stock</div><div class="stat-value" id="statLow">—</div><div class="stat-sub">below minimum</div></div>
-            <div class="stat-card danger" id="statOutCard"><div class="stat-label">Out of Stock</div><div class="stat-value" id="statOut">—</div><div class="stat-sub">qty = 0</div></div>
+            <button type="button" class="stat-card warning" id="statLowCard" data-stock-filter="low" aria-pressed="false" title="Show low-stock items"><div class="stat-label">Low Stock</div><div class="stat-value" id="statLow">—</div><div class="stat-sub">below minimum</div></button>
+            <button type="button" class="stat-card danger" id="statOutCard" data-stock-filter="out" aria-pressed="false" title="Show out-of-stock items"><div class="stat-label">Out of Stock</div><div class="stat-value" id="statOut">—</div><div class="stat-sub">qty = 0</div></button>
             <div class="stat-card" id="statValueCard"><div class="stat-label">Stock Value</div><div class="stat-value" id="statValue">—</div><div class="stat-sub">at cost price</div></div>
         </div>
 
@@ -381,7 +394,13 @@
                     <div></div>
                 </div>
                 <div id="invBody">
-                    <div class="state-box"><div class="state-icon" data-icon="loader"></div><p>Loading inventory…</p></div>
+                    <div class="sc-skel-list" role="status" aria-label="Loading inventory">
+                        <div class="sc-skel-row"><span class="sc-skel sc-skel-avatar"></span><span class="sc-skel-lines"><span class="sc-skel sc-skel-line" style="width:46%"></span><span class="sc-skel sc-skel-line sm" style="width:24%"></span></span><span class="sc-skel sc-skel-pill"></span></div>
+                        <div class="sc-skel-row"><span class="sc-skel sc-skel-avatar"></span><span class="sc-skel-lines"><span class="sc-skel sc-skel-line" style="width:38%"></span><span class="sc-skel sc-skel-line sm" style="width:30%"></span></span><span class="sc-skel sc-skel-pill"></span></div>
+                        <div class="sc-skel-row"><span class="sc-skel sc-skel-avatar"></span><span class="sc-skel-lines"><span class="sc-skel sc-skel-line" style="width:52%"></span><span class="sc-skel sc-skel-line sm" style="width:24%"></span></span><span class="sc-skel sc-skel-pill"></span></div>
+                        <div class="sc-skel-row"><span class="sc-skel sc-skel-avatar"></span><span class="sc-skel-lines"><span class="sc-skel sc-skel-line" style="width:42%"></span><span class="sc-skel sc-skel-line sm" style="width:30%"></span></span><span class="sc-skel sc-skel-pill"></span></div>
+                        <div class="sc-skel-row"><span class="sc-skel sc-skel-avatar"></span><span class="sc-skel-lines"><span class="sc-skel sc-skel-line" style="width:46%"></span><span class="sc-skel sc-skel-line sm" style="width:24%"></span></span><span class="sc-skel sc-skel-pill"></span></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -691,6 +710,7 @@
 <script src="js/staff-banner.js"></script>
 <script src="js/v5-shell.js"></script>
 <script src="js/components.js"></script>
+<script src="js/v5-qol.js"></script>
 
     <script>
     // SCRIPT_URL is provided globally by js/api.js
@@ -756,7 +776,29 @@
         if (!('BarcodeDetector' in window) && !navigator.mediaDevices) {
             document.getElementById('cameraScanBtn').style.display = 'none';
         }
+
+        document.querySelectorAll('[data-stock-filter]').forEach(card => {
+            card.addEventListener('click', () => {
+                const sel = document.getElementById('filterStock');
+                const val = card.dataset.stockFilter;
+                sel.value = sel.value === val ? '' : val;
+                _invPage = 1;
+                renderInventory();
+                if (typeof haptic === 'function') haptic('light');
+                if (sel.value) document.querySelector('.toolbar').scrollIntoView({ block: 'start', behavior: 'smooth' });
+            });
+        });
+        if (window.SCQol) SCQol.pullToRefresh(loadInventory);
     });
+
+    function syncStockCards() {
+        const val = document.getElementById('filterStock').value;
+        document.querySelectorAll('[data-stock-filter]').forEach(card => {
+            const on = card.dataset.stockFilter === val;
+            card.classList.toggle('is-active', on);
+            card.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+    }
 
     function getShiftDate() {
         const d = new Date();
@@ -814,7 +856,7 @@
 
     // -- Load ------------------------------------------------------------------
     async function loadInventory() {
-        setSyncState('loading', 'Syncing?');
+        setSyncState('loading', 'Syncing…');
         try {
             const [invData, movData] = await Promise.all([
                 apiGet({ action: 'listinventory' }),
@@ -869,6 +911,7 @@
     }
 
     function renderInventory() {
+        syncStockCards();
         const filtered = getFilteredItems();
 
         // Reset to page 1 when filters change
@@ -1183,7 +1226,7 @@
             return;
         }
         const btn = document.getElementById('itemSubmitBtn');
-        btn.disabled = true; btn.textContent = 'Saving?';
+        btn.disabled = true; btn.textContent = 'Saving…';
         
         const payload = {
             action:    editingSku ? 'updateitem' : 'createitem',
@@ -1320,7 +1363,7 @@
         const reason = document.getElementById('adjReason').value.trim();
         const jobId  = document.getElementById('adjJobId').value.trim();
         const btn    = document.getElementById('adjSubmitBtn');
-        btn.disabled = true; btn.textContent = 'Applying?';
+        btn.disabled = true; btn.textContent = 'Applying…';
         
         // OPTIMISTIC UPDATE: Store original state and update UI immediately
         const item = allItems.find(i => i.sku === adjSelectedSku);
@@ -1446,7 +1489,7 @@
     async function confirmDelete() {
         if (!pendingDeleteSku || (!isManager && !window.canDelete)) return;
         const btn = document.getElementById('deleteConfirmBtn');
-        btn.disabled = true; btn.textContent = 'Deleting?';
+        btn.disabled = true; btn.textContent = 'Deleting…';
         
         // OPTIMISTIC UPDATE: Store original state and remove from UI immediately
         const originalItems = [...allItems];
@@ -1544,7 +1587,7 @@
     function focusScanToField(fieldId) {
         scanTargetField = fieldId;
         const el = document.getElementById(fieldId);
-        if (el) { el.focus(); el.placeholder = 'Scan now?'; setTimeout(() => { el.placeholder = el.id === 'iSku' ? 'e.g. SCR-IP14P-BLK' : 'Search name or scan SKU'; }, 5000); }
+        if (el) { el.focus(); el.placeholder = 'Scan now…'; setTimeout(() => { el.placeholder = el.id === 'iSku' ? 'e.g. SCR-IP14P-BLK' : 'Search name or scan SKU'; }, 5000); }
     }
 
     // -- Camera Scanner --------------------------------------------------------
@@ -1742,7 +1785,7 @@
         const items = window._csvParsed || [];
         if (!items.length) return;
         const btn = document.getElementById('csvConfirmBtn');
-        btn.disabled = true; btn.textContent = 'Importing?';
+        btn.disabled = true; btn.textContent = 'Importing…';
         let success = 0, failed = 0;
         // Import sequentially to avoid GAS lock contention
         for (const item of items) {

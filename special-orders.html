@@ -18,6 +18,7 @@
     <link rel="stylesheet" href="css/perf.css">
     <link rel="stylesheet" href="css/nav.css">
     <link rel="stylesheet" href="css/v5-shell.css">
+    <link rel="stylesheet" href="css/v5-qol.css">
     <link rel="stylesheet" href="css/footer.css">
     <link rel="stylesheet" href="css/splash.css">
 
@@ -297,6 +298,26 @@
         .tag-date {
             background: rgba(100, 116, 139, 0.1);
             color: var(--text-dim);
+        }
+
+        .tag-phone {
+            background: rgba(16, 185, 129, 0.12);
+            color: var(--success);
+            text-decoration: none;
+        }
+
+        .tag-phone:hover { background: rgba(16, 185, 129, 0.2); }
+
+        .order-card.is-focused {
+            border-color: rgba(var(--primary-rgb), 0.6);
+            box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.18);
+        }
+
+        .so-skel {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            overflow: hidden;
         }
 
         .order-notes {
@@ -735,6 +756,7 @@
                     placeholder="Search by item, order #, or requester…" oninput="renderOrders()">
             </div>
             <select class="filter-select" id="filterStatus" onchange="renderOrders()">
+                <option value="open" selected>Open Orders</option>
                 <option value="">All Statuses</option>
                 <option value="Pending">Pending</option>
                 <option value="Acknowledged">Acknowledged</option>
@@ -750,11 +772,11 @@
         <!-- Orders list -->
         <div class="orders-section">
             <div class="orders-grid" id="ordersGrid">
-                <div class="state-box">
-                    <div class="state-icon">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                    </div>
-                    <p>Loading special orders…</p>
+                <div class="sc-skel-list so-skel" role="status" aria-label="Loading special orders">
+                    <div class="sc-skel-row"><span class="sc-skel sc-skel-avatar"></span><span class="sc-skel-lines"><span class="sc-skel sc-skel-line" style="width:52%"></span><span class="sc-skel sc-skel-line sm" style="width:38%"></span></span><span class="sc-skel sc-skel-pill"></span></div>
+                    <div class="sc-skel-row"><span class="sc-skel sc-skel-avatar"></span><span class="sc-skel-lines"><span class="sc-skel sc-skel-line" style="width:44%"></span><span class="sc-skel sc-skel-line sm" style="width:30%"></span></span><span class="sc-skel sc-skel-pill"></span></div>
+                    <div class="sc-skel-row"><span class="sc-skel sc-skel-avatar"></span><span class="sc-skel-lines"><span class="sc-skel sc-skel-line" style="width:36%"></span><span class="sc-skel sc-skel-line sm" style="width:38%"></span></span><span class="sc-skel sc-skel-pill"></span></div>
+                    <div class="sc-skel-row"><span class="sc-skel sc-skel-avatar"></span><span class="sc-skel-lines"><span class="sc-skel sc-skel-line" style="width:52%"></span><span class="sc-skel sc-skel-line sm" style="width:30%"></span></span><span class="sc-skel sc-skel-pill"></span></div>
                 </div>
             </div>
         </div>
@@ -801,6 +823,11 @@
             </div>
 
             <div class="form-group">
+                <label>Customer Phone</label>
+                <input type="tel" id="soPhone" placeholder="Optional — so you can call when it arrives" inputmode="tel" autocomplete="off" maxlength="20">
+            </div>
+
+            <div class="form-group">
                 <label>Notes</label>
                 <textarea id="soNotes" rows="3" placeholder="Any extra details, specs, colour, urgency…"></textarea>
             </div>
@@ -817,6 +844,7 @@
 <script src="js/staff-banner.js"></script>
 <script src="js/v5-shell.js"></script>
 <script src="js/components.js"></script>
+<script src="js/v5-qol.js"></script>
 
     <script>
         // SCRIPT_URL is provided globally by js/api.js
@@ -844,7 +872,41 @@
                     ? getEffectiveRole(currentUser) === 'manager'
                     : deriveRole(currentUser) === 'manager');
             loadOrders();
+            if (window.SCQol) SCQol.pullToRefresh(loadOrders);
         });
+
+        function notify(msg, type) {
+            if (window.SCQol) SCQol.toast(msg, type);
+            else alert(msg);
+        }
+
+        // Search and the dashboard link here as ?order=SO-123: show it (even if closed), scroll to it, then drop the param
+        let _orderFromUrlDone = false;
+        function focusOrderFromUrl() {
+            if (_orderFromUrlDone) return;
+            _orderFromUrlDone = true;
+            const params = new URLSearchParams(window.location.search);
+            const num = params.get('order');
+            if (!num) return;
+            params.delete('order');
+            const qs = params.toString();
+            history.replaceState(null, '', window.location.pathname + (qs ? '?' + qs : '') + window.location.hash);
+            if (!allOrders.some(o => o.orderNumber === num)) { notify('Order ' + num + ' was not found.', 'err'); return; }
+            document.getElementById('filterStatus').value = '';
+            document.getElementById('filterUser').value = '';
+            document.getElementById('searchInput').value = num;
+            renderOrders();
+            const card = document.querySelector(`.order-card[data-order="${CSS.escape(num)}"]`);
+            if (!card) return;
+            let tries = 0;
+            (function highlight() {
+                const splash = document.getElementById('splash-screen');
+                if (splash && !splash.classList.contains('hidden') && !splash.classList.contains('exiting') && ++tries < 25) { setTimeout(highlight, 200); return; }
+                card.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                card.classList.add('is-focused');
+                setTimeout(() => card.classList.remove('is-focused'), 2400);
+            })();
+        }
 
         // ── Load ──────────────────────────────────────────────────────────────
         async function loadOrders() {
@@ -854,6 +916,7 @@
                 allOrders = data.orders || [];
                 populateUserFilter();
                 renderOrders();
+                focusOrderFromUrl();
                 setSyncState('ok', 'Last sync: ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
             } catch (err) {
                 setSyncState('error', 'Sync failed — check connection');
@@ -879,14 +942,15 @@
             const filterUser = document.getElementById('filterUser').value;
 
             let filtered = allOrders.filter(o => {
-                const matchStat = !filterStat || o.status === filterStat;
+                const matchStat = !filterStat || (filterStat === 'open' ? o.status !== 'Closed' : o.status === filterStat);
                 const matchUser = !filterUser || o.requestedBy === filterUser;
                 const matchQ = !query ||
                     (o.orderNumber || '').toLowerCase().includes(query) ||
                     (o.item || '').toLowerCase().includes(query) ||
                     (o.requestedBy || '').toLowerCase().includes(query) ||
                     (o.notes || '').toLowerCase().includes(query) ||
-                    (o.customer || '').toLowerCase().includes(query);
+                    (o.customer || '').toLowerCase().includes(query) ||
+                    (query.replace(/\D/g, '').length >= 3 && String(o.phone || '').replace(/\D/g, '').includes(query.replace(/\D/g, '')));
                 return matchStat && matchUser && matchQ;
             });
 
@@ -895,7 +959,9 @@
             if (!filtered.length) {
                 grid.innerHTML = `<div class="state-box">
                     <div class="state-icon empty"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></div>
-                    <p>${allOrders.length ? 'No orders match your filters.' : 'No special orders yet. Be the first to log one!'}</p>
+                    <p>${!allOrders.length ? 'No special orders yet. Be the first to log one!'
+                        : (filterStat === 'open' && !query && !filterUser) ? 'No open orders — everything has been closed out.'
+                        : 'No orders match your filters.'}</p>
                     ${!allOrders.length ? `<button onclick="openNewOrderModal()" style="margin-top:14px;padding:10px 22px;border-radius:99px;border:none;background:var(--primary);color:#fff;font-family:var(--font-family);font-size:0.85rem;font-weight:700;cursor:pointer;">New Order</button>` : ''}
                 </div>`;
                 return;
@@ -915,6 +981,10 @@
 
             const notesHTML = o.notes ? `<div class="order-notes">${escHtml(String(o.notes))}</div>` : '';
             const customerTag = o.customer ? `<span class="meta-tag tag-qty">${escHtml(String(o.customer))}</span>` : '';
+            const phoneDigits = String(o.phone || '').replace(/\D/g, '');
+            const phoneTag = phoneDigits.length >= 7
+                ? `<a class="meta-tag tag-phone" href="tel:${phoneDigits.length === 7 ? '+501' + phoneDigits : '+' + phoneDigits}" aria-label="Call ${escHtml(String(o.customer || 'customer'))}">${escHtml(String(o.phone))}</a>`
+                : '';
 
             const itemName = String(o.item || o.part || 'Unnamed item');
             const orderNum = String(o.orderNumber || o.id || '—');
@@ -928,7 +998,7 @@
                 : `<span class="status-badge ${cfg.badge}">${cfg.label}</span>`;
 
             return `
-    <div class="order-card status-${statusKey}">
+    <div class="order-card status-${statusKey}" data-order="${escHtml(orderNum)}">
         <div class="order-num">${escHtml(orderNum)}</div>
         <div class="order-body">
             <div class="order-title">${escHtml(itemName)}</div>
@@ -937,6 +1007,7 @@
                 <span class="meta-tag tag-qty">×${escHtml(quantity)}</span>
                 <span class="meta-tag tag-date">${dateStr}</span>
                 ${customerTag}
+                ${phoneTag}
                 ${updatedStr ? `<span class="meta-tag tag-date">${updatedStr}</span>` : ''}
             </div>
             ${notesHTML}
@@ -948,7 +1019,7 @@
         }
 
         // ── Update status (manager only) ──────────────────────────────────────
-        async function updateStatus(orderNumber, newStatus) {
+        async function updateStatus(orderNumber, newStatus, isUndo) {
             if (!isManager) return;
             
             // OPTIMISTIC UPDATE: Store original state and update UI immediately
@@ -974,6 +1045,12 @@
                     // Backend confirmed
                     setSyncState('ok', 'Saved ✓');
                     setTimeout(() => setSyncState('ok', 'Last sync: ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })), 1500);
+                    if (isUndo) notify(orderNumber + ' set back to ' + newStatus, 'ok');
+                    else if (window.SCQol && originalStatus && originalStatus !== newStatus) {
+                        SCQol.undoToast(orderNumber + ' marked ' + newStatus, {
+                            onUndo: () => updateStatus(orderNumber, originalStatus, true)
+                        });
+                    }
                 } else {
                     // REVERT: Backend failed
                     if (order) {
@@ -1004,6 +1081,7 @@
             document.getElementById('soItem').value = '';
             document.getElementById('soQty').value = '1';
             document.getElementById('soCustomer').value = '';
+            document.getElementById('soPhone').value = '';
             document.getElementById('soNotes').value = '';
             document.getElementById('soSubmitBtn').disabled = false;
             document.getElementById('soSubmitBtn').textContent = 'Submit Order';
@@ -1023,6 +1101,7 @@
             const item = document.getElementById('soItem').value.trim();
             const qty = document.getElementById('soQty').value.trim() || '1';
             const customer = document.getElementById('soCustomer').value.trim();
+            const phone = document.getElementById('soPhone').value.trim();
             const notes = document.getElementById('soNotes').value.trim();
 
             if (!item) {
@@ -1043,8 +1122,9 @@
                 item,
                 quantity: qty,
                 customer,
+                phone,
                 notes,
-                status: 'pending',
+                status: 'Pending',
                 requestedBy: currentUser,
                 dateCreated: new Date().toISOString(),
                 dateUpdated: new Date().toISOString(),
@@ -1062,6 +1142,7 @@
                     item,
                     quantity: qty,
                     customer,
+                    phone,
                     notes,
                     requestedBy: currentUser
                 });
@@ -1071,11 +1152,12 @@
                 if (data.success) {
                     // Backend confirmed - reload to get real order number
                     await loadOrders();
+                    notify((data.orderNumber ? data.orderNumber + ' logged' : 'Order logged') + ' — the team has been notified.', 'ok');
                 } else {
                     // REVERT: Backend failed
                     allOrders = allOrders.filter(o => o.orderNumber !== tempOrderNumber);
                     renderOrders();
-                    alert('❌ Could not submit order. Please try again.');
+                    notify('Could not submit the order. Please try again.', 'err');
                     btn.disabled = false;
                     btn.textContent = 'Submit Order';
                 }
@@ -1083,7 +1165,7 @@
                 // REVERT: Network error
                 allOrders = allOrders.filter(o => o.orderNumber !== tempOrderNumber);
                 renderOrders();
-                alert('Connection error. Please try again.');
+                notify('Connection error — the order was not saved. Please try again.', 'err');
                 btn.disabled = false;
                 btn.textContent = 'Submit Order';
                 console.error(err);

@@ -33,7 +33,7 @@ window.getUserRole = getUserRole;
 
 const SC_PREF_KEYS = [
     'scTheme', 'scCompact', 'scHaptics', 'scNotif', 'scNotifSound',
-    'scNotifSoundType', 'scAutoPrintReceipt', 'appVersion', 'scSidebarCollapsed'
+    'scNotifSoundType', 'scAutoPrintReceipt', 'appVersion', 'scSidebarCollapsed', 'scToursSeen'
 ];
 
 function escH(s) {

@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="css/perf.css">
     <link rel="stylesheet" href="css/nav.css">
     <link rel="stylesheet" href="css/v5-shell.css">
+    <link rel="stylesheet" href="css/v5-qol.css">
     <link rel="stylesheet" href="css/footer.css">
     <link rel="stylesheet" href="css/splash.css">
     <style>
@@ -40,6 +41,8 @@
 
         /* ── KPI Grid ── */
         .kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;animation:fadeInUp 0.4s ease 0.08s both;}
+        /* A lone card on the last row of the 3-column grid spans the row instead of leaving a gap */
+        @media(min-width:769px){.kpi-grid>.kpi-card:last-child:nth-child(3n+1){grid-column:1/-1;}}
         .kpi-card{background:var(--glass);border:1px solid var(--glass-border);border-radius:var(--radius-md);padding:18px 20px;backdrop-filter:blur(10px);position:relative;overflow:hidden;}
         .kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--primary);opacity:0.4;}
         .kpi-card.green::before{background:var(--success);}
@@ -59,6 +62,10 @@
         .kpi-delta.neutral{color:var(--text-dim);}
         .kpi-card.teal::before{background:#0d9488;}
         .kpi-card.teal .kpi-value{color:#0d9488;}
+        .kpi-card[onclick]{transition:transform 0.2s ease,border-color 0.2s ease,box-shadow 0.2s ease;-webkit-tap-highlight-color:transparent;}
+        @media (hover:hover){.kpi-card[onclick]:hover{transform:translateY(-2px);border-color:rgba(var(--primary-rgb),0.3);box-shadow:0 8px 20px rgba(15,23,42,0.12);}}
+        .kpi-card[onclick]:active{transform:scale(0.98);}
+        @media (prefers-reduced-motion:reduce){.kpi-card[onclick],.kpi-card[onclick]:hover,.kpi-card[onclick]:active{transform:none;}}
         .bar-wrap.drillable{cursor:pointer;}
         .bar-wrap.drillable:hover .bar{opacity:1;}
         .person-row.drill-row{cursor:pointer;border-radius:8px;margin:0 -8px;padding-left:8px;padding-right:8px;}
@@ -321,7 +328,7 @@
             <div class="kpi-value" id="kpiBills"><div class="shimmer" style="width:60px;"></div></div>
             <div class="kpi-sub" id="kpiBillsSub">&nbsp;</div>
         </div>
-        <div class="kpi-card red">
+        <div class="kpi-card" id="kpiReversalsCard">
             <div class="kpi-label">Reversal Rate</div>
             <div class="kpi-value" id="kpiReversals"><div class="shimmer" style="width:50px;"></div></div>
             <div class="kpi-sub" id="kpiReversalsSub">&nbsp;</div>
@@ -480,6 +487,7 @@
 <script src="js/staff-banner.js"></script>
 <script src="js/v5-shell.js"></script>
 <script src="js/components.js"></script>
+<script src="js/v5-qol.js"></script>
 <script src="js/partial-sales.js"></script>
 <script src="js/statistics.js"></script>
 </body>

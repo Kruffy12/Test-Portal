@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="css/perf.css">
     <link rel="stylesheet" href="css/nav.css">
     <link rel="stylesheet" href="css/v5-shell.css">
+    <link rel="stylesheet" href="css/v5-qol.css">
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/splash.css">
     <link rel="stylesheet" href="css/footer.css">
@@ -2652,6 +2653,7 @@
             </div>
             <select id="statusFilter" class="filter-dropdown">
                 <option value="all">All Shop Activity</option>
+                <option value="mine">My Jobs</option>
                 <option value="inprogress">All In Progress</option>
                 <option value="received">Received / Ordered</option>
                 <option value="fixing">Repair In Progress</option>
@@ -2661,6 +2663,7 @@
                 <option value="unsuccessful">Unsuccessful</option>
                 <option value="abandoned">Abandoned</option>
                 <option value="expiring">Expiring Soon (7 days)</option>
+                <option value="stale">Stale (14+ days in shop)</option>
             </select>
             <button class="refresh-btn" id="refreshBtn" onclick="refreshJobs()" title="Refresh jobs" aria-label="Refresh jobs">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
@@ -2807,7 +2810,16 @@
                 <div>Storage</div>
                 <div>Actions</div>
             </div>
-            <div id="jobsList"></div>
+            <div id="jobsList">
+                <div class="sc-skel-list" role="status" aria-label="Loading jobs">
+                    <div class="sc-skel-row"><span class="sc-skel sc-skel-avatar"></span><span class="sc-skel-lines"><span class="sc-skel sc-skel-line" style="width:58%"></span><span class="sc-skel sc-skel-line sm" style="width:34%"></span></span><span class="sc-skel sc-skel-pill"></span></div>
+                    <div class="sc-skel-row"><span class="sc-skel sc-skel-avatar"></span><span class="sc-skel-lines"><span class="sc-skel sc-skel-line" style="width:49%"></span><span class="sc-skel sc-skel-line sm" style="width:26%"></span></span><span class="sc-skel sc-skel-pill"></span></div>
+                    <div class="sc-skel-row"><span class="sc-skel sc-skel-avatar"></span><span class="sc-skel-lines"><span class="sc-skel sc-skel-line" style="width:40%"></span><span class="sc-skel sc-skel-line sm" style="width:34%"></span></span><span class="sc-skel sc-skel-pill"></span></div>
+                    <div class="sc-skel-row"><span class="sc-skel sc-skel-avatar"></span><span class="sc-skel-lines"><span class="sc-skel sc-skel-line" style="width:58%"></span><span class="sc-skel sc-skel-line sm" style="width:26%"></span></span><span class="sc-skel sc-skel-pill"></span></div>
+                    <div class="sc-skel-row"><span class="sc-skel sc-skel-avatar"></span><span class="sc-skel-lines"><span class="sc-skel sc-skel-line" style="width:49%"></span><span class="sc-skel sc-skel-line sm" style="width:34%"></span></span><span class="sc-skel sc-skel-pill"></span></div>
+                    <div class="sc-skel-row"><span class="sc-skel sc-skel-avatar"></span><span class="sc-skel-lines"><span class="sc-skel sc-skel-line" style="width:40%"></span><span class="sc-skel sc-skel-line sm" style="width:26%"></span></span><span class="sc-skel sc-skel-pill"></span></div>
+                </div>
+            </div>
             <div id="jobsPagination"></div>
             <div class="photo-grid" id="photoGrid"></div>
         </div>
@@ -3021,7 +3033,7 @@
     <div id="photoLightbox">
         <button class="lb-close" onclick="closeLightbox()">✕</button>
         <button class="lb-nav lb-prev" id="lbPrev" onclick="lbNav(-1)">&#x2039;</button>
-        <img id="lbImg" src="" alt="Inspection photo">
+        <img id="lbImg" alt="Inspection photo">
         <button class="lb-nav lb-next" id="lbNext" onclick="lbNav(1)">&#x203A;</button>
         <div class="lb-counter" id="lbCounter"></div>
     </div>
@@ -3297,7 +3309,7 @@
                     <div class="delete-info-row"><span>Device</span><span id="del-device">—</span></div>
                     <div class="delete-info-row"><span>Status</span><span id="del-status">—</span></div>
                 </div>
-                <p class="delete-warning">This action cannot be undone.</p>
+                <p class="delete-warning">You'll have a few seconds to undo — after that it's permanent.</p>
             </div>
             <div class="modal-footer">
                 <button class="mf-btn mf-cancel" onclick="closeModal('deleteModal')">Go Back</button>
@@ -3389,6 +3401,7 @@
 <script src="js/staff-banner.js"></script>
 <script src="js/v5-shell.js"></script>
 <script src="js/components.js"></script>
+<script src="js/v5-qol.js"></script>
     <script src="js/qz-drawer.js"></script>
     <script src="js/receipt.js"></script>
     <script>
@@ -3408,6 +3421,8 @@
         // ──────────────────────────────────────────────────────────────────────────
 
         let allJobs = [];
+        // Jobs removed from the list but not yet deleted on the server (still inside their undo window)
+        const _pendingDeletes = new Set();
 
         function escH(s) {
             const d = document.createElement('div');
@@ -3516,7 +3531,19 @@
             return daysLeft <= 7 && daysLeft >= 0;
         }
 
-        // Dashboard rows link here as ?job=<id>; open that job once, then drop the param so a refresh doesn't reopen it
+        // Same rule as the dashboard's "Stale" tab
+        function isStale(job, cls) {
+            if (!['received', 'fixing', 'testing'].includes(cls) || !job.dateReceived) return false;
+            return Math.floor((Date.now() - new Date(job.dateReceived).getTime()) / 86400000) >= 14;
+        }
+
+        function isMyJob(job, cls) {
+            const me = (localStorage.getItem('scUser') || sessionStorage.getItem('scUser') || '').toLowerCase();
+            if (!me || ['resolved', 'abandoned'].includes(cls)) return false;
+            return [job.claimedBy, job.technician].some(v => String(v || '').toLowerCase() === me);
+        }
+
+        // Dashboard rows link here as ?job=<id> (plus &msg=1 to open the customer message); open once, then drop the params
         let _openedJobFromUrl = false;
         function openJobFromUrl() {
             if (_openedJobFromUrl) return;
@@ -3524,9 +3551,14 @@
             const id = params.get('job');
             if (!id) return;
             _openedJobFromUrl = true;
-            if (getJob(id)) openViewModal(id);
+            const job = getJob(id);
+            if (job && params.get('msg') === '1' && typeof shareJobCustomerMessage === 'function') {
+                currentJobData = job;
+                shareJobCustomerMessage(job, {});
+            } else if (job) openViewModal(id);
             else showToast('Job #' + id + ' was not found.', 'err');
             params.delete('job');
+            params.delete('msg');
             const qs = params.toString();
             history.replaceState(null, '', window.location.pathname + (qs ? '?' + qs : '') + window.location.hash);
         }
@@ -3549,7 +3581,12 @@
         function renderJobs(jobs) {
             const list = document.getElementById('jobsList');
             if (jobs.length === 0) {
-                list.innerHTML = `<div style="padding:40px;text-align:center;opacity:0.5;">No jobs found matching your criteria.</div>`;
+                const filter = document.getElementById('statusFilter')?.value;
+                const hasSearch = !!document.getElementById('searchInput')?.value.trim();
+                const emptyMsg = !hasSearch && filter === 'mine' ? 'You have no open jobs. Claim a job to see it here.'
+                    : !hasSearch && filter === 'stale' ? 'Nothing stale — every in-progress repair is under 14 days old.'
+                    : 'No jobs found matching your criteria.';
+                list.innerHTML = `<div style="padding:40px;text-align:center;opacity:0.5;">${emptyMsg}</div>`;
                 const pg = document.getElementById('jobsPagination');
                 if (pg) pg.style.display = 'none';
                 return;
@@ -3704,6 +3741,8 @@
                 const matchFilter = _viewingArchive || filter === 'all'
                     || (filter === 'inprogress' ? ['received', 'fixing', 'testing'].includes(cls)
                         : filter === 'expiring' ? isExpiringSoon(j, cls)
+                        : filter === 'stale' ? isStale(j, cls)
+                        : filter === 'mine' ? isMyJob(j, cls)
                         : cls === filter);
 
                 return matchSearch && matchFilter;
@@ -3878,7 +3917,7 @@
         async function loadJobs() {
             try {
                 const data = await apiGet({ action: 'list' });
-                allJobs = data.jobs || [];
+                allJobs = (data.jobs || []).filter(j => !_pendingDeletes.has(String(j.id)));
                 localStorage.setItem('sc_cache_jobs', JSON.stringify(allJobs));
                 filterAndRender();
                 updateStats(allJobs);
@@ -4843,8 +4882,15 @@
                     return;
                 }
 
-                // Backend confirmed - show success
-                showToast('✅ Job updated successfully', 'ok');
+                if (originalState && originalState.status !== status && window.SCQol) {
+                    const jobId = currentEditId;
+                    const prev = { ...originalState };
+                    SCQol.undoToast('Job #' + jobId + ' moved to ' + classifyStatus({ status }).label, {
+                        onUndo: () => revertJobEdit(jobId, prev)
+                    });
+                } else {
+                    showToast('✅ Job updated successfully', 'ok');
+                }
                 haptic('success');
 
                 // ── Push notifications on key status changes ──
@@ -4886,6 +4932,36 @@
             }
         }
 
+        async function revertJobEdit(id, prev) {
+            const job = allJobs.find(j => String(j.id) === String(id));
+            if (job) {
+                Object.assign(job, prev);
+                filterAndRender();
+                updateStats(allJobs);
+            }
+            const invoice = prev.invoiceItems == null ? '' : (typeof prev.invoiceItems === 'string' ? prev.invoiceItems : JSON.stringify(prev.invoiceItems));
+            try {
+                const data = await apiPost(new URLSearchParams({
+                    action: 'update',
+                    id,
+                    username: localStorage.getItem('scUser') || sessionStorage.getItem('scUser') || '',
+                    status: prev.status || 'received',
+                    priority: prev.priority || 'low',
+                    notes: prev.notes || '',
+                    dateCompleted: prev.dateCompleted || '',
+                    estimatedCompletion: prev.estimatedCompletion || '',
+                    payment: prev.payment || 'unpaid',
+                    invoiceItems: invoice
+                }));
+                if (data && data.success === false) throw new Error(data.error || 'Update rejected');
+                showToast('Job #' + id + ' change undone', 'ok');
+            } catch (err) {
+                console.error(err);
+                showToast('❌ Could not undo — please edit job #' + id + ' manually.', 'err');
+            }
+            loadJobs();
+        }
+
         function openDeleteModal(id) {
             const j = getJob(id);
             if (!j) return;
@@ -4903,18 +4979,50 @@
             openModal('deleteModal');
         }
 
-        async function deleteJob(id) {
+        function deleteJob(id) {
             closeModal('deleteModal');
 
-            // OPTIMISTIC UPDATE: Remove from UI immediately
-            const originalJobs = [...allJobs];
-            const deletedJob = allJobs.find(j => String(j.id) === String(id));
-
+            const idx = allJobs.findIndex(j => String(j.id) === String(id));
+            if (idx === -1) return;
+            const deletedJob = allJobs[idx];
             allJobs = allJobs.filter(j => String(j.id) !== String(id));
-
-            showToast('🗑️ Deleting job #' + id + '...', '');
+            _pendingDeletes.add(String(id));
             filterAndRender();
             updateStats(allJobs);
+            haptic('warning');
+
+            if (!window.SCQol) { commitDeleteJob(id, deletedJob, idx, false); return; }
+            SCQol.undoToast('Job #' + id + ' deleted', {
+                onUndo: () => {
+                    _pendingDeletes.delete(String(id));
+                    if (!allJobs.some(j => String(j.id) === String(id))) allJobs.splice(Math.min(idx, allJobs.length), 0, deletedJob);
+                    filterAndRender();
+                    updateStats(allJobs);
+                    showToast('Job #' + id + ' restored', 'ok');
+                },
+                onCommit: (isUnload) => commitDeleteJob(id, deletedJob, idx, isUnload)
+            });
+        }
+
+        async function commitDeleteJob(id, deletedJob, idx, isUnload) {
+            const restore = () => {
+                _pendingDeletes.delete(String(id));
+                if (!allJobs.some(j => String(j.id) === String(id))) allJobs.splice(Math.min(idx, allJobs.length), 0, deletedJob);
+                filterAndRender();
+                updateStats(allJobs);
+            };
+
+            if (isUnload) {
+                // Page is closing: keepalive lets the request finish after the tab is gone
+                try {
+                    fetch(`${SUPABASE_URL}/rest/v1/jobs?id=eq.${encodeURIComponent(id)}`, {
+                        method: 'DELETE',
+                        keepalive: true,
+                        headers: { apikey: SUPABASE_ANON, Authorization: `Bearer ${SUPABASE_ANON}` }
+                    });
+                } catch (_) { }
+                return;
+            }
 
             try {
                 const params = new URLSearchParams({
@@ -4924,29 +5032,18 @@
 
                 const data = await apiPost(params);
 
-                // Check if deletion was successful
                 if (data.success === false) {
-                    // REVERT: Backend rejected deletion
-                    allJobs = originalJobs;
+                    restore();
                     showToast('❌ ' + (data.error || 'Could not delete job'), 'err');
                     haptic('error');
-                    filterAndRender();
-                    updateStats(allJobs);
                     return;
                 }
-
-                showToast('✅ Job #' + id + ' removed successfully.', 'ok');
-                haptic('warning');
-
+                _pendingDeletes.delete(String(id));
                 setTimeout(loadJobs, 2000);
-
             } catch (err) {
-                // REVERT: Network error, restore original state
-                allJobs = originalJobs;
-                showToast('❌ Connection failed.', 'err');
+                restore();
+                showToast('❌ Connection failed — job #' + id + ' was not deleted.', 'err');
                 haptic('error');
-                filterAndRender();
-                updateStats(allJobs);
                 console.error(err);
             }
         }
@@ -5092,6 +5189,7 @@
         document.getElementById('statusFilter').addEventListener('change', filterAndRender);
         loadJobs();
         setInterval(loadJobs, 60000);
+        if (window.SCQol) SCQol.pullToRefresh(loadJobs);
 
         // ── Photo Lightbox ────────────────────────────────────────────────────
         let _lbImages = [], _lbIndex = 0, _lbTouchX = null;

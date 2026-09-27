@@ -655,6 +655,12 @@ function renderKPIs(sales, reversed, payouts, jobs, bills, closes, prevSales) {
     document.getElementById('kpiBillsSub').textContent   = openBills.length + ' open bills (all time)';
     document.getElementById('kpiReversals').textContent  = revRate + '%';
     document.getElementById('kpiReversalsSub').textContent = reversed.length + ' of ' + totalTx + ' reversed';
+    const revCard = document.getElementById('kpiReversalsCard');
+    if (revCard) {
+        const r = parseFloat(revRate) || 0;
+        revCard.classList.remove('green', 'yellow', 'red');
+        revCard.classList.add(r <= 2 ? 'green' : r <= 5 ? 'yellow' : 'red');
+    }
     document.getElementById('kpiPartialOwed').textContent = bz(partialOwed);
     document.getElementById('kpiPartialSub').textContent = partialCount + ' open balance' + (partialCount === 1 ? '' : 's') + ' (all time)';
     document.getElementById('kpiGST').textContent = bz(gstTotal);

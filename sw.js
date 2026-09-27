@@ -3,7 +3,7 @@
 // Network-first strategy for fast security updates
 // ─────────────────────────────────────────────────────────────────────────────
 
-const CACHE_DATE = '2026-09-26o'; // ← change this to today's date on each deploy
+const CACHE_DATE = '2026-09-26r'; // ← change this to today's date on each deploy
 const CACHE_NAME = 'servicell-' + CACHE_DATE;
 const BASE = (function () {
     try {
@@ -33,8 +33,11 @@ const PRECACHE_URLS = [
     BASE + '/css/staff-banner.css',
     BASE + '/css/v5-shell.css',
     BASE + '/css/v5-sales.css',
+    BASE + '/css/v5-qol.css',
     BASE + '/js/staff-banner.js',
     BASE + '/js/v5-shell.js',
+    BASE + '/js/v5-qol.js',
+    BASE + '/js/icons.js',
     BASE + '/js/components.js',
     BASE + '/js/auth-guard.js',
     BASE + '/js/theme-init.js',
@@ -59,7 +62,8 @@ self.addEventListener('message', event => {
 self.addEventListener('install', event => {
     event.waitUntil(
         caches.open(CACHE_NAME)
-            .then(cache => cache.addAll(PRECACHE_URLS))
+            // cache: 'reload' bypasses the HTTP cache so a new release never precaches stale files
+            .then(cache => cache.addAll(PRECACHE_URLS.map(u => new Request(u, { cache: 'reload' }))))
             .then(() => self.skipWaiting())
     );
 });
@@ -97,8 +101,16 @@ self.addEventListener('fetch', event => {
                                url.pathname.endsWith('.css');
     
     if (isSecurityCritical) {
+        // 'no-cache' revalidates with the server (cheap 304) instead of trusting a heuristically-fresh HTTP cache entry.
+        // Navigation requests can't be cloned with a RequestInit, so they're rebuilt from the URL.
+        let freshRequest = event.request;
+        if (url.origin === self.location.origin && event.request.method === 'GET') {
+            freshRequest = event.request.mode === 'navigate'
+                ? new Request(url.href, { cache: 'no-cache', credentials: 'same-origin', redirect: 'manual' })
+                : new Request(event.request, { cache: 'no-cache' });
+        }
         event.respondWith(
-            fetch(event.request)
+            fetch(freshRequest)
                 .then(response => {
                     // Cache the fresh response
                     if (response.status === 200) {

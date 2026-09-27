@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="css/perf.css">
     <link rel="stylesheet" href="css/nav.css">
     <link rel="stylesheet" href="css/v5-shell.css">
+    <link rel="stylesheet" href="css/v5-qol.css">
     <link rel="stylesheet" href="css/footer.css">
     <link rel="stylesheet" href="css/splash.css">
 
@@ -380,6 +381,106 @@
             color: var(--text-dim);
             font-size: 0.88rem;
         }
+
+        /* ── Recent Jobs tabs ── */
+        .recent-tabs {
+            display: flex;
+            gap: 6px;
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--glass-border);
+            overflow-x: auto;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .recent-tabs::-webkit-scrollbar { display: none; }
+
+        .recent-tab {
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            min-height: 34px;
+            padding: 0 14px;
+            border-radius: 99px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--text-dim);
+            font-family: var(--font-family);
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+        }
+
+        @media (hover: hover) {
+            .recent-tab:hover { color: var(--text-main); background: rgba(var(--primary-rgb),0.06); }
+        }
+
+        .recent-tab.active {
+            background: rgba(var(--primary-rgb),0.12);
+            border-color: rgba(var(--primary-rgb),0.25);
+            color: var(--primary);
+        }
+
+        .recent-tab:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+
+        .recent-tab-count {
+            min-width: 20px;
+            padding: 1px 6px;
+            border-radius: 99px;
+            background: rgba(var(--primary-rgb),0.1);
+            font-size: 0.68rem;
+            font-weight: 800;
+            text-align: center;
+        }
+
+        .recent-tab-count:empty { display: none; }
+        .recent-tab.is-alert .recent-tab-count { background: rgba(239,68,68,0.14); color: var(--danger); }
+
+        .activity-meta .meta-warn { color: var(--danger); font-weight: 700; }
+        .activity-meta .meta-soft { color: var(--warning); font-weight: 700; }
+
+        /* Rows with call/message buttons: a full-row link sits underneath the buttons */
+        .activity-cover {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            border-radius: inherit;
+        }
+
+        .activity-cover:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+
+        .activity-actions {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .activity-act {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            border: 1px solid var(--glass-border);
+            background: var(--glass-strong);
+            color: var(--primary);
+            text-decoration: none;
+            -webkit-tap-highlight-color: transparent;
+            transition: background var(--transition-fast), transform var(--transition-fast);
+        }
+
+        .activity-act.call { color: var(--success); }
+
+        @media (hover: hover) {
+            .activity-act:hover { background: rgba(var(--primary-rgb),0.12); transform: translateY(-1px); }
+        }
+
+        .activity-act:active { transform: scale(0.94); }
 
         /* ── Sync bar ── */
         .sync-bar {
@@ -783,13 +884,26 @@
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                         Recent Jobs
                     </h2>
-                    <a href="current-jobs.html">
+                    <a href="current-jobs.html" id="recentViewAll">
                         View all
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                     </a>
                 </div>
-                <div class="activity-list" id="activityList">
-                    <div class="activity-empty">Loading jobs…</div>
+                <div class="recent-tabs" id="recentTabs" role="tablist" aria-label="Filter recent jobs">
+                    <button type="button" class="recent-tab active" role="tab" aria-selected="true" data-tab="latest">Latest</button>
+                    <button type="button" class="recent-tab" role="tab" aria-selected="false" data-tab="mine">Mine <span class="recent-tab-count"></span></button>
+                    <button type="button" class="recent-tab" role="tab" aria-selected="false" data-tab="ready">Ready <span class="recent-tab-count"></span></button>
+                    <button type="button" class="recent-tab" role="tab" aria-selected="false" data-tab="expiring">Expiring <span class="recent-tab-count"></span></button>
+                    <button type="button" class="recent-tab" role="tab" aria-selected="false" data-tab="stale">Stale <span class="recent-tab-count"></span></button>
+                </div>
+                <div class="activity-list" id="activityList" role="tabpanel">
+                    <div class="sc-skel-list" role="status" aria-label="Loading">
+                        <div class="sc-skel-row"><span class="sc-skel sc-skel-avatar"></span><span class="sc-skel-lines"><span class="sc-skel sc-skel-line" style="width:58%"></span><span class="sc-skel sc-skel-line sm" style="width:34%"></span></span><span class="sc-skel sc-skel-pill"></span></div>
+                        <div class="sc-skel-row"><span class="sc-skel sc-skel-avatar"></span><span class="sc-skel-lines"><span class="sc-skel sc-skel-line" style="width:49%"></span><span class="sc-skel sc-skel-line sm" style="width:26%"></span></span><span class="sc-skel sc-skel-pill"></span></div>
+                        <div class="sc-skel-row"><span class="sc-skel sc-skel-avatar"></span><span class="sc-skel-lines"><span class="sc-skel sc-skel-line" style="width:40%"></span><span class="sc-skel sc-skel-line sm" style="width:34%"></span></span><span class="sc-skel sc-skel-pill"></span></div>
+                        <div class="sc-skel-row"><span class="sc-skel sc-skel-avatar"></span><span class="sc-skel-lines"><span class="sc-skel sc-skel-line" style="width:58%"></span><span class="sc-skel sc-skel-line sm" style="width:26%"></span></span><span class="sc-skel sc-skel-pill"></span></div>
+                        <div class="sc-skel-row"><span class="sc-skel sc-skel-avatar"></span><span class="sc-skel-lines"><span class="sc-skel sc-skel-line" style="width:49%"></span><span class="sc-skel sc-skel-line sm" style="width:34%"></span></span><span class="sc-skel sc-skel-pill"></span></div>
+                    </div>
                 </div>
             </div>
 
@@ -829,6 +943,7 @@
 <script src="js/staff-banner.js"></script>
 <script src="js/v5-shell.js"></script>
 <script src="js/components.js"></script>
+<script src="js/v5-qol.js"></script>
     <script>
         // ── HARD PWA WALL ENFORCEMENT ──────────────────────────────────────
         (function enforcePWA() {
@@ -1057,33 +1172,176 @@
             return d.innerHTML;
         }
 
-        function renderActivity(jobs) {
-            const list = document.getElementById('activityList');
-            if (!jobs.length) {
-                list.innerHTML = `<div class="activity-empty">No jobs found.</div>`;
-                return;
-            }
-            const recent = jobs.slice(0, 5);
-            list.innerHTML = recent.map(j => {
-                const cls = classifyStatus(j);
-                const si = statusIcon[cls] || statusIcon.received;
-                const label = statusLabel[cls] || cls;
-                const badgeCls = 'badge-' + cls;
-                const device = escH(j.device || '—');
-                const name = escH(j.customerName || 'Walk-in');
+        // ── Recent Jobs tabs ──
+        const RECENT_LIMIT = 6;
+        const STALE_DAYS = 14;
+        const DAY_MS = 86400000;
+        const IN_PROGRESS = ['received', 'fixing', 'testing'];
+        const RECENT_VIEW_ALL = {
+            latest: 'current-jobs.html',
+            mine: 'current-jobs.html?filter=mine',
+            ready: 'current-jobs.html?filter=ready',
+            expiring: 'current-jobs.html?filter=expiring',
+            stale: 'current-jobs.html?filter=stale'
+        };
+        const RECENT_EMPTY = {
+            latest: 'No jobs yet.',
+            mine: 'Nothing claimed by you right now. Claim a job from Current Jobs and it shows up here.',
+            ready: 'No devices waiting for pickup.',
+            expiring: 'Nothing is close to its 90-day pickup deadline.',
+            stale: 'No repairs have been sitting for ' + STALE_DAYS + '+ days. Nice work!'
+        };
+        let _recentTab = sessionStorage.getItem('scDashTab') || 'latest';
+        let _dashJobs = [];
 
-                return `
-            <a href="current-jobs.html?job=${encodeURIComponent(j.id)}" class="activity-item status-${cls}" aria-label="Open job #${escH(j.id)}: ${device}">
+        function daysSince(d) {
+            const t = d ? new Date(d).getTime() : NaN;
+            return isNaN(t) ? null : Math.floor((Date.now() - t) / DAY_MS);
+        }
+
+        function pickupDaysLeft(j) {
+            const since = daysSince(j.dateCompleted);
+            return since === null ? null : 90 - since;
+        }
+
+        function isMine(j, me) {
+            const who = me.toLowerCase();
+            return !!who && ['claimedBy', 'technician'].some(k => String(j[k] || '').toLowerCase() === who);
+        }
+
+        function recentBuckets(jobs) {
+            const me = localStorage.getItem('scUser') || sessionStorage.getItem('scUser') || '';
+            const byOldest = (key) => (a, b) => new Date(a[key]) - new Date(b[key]);
+            return {
+                latest: jobs,
+                mine: jobs.filter(j => isMine(j, me) && !['resolved', 'abandoned'].includes(classifyStatus(j))),
+                ready: jobs.filter(j => classifyStatus(j) === 'ready').sort(byOldest('dateCompleted')),
+                expiring: jobs.filter(j => {
+                    if (!['ready', 'unsuccessful'].includes(classifyStatus(j))) return false;
+                    const left = pickupDaysLeft(j);
+                    return left !== null && left >= 0 && left <= 7;
+                }).sort((a, b) => pickupDaysLeft(a) - pickupDaysLeft(b)),
+                stale: jobs.filter(j => IN_PROGRESS.includes(classifyStatus(j)) && (daysSince(j.dateReceived) || 0) >= STALE_DAYS)
+                    .sort(byOldest('dateReceived'))
+            };
+        }
+
+        function phoneHref(p) {
+            const d = String(p || '').replace(/\D/g, '');
+            if (d.length < 7 || /^0+$/.test(d)) return '';
+            return 'tel:' + (d.length === 7 ? '+501' + d : '+' + d);
+        }
+
+        function recentMeta(j, tab) {
+            const name = escH(j.customerName || 'Walk-in');
+            const id = '#' + escH(j.id);
+            if (tab === 'expiring') {
+                const left = pickupDaysLeft(j);
+                const txt = left === 0 ? 'last day' : left + (left === 1 ? ' day' : ' days') + ' left';
+                return `${name} &nbsp;·&nbsp; ${id} &nbsp;·&nbsp; <span class="meta-warn">${txt}</span>`;
+            }
+            if (tab === 'stale') {
+                const d = daysSince(j.dateReceived);
+                return `${name} &nbsp;·&nbsp; ${id} &nbsp;·&nbsp; <span class="meta-soft">${d} days in shop</span>`;
+            }
+            if (tab === 'ready') {
+                const d = daysSince(j.dateCompleted);
+                const waiting = d === null ? '' : d === 0 ? 'ready today' : 'waiting ' + d + (d === 1 ? ' day' : ' days');
+                return `${name} &nbsp;·&nbsp; ${id}${waiting ? ' &nbsp;·&nbsp; ' + waiting : ''}`;
+            }
+            return `${name} &nbsp;·&nbsp; ${id}`;
+        }
+
+        const CHEVRON_SVG = '<svg class="activity-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>';
+
+        function renderActivityRow(j, tab) {
+            const cls = classifyStatus(j);
+            const si = statusIcon[cls] || statusIcon.received;
+            const label = statusLabel[cls] || cls;
+            const device = escH(j.device || '—');
+            const href = 'current-jobs.html?job=' + encodeURIComponent(j.id);
+            const inner = `
                 <div class="activity-icon" style="background:${si.bg};color:${si.color}">${si.svg}</div>
                 <div class="activity-content">
                     <div class="activity-title">${device}</div>
-                    <div class="activity-meta">${name} &nbsp;·&nbsp; #${escH(j.id)}</div>
+                    <div class="activity-meta">${recentMeta(j, tab)}</div>
+                </div>`;
+
+            if (tab === 'expiring') {
+                const tel = phoneHref(j.customerPhone);
+                const ic = (n) => typeof scIcon === 'function' ? scIcon(n, 16) : '';
+                return `
+            <div class="activity-item status-${cls}">
+                <a class="activity-cover" href="${href}" aria-label="Open job #${escH(j.id)}: ${device}"></a>
+                ${inner}
+                <div class="activity-actions">
+                    ${tel ? `<a class="activity-act call" href="${tel}" aria-label="Call ${escH(j.customerName || 'customer')}" title="Call">${ic('phone')}</a>` : ''}
+                    <a class="activity-act" href="${href}&msg=1" aria-label="Message ${escH(j.customerName || 'customer')}" title="Send pickup reminder">${ic('message')}</a>
                 </div>
-                <span class="activity-badge ${badgeCls}">${label}</span>
-                <svg class="activity-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>`;
+            }
+
+            return `
+            <a href="${href}" class="activity-item status-${cls}" aria-label="Open job #${escH(j.id)}: ${device}">
+                ${inner}
+                <span class="activity-badge badge-${cls}">${label}</span>
+                ${CHEVRON_SVG}
             </a>`;
-            }).join('');
         }
+
+        let _dashLoaded = false;
+
+        function renderActivity(jobs) {
+            if (jobs) { _dashJobs = jobs; _dashLoaded = true; }
+            const buckets = recentBuckets(_dashJobs);
+            if (!buckets[_recentTab]) _recentTab = 'latest';
+
+            document.querySelectorAll('#recentTabs .recent-tab').forEach(btn => {
+                const tab = btn.dataset.tab;
+                const on = tab === _recentTab;
+                btn.classList.toggle('active', on);
+                btn.setAttribute('aria-selected', on ? 'true' : 'false');
+                btn.tabIndex = on ? 0 : -1;
+                const count = btn.querySelector('.recent-tab-count');
+                if (count) count.textContent = buckets[tab].length ? buckets[tab].length : '';
+                btn.classList.toggle('is-alert', tab === 'expiring' && buckets[tab].length > 0);
+            });
+            document.getElementById('recentViewAll').href = RECENT_VIEW_ALL[_recentTab];
+            if (!_dashLoaded) return;
+
+            const list = document.getElementById('activityList');
+            const rows = buckets[_recentTab].slice(0, RECENT_LIMIT);
+            list.innerHTML = rows.length
+                ? rows.map(j => renderActivityRow(j, _recentTab)).join('')
+                : `<div class="activity-empty">${RECENT_EMPTY[_recentTab]}</div>`;
+        }
+
+        (function initRecentTabs() {
+            const bar = document.getElementById('recentTabs');
+            const tabs = () => [...bar.querySelectorAll('.recent-tab')];
+            function select(tab, focus) {
+                if (tab === _recentTab) return;
+                _recentTab = tab;
+                sessionStorage.setItem('scDashTab', tab);
+                if (typeof haptic === 'function') haptic('light');
+                renderActivity();
+                if (focus) bar.querySelector(`[data-tab="${tab}"]`).focus();
+            }
+            bar.addEventListener('click', e => {
+                const btn = e.target.closest('.recent-tab');
+                if (btn) select(btn.dataset.tab);
+            });
+            bar.addEventListener('keydown', e => {
+                if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+                e.preventDefault();
+                const all = tabs().map(b => b.dataset.tab);
+                const i = all.indexOf(_recentTab);
+                select(all[(i + (e.key === 'ArrowRight' ? 1 : -1) + all.length) % all.length], true);
+            });
+            renderActivity();
+        })();
+
+        if (window.SCQol) SCQol.pullToRefresh(loadDashboard);
 
         function setSyncState(state, text) {
             const dot = document.getElementById('syncDot');

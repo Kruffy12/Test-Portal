@@ -197,10 +197,22 @@
             '</div><div class="notif-list" id="notifList"></div></div></div>'
         ) : '';
 
+        var isMac = /Mac|iPhone|iPad/.test(global.navigator.platform || global.navigator.userAgent);
+        var searchHTML = loggedIn ? (
+            '<button type="button" class="sc-sidebar-search" data-sc-search data-tour="search" title="Search (' + (isMac ? '⌘' : 'Ctrl') + '+K)" aria-label="Search">' +
+            icon('search', 20) + '<span class="sc-sidebar-link-label">Search</span>' +
+            '<span class="sc-sidebar-search-kbd"><kbd class="sc-kbd">' + (isMac ? '⌘' : 'Ctrl') + '</kbd><kbd class="sc-kbd">K</kbd></span></button>'
+        ) : '';
+        var topSearchHTML = loggedIn
+            ? '<button type="button" class="sc-topbar-search" data-sc-search aria-label="Search">' + icon('search', 21) + '</button>'
+            : '';
+        global.SCV5.visibleLinks = visible;
+
         placeholder.innerHTML =
             '<aside class="sc-sidebar" id="mainNav" aria-label="Main navigation">' +
             '<div class="sc-sidebar-brand"><div class="sc-sidebar-logo">SC</div>' +
             '<span class="sc-sidebar-title">ServiCell</span></div>' +
+            searchHTML +
             '<nav class="sc-sidebar-nav">' + sidebarLinks + '</nav>' +
             '<div class="sc-sidebar-foot">' +
             '<div class="sc-sidebar-desktop-tools">' + bellHTML + accountHTML + '</div>' +
@@ -211,7 +223,7 @@
 
             '<header class="sc-topbar" id="scTopbar">' +
             '<div class="sc-topbar-title">' + (PAGE_TITLES[current] || 'Staff Portal') + '</div>' +
-            '<div class="sc-topbar-actions" id="scTopbarActions"></div></header>' +
+            '<div class="sc-topbar-actions" id="scTopbarActions">' + topSearchHTML + '</div></header>' +
 
             '<nav class="sc-tabbar" id="scTabbar" aria-label="Primary">' + tabHtml + '</nav>' +
 

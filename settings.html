@@ -18,6 +18,7 @@
     <link rel="stylesheet" href="css/perf.css">
     <link rel="stylesheet" href="css/nav.css">
     <link rel="stylesheet" href="css/v5-shell.css">
+    <link rel="stylesheet" href="css/v5-qol.css">
     <link rel="stylesheet" href="css/footer.css">
     <link rel="stylesheet" href="css/splash.css">
 
@@ -1132,6 +1133,10 @@
         }
 
         /* Change Password Button (in About section) */
+        .change-password-btn.tips-btn { margin-top: 0; flex-shrink: 0; white-space: nowrap; }
+        .shortcut-hint { margin-top: 8px; }
+        @media (max-width: 900px) { .shortcut-hint { display: none; } }
+
         .change-password-btn {
             display: inline-flex;
             align-items: center;
@@ -1314,6 +1319,15 @@
                     </div>
                 </div>
 
+                <div class="setting-row" id="tipsRow">
+                    <div class="setting-info">
+                        <div class="setting-label">Page Tips</div>
+                        <div class="setting-desc">Short walkthroughs that point out the key features on each page. They show once per page; replay them whenever you like.</div>
+                        <div class="setting-desc shortcut-hint" id="shortcutHint">Tip: press <kbd class="sc-kbd" id="shortcutMod">Ctrl</kbd><kbd class="sc-kbd">K</kbd> or <kbd class="sc-kbd">/</kbd> on any page to search jobs, customers and orders.</div>
+                    </div>
+                    <button type="button" class="change-password-btn tips-btn" onclick="replayPageTips()" data-icon="help">Replay tips</button>
+                </div>
+
                 <!-- Haptics — Android only, hidden on other platforms -->
                 <div class="setting-row" id="hapticsRow" style="display:none;">
                     <div class="setting-info">
@@ -1345,8 +1359,29 @@
 
                     <div class="changelog-entry">
                         <div class="changelog-version">
-                            v5.0.0-beta.4
+                            v5.0.0-beta.5
                             <span class="changelog-badge badge-current">Beta</span>
+                        </div>
+                        <div class="changelog-date">September 26, 2026</div>
+                        <ul class="changelog-changes">
+                            <li>Search from any page — find jobs by number, customer or phone, plus special orders and pages (Ctrl/⌘+K or /)</li>
+                            <li>New Job is now a guided four-step flow with brand and repair presets, inline checks and a saved draft</li>
+                            <li>Dashboard: tap any stat card or job to open it; Recent Jobs has Latest, Mine, Ready, Expiring and Stale tabs</li>
+                            <li>Expiring pickups have one-tap Call and Message buttons</li>
+                            <li>Undo for deleted jobs, job status changes and special-order status changes</li>
+                            <li>Pull down to refresh on Dashboard, Current Jobs, Special Orders and Inventory (phones)</li>
+                            <li>Loading placeholders instead of blank “Loading…” text</li>
+                            <li>Special Orders: open orders shown first, customer phone field, tap-to-call</li>
+                            <li>Inventory: tap Low Stock or Out of Stock to filter</li>
+                            <li>Toasts match your theme — green for success, red for errors</li>
+                            <li>Page tips for new staff; replay them from Settings → Display</li>
+                        </ul>
+                    </div>
+
+                    <div class="changelog-entry">
+                        <div class="changelog-version">
+                            v5.0.0-beta.4
+                            <span class="changelog-badge badge-legacy">Beta</span>
                         </div>
                         <div class="changelog-date">September 26, 2026</div>
                         <ul class="changelog-changes">
@@ -1420,207 +1455,21 @@
 
                     <div class="changelog-entry">
                         <div class="changelog-version">
-                            v4.5.3
-                            <span class="changelog-badge badge-legacy">Legacy</span>
+                            v1.0 – v4.5
+                            <span class="changelog-badge badge-legacy">Earlier</span>
                         </div>
-                        <div class="changelog-date">April 8, 2026</div>
+                        <div class="changelog-date">April 3 – 8, 2026</div>
                         <ul class="changelog-changes">
-                            <li>Fixed missing closing brace in updateAbandonedJobs — GAS now deploys correctly</li>
-                            <li>Fixed isRev undefined in renderSales — sale rows now render correctly</li>
-                            <li>Removed cash drawer integration — receipt printing still works</li>
-                            <li>72mm receipt and EOD print layout fixed for thermal printers</li>
-                            <li>Settings Sales card now visible without requiring re-login</li>
-                        </ul>
-                    </div>
-
-                    <div class="changelog-entry">
-                        <div class="changelog-version">
-                            v4.5.1
-                            <span class="changelog-badge badge-legacy">Legacy</span>
-                        </div>
-                        <div class="changelog-date">April 8, 2026</div>
-                        <ul class="changelog-changes">
-                            <li>Settings Sales card now visible for cashier/manager without requiring re-login</li>
-                            <li>Technicians added to inventory read-only access</li>
-                            <li>Cashiers temporarily granted delete access for inventory cleanup</li>
-                            <li>Changelog entries now collapsible — legacy versions collapsed by default</li>
-                        </ul>
-                    </div>
-
-                    <div class="changelog-entry">
-                        <div class="changelog-version">
-                            v4.5.0
-                            <span class="changelog-badge badge-legacy">Legacy</span>
-                        </div>
-                        <div class="changelog-date">April 8, 2026</div>
-                        <ul class="changelog-changes">
-                            <li>Customer lookup with job and sales history</li>
-                            <li>Export CSV and Print Report from statistics</li>
-                            <li>Sales search and bills search on sales page</li>
-                            <li>Reverse sale now requires a reason (audit logged)</li>
-                            <li>Show settled bills toggle on bills tab</li>
-                        </ul>
-                    </div>
-
-                    <div class="changelog-entry">
-                        <div class="changelog-version">
-                            v4.4.0
-                            <span class="changelog-badge badge-legacy">Legacy</span>
-                        </div>
-                        <div class="changelog-date">April 8, 2026</div>
-                        <ul class="changelog-changes">
-                            <li>Sales page (payouts.html) — full cashier workspace: sales, payouts, bills, end of day</li>
-                            <li>GAS backend: DailySales, Payouts, ActiveBills, DayClose sheets + all CRUD functions</li>
-                            <li>Job pickup payment flow — links current-jobs to sales</li>
-                            <li>Shift-aware EOD with drawer variance, short-cashier manager alert, and print report</li>
-                            <li>Bill/tab system with partial settlement routed as normal sales</li>
-                        </ul>
-                    </div>
-
-                    <div class="changelog-entry">
-                        <div class="changelog-version">
-                            v4.3.2
-                            <span class="changelog-badge badge-legacy">Legacy</span>
-                        </div>
-                        <div class="changelog-date">April 8, 2026</div>
-                        <ul class="changelog-changes">
-                            <li>Fixed cross-device notification delivery — each user now gets their own copy</li>
-                            <li>Fixed bell sync — SCRIPT_URL now always available on all pages</li>
-                            <li>Push subscription now uses correct request format (no CORS issues)</li>
-                        </ul>
-                    </div>
-
-                    <div class="changelog-entry">
-                        <div class="changelog-version">
-                            v4.3.0
-                            <span class="changelog-badge badge-legacy">Legacy</span>
-                        </div>
-                        <div class="changelog-date">April 8, 2026</div>
-                        <ul class="changelog-changes">
-                            <li>Fixed push subscription CORS issue — subscriptions now save correctly</li>
-                            <li>Background push notifications fully working via Cloudflare Worker</li>
-                            <li>Notifications delivered to closed app on all subscribed devices</li>
-                        </ul>
-                    </div>
-
-                    <div class="changelog-entry">
-                        <div class="changelog-version">
-                            v4.2.0
-                            <span class="changelog-badge badge-legacy">Legacy</span>
-                        </div>
-                        <div class="changelog-date">April 8, 2026</div>
-                        <ul class="changelog-changes">
-                            <li>Real background push notifications via Cloudflare Worker + Web Push</li>
-                            <li>Cross-device notification delivery (app closed = still notified)</li>
-                            <li>Removed tap highlight box on all interactive elements</li>
-                            <li>Prevented zoom-in on mobile across all pages</li>
-                            <li>Fixed long-press link preview on nav buttons</li>
-                            <li>Inventory scroll performance optimized</li>
-                            <li>Stale job alerts — notifies all roles after 3 days of inactivity</li>
-                            <li>Nav panels now mutually exclusive (one closes when another opens)</li>
-                            <li>Account dropdown fixed on mobile (no longer goes off-screen)</li>
-                            <li>Password visibility toggle improved with SVG icons</li>
-                        </ul>
-                    </div>
-
-                    <div class="changelog-entry">
-                        <div class="changelog-version">
-                            v4.1.0
-                            <span class="changelog-badge badge-legacy">Legacy</span>
-                        </div>
-                        <div class="changelog-date">April 7, 2026</div>
-                        <ul class="changelog-changes">
-                            <li>Inventory page fully built — parts, accessories, consumables</li>
-                            <li>Barcode scanner support (USB + camera)</li>
-                            <li>Stock adjustments with full movement history</li>
-                            <li>Low stock and out-of-stock alerts to manager</li>
-                            <li>Cashier edits flagged and routed to manager bell</li>
-                            <li>Role-based notification routing (manageronly type)</li>
-                            <li>Manager-only: add, edit prices, delete items</li>
-                        </ul>
-                    </div>
-
-                    <div class="changelog-entry">
-                        <div class="changelog-version">
-                            v4.0.0
-                            <span class="changelog-badge badge-legacy">Legacy</span>
-                        </div>
-                        <div class="changelog-date">April 7, 2026</div>
-                        <ul class="changelog-changes">
-                            <li>In-app notification bell with unread badge and 7-day auto-cleanup</li>
-                            <li>Mobile nav redesigned with icon grid layout</li>
-                            <li>Special Orders: view, edit, delete modals — manager-only delete</li>
-                            <li>Special Orders: Show/Hide Closed filter</li>
-                            <li>Haptic feedback on Android (Settings toggle)</li>
-                            <li>Offline mode with cached data fallback and auto-reload on reconnect</li>
-                            <li>PWA service worker with auto cache-busting</li>
-                            <li>Password change from Settings</li>
-                            <li>Fixed login (e.parameter bug in GAS)</li>
-                        </ul>
-                    </div>
-
-                    <div class="changelog-entry">
-                        <div class="changelog-version">
-                            v3.5.1
-                            <span class="changelog-badge badge-legacy">Legacy</span>
-                        </div>
-                        <div class="changelog-date">April 6, 2026</div>
-                        <ul class="changelog-changes">
-                            <li>MAJOR OVERHAUL:</li>
-                            <li>New 'Settings' tab! Try out the new themes, 'Dark Mode' and 'ServiCell Blue'!</li>
-                            <li>Added Push Notifications options.</li>
-                            <li>Added Compact Mode for a denser layout.</li>
-                            <li>Improved app performance and reduced memory usage.</li>
-                            <li>Added changelog section to keep you informed about updates.</li>
-                            <li>Added clear cache option.</li>
-                            <li>Many under-the-hood improvements and bug fixes.</li>
-                            <li>Login now requires username and password</li>
-                        </ul>
-                    </div>
-
-
-                    <div class="changelog-entry">
-                        <div class="changelog-version">
-                            v2.4.1
-                            <span class="changelog-badge badge-legacy">Legacy</span>
-                        </div>
-                        <div class="changelog-date">April 5, 2026</div>
-                        <ul class="changelog-changes">
-                            <li>Invoices now print-able from the app</li>
-                            <li>Added 'Print Invoice' button to job details</li>
-                            <li>Added 'Print Summary' button to current jobs page</li>
-                            <li>Added priority tags</li>
-                            <li>Added 'Quick-Templates' for invoice creation</li>
-
-                        </ul>
-                    </div>
-
-                    <div class="changelog-entry">
-                        <div class="changelog-version">
-                            v1.4.1
-                            <span class="changelog-badge badge-legacy">Legacy</span>
-                        </div>
-                        <div class="changelog-date">April 4, 2026</div>
-                        <ul class="changelog-changes">
-                            <li>Mobile Optimization for Better Touch Interaction</li>
-                            <li>Fixed layout issues on small screens</li>
-                            <li>Added Lock Screen</li>
-                            <li>Improved performance of job list rendering</li>
-                            <li>Re-styled footer for better visual consistency</li>
-                            <li>Added Splash Screen</li>
-                        </ul>
-                    </div>
-
-                    <div class="changelog-entry">
-                        <div class="changelog-version">
-                            v1.0.0
-                            <span class="changelog-badge badge-legacy">Legacy</span>
-                        </div>
-                        <div class="changelog-date">April 3, 2026</div>
-                        <ul class="changelog-changes">
-                            <li>Initial stable release of ServiCell Staff Portal</li>
-                            <li>Core job tracking and management system</li>
-                            <li>Three pages including: Dashboard, Current Jobs, and New Job</li>
+                            <li>First release: job tracking with Dashboard, Current Jobs and New Job</li>
+                            <li>Printable invoices, priority tags and invoice quick-templates</li>
+                            <li>Settings with Dark and ServiCell Blue themes, Compact Mode and this changelog</li>
+                            <li>Username and password login, splash screen and lock screen</li>
+                            <li>In-app notification bell and background push notifications on every subscribed device</li>
+                            <li>Special Orders with view, edit and status tracking</li>
+                            <li>Inventory with barcode scanning, stock adjustments and low-stock alerts</li>
+                            <li>Sales workspace: sales, payouts, bills and end-of-day close with drawer variance</li>
+                            <li>Customer lookup, CSV export and printable statistics report</li>
+                            <li>Offline mode with cached data, and the app installs as a PWA</li>
                         </ul>
                     </div>
 
@@ -1857,6 +1706,7 @@
     <script src="js/staff-banner.js"></script>
 <script src="js/v5-shell.js"></script>
 <script src="js/components.js"></script>
+<script src="js/v5-qol.js"></script>
 
     <script>
         // SCRIPT_URL is provided globally by js/api.js
@@ -2170,9 +2020,21 @@
             document.getElementById('aboutSync').textContent = lastSync;
         }
 
+        function replayPageTips() {
+            if (!window.SCQol) return;
+            SCQol.resetTours(true);
+            if (typeof haptic === 'function') haptic('light');
+            SCQol.toast('Tips are back on — they’ll show as you visit each page.', 'ok');
+        }
+
+        if (/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)) {
+            const mod = document.getElementById('shortcutMod');
+            if (mod) mod.textContent = '⌘';
+        }
+
         function clearCache() {
             if (!confirm('Clear all cached data? You will stay logged in.')) return;
-            const keep = ['isLoggedIn', 'scUser', 'scTheme', 'scCompact', 'scNotif', 'appVersion',
+            const keep = ['isLoggedIn', 'scUser', 'scTheme', 'scCompact', 'scNotif', 'appVersion', 'scToursSeen', 'scSidebarCollapsed',
                 'scNotif_received', 'scNotif_ready', 'scNotif_abandoned',
                 'scNotif_specialorder', 'scNotif_update', 'scNotif_jobstatus'];
             const user = localStorage.getItem('scUser');
