@@ -689,7 +689,7 @@
 
     var _searchReturnFocus = null;
     function openSearch() {
-        if (!isLoggedIn() || T || doc.querySelector('.sc-intro')) return;
+        if (!isLoggedIn() || T || doc.querySelector('.sc-intro, .sc-tour-layer')) return;
         if (!S.el) buildSearch();
         if (S.el.classList.contains('open')) { S.input.focus(); return; }
         _searchReturnFocus = doc.activeElement;
@@ -776,7 +776,7 @@
             { sel: '.date-bar', title: 'Pick a period', body: 'Switch between today, this week, this month or a custom range. Everything below updates.' }
         ],
         'settings.html': [
-            { sel: '#tipsRow', title: 'Tips any time', body: 'Replay these tips for every page whenever you like.' }
+            { sel: '#tipsRow', title: 'Tips any time', body: 'Replay the page tips — or this whole tour — whenever you like.' }
         ]
     };
 
@@ -810,24 +810,73 @@
 
     var T = null;
 
+    function buildTourLayer(onboarding) {
+        var layer = doc.createElement('div');
+        layer.className = 'sc-tour-layer' + (onboarding ? ' is-onboarding' : '');
+        layer.innerHTML =
+            '<div class="sc-tour-block"></div>' +
+            '<div class="sc-tour-spot"></div>' +
+            (onboarding ? '<div class="sc-tour-chapter" role="status" aria-live="polite"></div>' : '') +
+            '<div class="sc-tour-card" role="dialog" aria-modal="true" aria-labelledby="scTourTitle">' +
+            (onboarding ? '<div class="sc-tour-progress" aria-hidden="true"></div>' : '') +
+            '<div class="sc-tour-count"></div>' +
+            '<div class="sc-tour-content"><div class="sc-tour-title" id="scTourTitle"></div><div class="sc-tour-body"></div></div>' +
+            '<div class="sc-tour-actions">' +
+            '<button type="button" class="sc-tour-off">' + (onboarding ? 'Skip tour' : 'Turn off tips') + '</button>' +
+            '<span class="sc-tour-spacer"></span>' +
+            '<button type="button" class="sc-tour-back">Back</button>' +
+            '<button type="button" class="sc-tour-next">Next</button>' +
+            '</div></div>';
+        doc.body.appendChild(layer);
+        void layer.offsetWidth;
+        return layer;
+    }
+
+    function removeLayer(layer) {
+        if (!layer) return;
+        layer._gone = true;
+        layer.classList.remove('show');
+        setTimeout(function () { if (layer.parentNode) layer.parentNode.removeChild(layer); }, 260);
+    }
+
+    function setSpot(spot, r, instant) {
+        if (instant) spot.style.transition = 'none';
+        spot.style.left = r.left + 'px';
+        spot.style.top = r.top + 'px';
+        spot.style.width = r.width + 'px';
+        spot.style.height = r.height + 'px';
+        if (instant) { void spot.offsetWidth; spot.style.transition = ''; }
+    }
+
+    // A spotlight the size of the screen means no dimming; shrinking it onto the target reads as an iris
+    function screenRect() {
+        return { left: -16, top: -16, width: global.innerWidth + 32, height: global.innerHeight + 32 };
+    }
+
+    // Stops listening but leaves the layer on screen (chapter hand-offs reuse it)
+    function detachTour() {
+        if (!T) return null;
+        var t = T;
+        global.removeEventListener('resize', t.onMove);
+        global.removeEventListener('scroll', t.onMove, true);
+        doc.removeEventListener('keydown', t.onKey, true);
+        T = null;
+        return t;
+    }
+
     function endTour(markAll, finished) {
         if (!T) return;
-        var onEnd = T.onEnd;
+        var page = T.page;
+        var t = detachTour();
         if (markAll) {
             var seen = toursSeen();
             Object.keys(TOURS).forEach(function (p) { seen[p] = 1; });
             try { localStorage.setItem(TOUR_KEY, JSON.stringify(seen)); } catch (_) {}
         } else {
-            markSeen(T.page);
+            markSeen(page);
         }
-        global.removeEventListener('resize', T.onMove);
-        global.removeEventListener('scroll', T.onMove, true);
-        doc.removeEventListener('keydown', T.onKey, true);
-        var layer = T.layer;
-        layer.classList.remove('show');
-        setTimeout(function () { if (layer.parentNode) layer.parentNode.removeChild(layer); }, 220);
-        T = null;
-        if (typeof onEnd === 'function') onEnd(!!finished);
+        removeLayer(t.layer);
+        if (typeof t.onEnd === 'function') t.onEnd(!!finished);
     }
 
     function nudgeTour() {
@@ -845,131 +894,146 @@
         var r = target.getBoundingClientRect();
         var pad = 6;
         var spot = T.layer.querySelector('.sc-tour-spot');
-        spot.style.left = (r.left - pad) + 'px';
-        spot.style.top = (r.top - pad) + 'px';
-        spot.style.width = (r.width + pad * 2) + 'px';
-        spot.style.height = (r.height + pad * 2) + 'px';
+        setSpot(spot, { left: r.left - pad, top: r.top - pad, width: r.width + pad * 2, height: r.height + pad * 2 });
 
-        var card = T.layer.querySelector('.sc-tour-card');
+        var card = T.card;
         var vw = global.innerWidth, vh = global.innerHeight;
         var cw = Math.min(340, vw - 24);
         card.style.width = cw + 'px';
         var ch = card.offsetHeight;
         var below = r.bottom + pad + 12;
         var above = r.top - pad - 12 - ch;
-        var top = below + ch <= vh - 12 ? below : (above >= 12 ? above : Math.max(12, vh - ch - 12));
+        var fitsBelow = below + ch <= vh - 12;
+        var top = fitsBelow ? below : (above >= 12 ? above : Math.max(12, vh - ch - 12));
         var left = Math.min(Math.max(12, r.left + r.width / 2 - cw / 2), vw - cw - 12);
         card.style.top = top + 'px';
         card.style.left = left + 'px';
+        card.setAttribute('data-side', fitsBelow ? 'below' : 'above');
     }
 
-    function showStep(i) {
+    // One segment per stop; the current one fills as its steps go by
+    function renderProgress(el, total, cur, frac) {
+        if (!el) return;
+        if (el.children.length !== total) {
+            var html = '';
+            for (var i = 0; i < total; i++) html += '<i><b></b></i>';
+            el.innerHTML = html;
+        }
+        for (var s = 0; s < total; s++) {
+            el.children[s].firstChild.style.width = (s < cur ? 100 : s === cur ? Math.round(frac * 100) : 0) + '%';
+        }
+    }
+
+    // dir: 1 forward, -1 back, 0 first step (content slides in from the side you're heading)
+    function showStep(i, dir) {
         if (!T) return;
         T.i = i;
-        var step = T.steps[i];
-        var card = T.layer.querySelector('.sc-tour-card');
-        card.querySelector('.sc-tour-count').textContent = T.onboarding ? 'Welcome to V5' : (i + 1) + ' of ' + T.steps.length;
-        var dots = card.querySelectorAll('.sc-tour-dots i');
-        for (var d = 0; d < dots.length; d++) dots[d].classList.toggle('on', d === i);
+        var step = T.steps[i], card = T.card, n = T.steps.length, last = i === n - 1;
+        var chap = T.chapter;
+        var nextStop = chap && chap.route[chap.idx + 1];
+        card.querySelector('.sc-tour-count').textContent = chap
+            ? chap.route[chap.idx].label + ' · ' + (i + 1) + ' of ' + n
+            : (i + 1) + ' of ' + n;
+        if (chap) renderProgress(card.querySelector('.sc-tour-progress'), chap.route.length, chap.idx, (i + 1) / n);
         card.querySelector('.sc-tour-title').textContent = step.title;
         card.querySelector('.sc-tour-body').textContent = step.body;
-        card.querySelector('.sc-tour-back').style.visibility = i === 0 ? 'hidden' : 'visible';
+        card.querySelector('.sc-tour-back').style.visibility = i > 0 || (chap && chap.idx > 0) ? 'visible' : 'hidden';
         var next = card.querySelector('.sc-tour-next');
-        next.textContent = i === T.steps.length - 1 ? (T.onboarding ? 'Finish' : 'Done') : 'Next';
+        if (last && nextStop) next.innerHTML = '<span>' + esc(nextStop.label) + '</span>' + icon('chevronRight', 15);
+        else next.textContent = last ? (chap ? 'Finish' : 'Done') : 'Next';
+        next.classList.toggle('is-onward', !!(last && nextStop));
+        next.setAttribute('aria-label', last && nextStop ? 'Next stop: ' + nextStop.label : next.textContent);
+
         var r = step.target.getBoundingClientRect();
         if (r.top < 70 || r.bottom > global.innerHeight - 90) {
             step.target.scrollIntoView({ block: 'center', behavior: 'auto' });
         }
-        card.classList.remove('in');
-        void card.offsetWidth;
+        var content = card.querySelector('.sc-tour-content');
+        content.classList.remove('fwd', 'back');
+        void content.offsetWidth;
+        if (dir) content.classList.add(dir < 0 ? 'back' : 'fwd');
         placeTour();
-        card.classList.add('in');
+        if (!card.classList.contains('in')) {
+            // Let the spotlight land before the card arrives
+            setTimeout(function () { if (T && T.card === card) card.classList.add('in'); }, prefersReducedMotion() ? 0 : 200);
+        }
         next.focus({ preventScroll: true });
     }
 
-    // opts.onboarding: the V5 welcome tour — can't be dismissed by a stray tap or Esc, only Skip or Finish.
-    // opts.onEnd(finished) runs once the layer is gone.
+    // opts.chapter { route, idx }: a stop on the V5 welcome tour. It can't be dismissed by a stray tap or
+    // Esc (only Skip), and Next/Back past either end call opts.onChapter(±1) to move to the next page.
+    // opts.layer reuses a layer already on screen (the stop's title card morphs into the spotlight).
+    // opts.atEnd opens on the last step (arriving with Back). opts.onEnd(finished) runs once it's gone.
     function startTour(force, opts) {
         opts = opts || {};
         var page = currentPage();
         var defs = TOURS[page];
         if (!defs || T || !isLoggedIn()) return false;
         if (!force && toursSeen()[page]) return false;
+        if (!opts.layer && doc.querySelector('.sc-tour-layer, .sc-intro')) return false;
         var steps = [];
         defs.forEach(function (d) {
             var target = findTarget(d);
             if (target) steps.push({ title: d.title, body: (isMobile() && d.mbody) || d.body, target: target });
         });
-        if (opts.onboarding && steps.length) {
-            steps[steps.length - 1] = {
-                title: steps[steps.length - 1].title,
-                body: steps[steps.length - 1].body + ' The first time you open any other page, you’ll get a short tip like this.',
-                target: steps[steps.length - 1].target
-            };
-        }
         if (!steps.length) {
-            if (force && !opts.onboarding) toast('No tips for this page yet.', 'info');
+            if (force && !opts.chapter) toast('No tips for this page yet.', 'info');
             return false;
         }
         closeSearch();
 
-        var dotsHtml = '';
-        if (opts.onboarding) {
-            dotsHtml = '<span class="sc-tour-dots" aria-hidden="true">';
-            for (var n = 0; n < steps.length; n++) dotsHtml += '<i></i>';
-            dotsHtml += '</span>';
+        var onboarding = !!opts.chapter;
+        var layer = opts.layer || buildTourLayer(onboarding);
+        var card = layer.querySelector('.sc-tour-card');
+        T = {
+            page: page, steps: steps, i: 0, layer: layer, card: card, onboarding: onboarding,
+            chapter: opts.chapter || null, onChapter: opts.onChapter, onEnd: opts.onEnd
+        };
+        function goNext() {
+            if (!T) return;
+            if (T.i < T.steps.length - 1) { tap('light'); showStep(T.i + 1, 1); return; }
+            if (T.chapter && typeof T.onChapter === 'function') { tap('success'); T.onChapter(1); return; }
+            tap('success');
+            endTour(false, true);
         }
-
-        var layer = doc.createElement('div');
-        layer.className = 'sc-tour-layer' + (opts.onboarding ? ' is-onboarding' : '');
-        layer.innerHTML =
-            '<div class="sc-tour-block"></div>' +
-            '<div class="sc-tour-spot"></div>' +
-            '<div class="sc-tour-card" role="dialog" aria-modal="true" aria-labelledby="scTourTitle">' +
-            '<div class="sc-tour-count"></div>' +
-            '<div class="sc-tour-title" id="scTourTitle"></div>' +
-            '<div class="sc-tour-body"></div>' +
-            '<div class="sc-tour-actions">' +
-            '<button type="button" class="sc-tour-off">' + (opts.onboarding ? 'Skip tour' : 'Turn off tips') + '</button>' +
-            dotsHtml +
-            '<span class="sc-tour-spacer"></span>' +
-            '<button type="button" class="sc-tour-back">Back</button>' +
-            '<button type="button" class="sc-tour-next">Next</button>' +
-            '</div></div>';
-        doc.body.appendChild(layer);
-
-        T = { page: page, steps: steps, i: 0, layer: layer, onboarding: !!opts.onboarding, onEnd: opts.onEnd };
+        function goBack() {
+            if (!T) return;
+            if (T.i > 0) { showStep(T.i - 1, -1); return; }
+            if (T.chapter && T.chapter.idx > 0 && typeof T.onChapter === 'function') T.onChapter(-1);
+        }
         T.onMove = function () { if (T) placeTour(); };
         T.onKey = function (e) {
             if (!T) return;
             if (e.key === 'Escape') { e.preventDefault(); if (T.onboarding) nudgeTour(); else endTour(false); }
-            else if (e.key === 'ArrowRight') { e.preventDefault(); layer.querySelector('.sc-tour-next').click(); }
-            else if (e.key === 'ArrowLeft' && T.i > 0) { e.preventDefault(); showStep(T.i - 1); }
+            else if (e.key === 'ArrowRight') { e.preventDefault(); goNext(); }
+            else if (e.key === 'ArrowLeft') { e.preventDefault(); goBack(); }
             else if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) { e.preventDefault(); e.stopPropagation(); }
         };
-        layer.querySelector('.sc-tour-next').addEventListener('click', function () {
-            if (!T) return;
-            if (T.i >= T.steps.length - 1) { tap('success'); endTour(false, true); }
-            else { tap('light'); showStep(T.i + 1); }
-        });
-        layer.querySelector('.sc-tour-back').addEventListener('click', function () { if (T && T.i > 0) showStep(T.i - 1); });
-        layer.querySelector('.sc-tour-off').addEventListener('click', function () {
+        card.querySelector('.sc-tour-next').addEventListener('click', goNext);
+        card.querySelector('.sc-tour-back').addEventListener('click', goBack);
+        card.querySelector('.sc-tour-off').addEventListener('click', function () {
             if (T && T.onboarding) { endTour(false, false); return; }
             endTour(true);
             toast('Tips turned off. Replay them any time from Settings.', 'info');
         });
-        layer.querySelector('.sc-tour-block').addEventListener('click', function () {
-            if (T && T.onboarding) nudgeTour(); else endTour(false);
-        });
+        layer.querySelector('.sc-tour-block').onclick = function () {
+            if (!T) return;
+            if (T.onboarding) nudgeTour(); else endTour(false);
+        };
         global.addEventListener('resize', T.onMove, { passive: true });
         global.addEventListener('scroll', T.onMove, { passive: true, capture: true });
         doc.addEventListener('keydown', T.onKey, true);
 
-        void layer.offsetWidth;
+        var chapterCard = layer.querySelector('.sc-tour-chapter.in');
+        var spot = layer.querySelector('.sc-tour-spot');
+        setSpot(spot, chapterCard ? chapterCard.getBoundingClientRect() : screenRect(), true);
+        layer.classList.add('show');
         setTimeout(function () {
-            layer.classList.add('show');
-            showStep(0);
-        }, 16);
+            if (!T || T.layer !== layer) return;
+            layer.classList.remove('is-chapter', 'no-fade');
+            if (chapterCard) { chapterCard.classList.remove('in'); chapterCard.classList.add('out'); }
+            showStep(opts.atEnd ? steps.length - 1 : 0, 0);
+        }, 30);
         return true;
     }
 
@@ -1029,8 +1093,8 @@
             '<div class="sc-intro-stage">' +
             '<div class="sc-intro-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></div>' +
             '<div class="sc-intro-eyebrow">ServiCell Staff Portal</div>' +
-            '<h1 class="sc-intro-title" id="scIntroTitle" aria-label="Version 5.0"><span class="sc-intro-v" aria-hidden="true">V</span><span class="sc-intro-5" aria-hidden="true">5</span></h1>' +
-            '<div class="sc-intro-version" aria-hidden="true">Version 5.0</div>' +
+            '<h1 class="sc-intro-title" id="scIntroTitle" aria-label="Version 5.0.0"><span class="sc-intro-v" aria-hidden="true">V</span><span class="sc-intro-5" aria-hidden="true">5</span></h1>' +
+            '<div class="sc-intro-version" aria-hidden="true">Version 5.0.0</div>' +
             '<p class="sc-intro-sub">Everything you use every day — faster, calmer and built for the counter.</p>' +
             '<div class="sc-intro-actions">' +
             '<button type="button" class="sc-intro-go">Show me around</button>' +
@@ -1061,47 +1125,279 @@
             }
         });
 
-        void el.offsetWidth;
-        setTimeout(function () {
+        // The intro covers the page straight away; in a background tab it holds on its first frame
+        // until the tab is visible, so the animation is never played to nobody.
+        function play() {
             el.classList.add('play');
             setTimeout(function () { try { go.focus({ preventScroll: true }); } catch (_) {} }, prefersReducedMotion() ? 50 : 2100);
-        }, 20);
-    }
-
-    function runOnboardingTour() {
-        setOnboardStage('tour');
-        var started = startTour(true, {
-            onboarding: true,
-            onEnd: function (finished) {
-                setOnboardStage('done');
-                toast(finished ? 'You’re all set. Tips will pop up the first time you open each page.'
-                    : 'Tour skipped. You can replay it any time from Settings.', finished ? 'success' : 'info');
-            }
+        }
+        void el.offsetWidth;
+        if (doc.visibilityState === 'visible') { setTimeout(play, 20); return; }
+        el.classList.add('held');
+        doc.addEventListener('visibilitychange', function onVisible() {
+            if (doc.visibilityState !== 'visible') return;
+            doc.removeEventListener('visibilitychange', onVisible);
+            el.classList.remove('held');
+            setTimeout(play, 60);
         });
-        if (!started) setOnboardStage('done');
     }
 
+    // ── Welcome tour: one stop per page, carried across page loads ───────────────
+    // Stage 'tour:<page>' (or 'tour:<page>:end' when arriving with Back) says which stop is next.
+    // Each stop opens with a title card that morphs into the spotlight; leaving a stop shows the next
+    // title card and then navigates, and the new page opens on that same card so the hop reads as one motion.
+    var ROUTE = [
+        { page: 'index.html', label: 'Dashboard', icon: 'home', blurb: 'Your shop at a glance — shortcuts, live numbers and the latest jobs.' },
+        { page: 'current-jobs.html', label: 'Current Jobs', icon: 'wrench', blurb: 'The repair board. Every job, where it’s at and who has it.' },
+        { page: 'new-job.html', label: 'New Job', icon: 'plus', blurb: 'Logging a repair takes four short steps.' },
+        { page: 'sales.html', label: 'Sales', icon: 'dollar', blurb: 'Ring up walk-ins and collect payment for finished repairs.', roles: ['cashier', 'manager'] },
+        { page: 'special-orders.html', label: 'Special Orders', icon: 'cart', blurb: 'Parts and accessories customers are waiting on.' },
+        { page: 'settings.html', label: 'Settings', icon: 'settings', blurb: 'Make the portal yours — and replay this tour any time.' }
+    ];
+
+    function userRole() {
+        return typeof global.getUserRole === 'function' ? global.getUserRole() : 'technician';
+    }
+
+    function onboardRoute() {
+        var role = userRole();
+        return ROUTE.filter(function (r) { return !r.roles || r.roles.indexOf(role) !== -1; });
+    }
+
+    function routeIndex(route, page) {
+        for (var i = 0; i < route.length; i++) if (route[i].page === page) return i;
+        return -1;
+    }
+
+    function parseStage(stage) {
+        if (stage === 'tour') return { page: 'index.html', atEnd: false };
+        var m = /^tour:([^:]+)(:end)?$/.exec(stage || '');
+        return m ? { page: m[1], atEnd: !!m[2] } : null;
+    }
+
+    // Pop-ups the page opened itself (not ours) and loading placeholders hold a stop back
+    function pageSettled() {
+        if (!isLoggedIn() || doc.querySelector('.sc-skel-list')) return false;
+        var splash = doc.getElementById('splash-screen');
+        if (splash && !splash.classList.contains('hidden')) return false;
+        if (doc.querySelector('.notif-panel.open, .account-dropdown.open')) return false;
+        var nodes = doc.querySelectorAll(OVERLAY_SEL);
+        for (var i = 0; i < nodes.length; i++) {
+            if (nodes[i].matches('.sc-tour-layer, .sc-intro, .sc-search')) continue;
+            if (isShownLayer(nodes[i])) return false;
+        }
+        return true;
+    }
+
+    function whenSettled(fn) {
+        var start = Date.now();
+        (function wait() {
+            if (pageSettled() || Date.now() - start > 9000) { setTimeout(fn, 250); return; }
+            setTimeout(wait, 120);
+        })();
+    }
+
+    function tourSkipped() {
+        setOnboardStage('done');
+        toast('Tour skipped. You can replay it any time from Settings.', 'info');
+    }
+
+    function showStopCard(layer, route, idx, eyebrow, instant) {
+        var ch = layer.querySelector('.sc-tour-chapter');
+        var stop = route[idx];
+        var bar = '';
+        for (var i = 0; i < route.length; i++) bar += '<i class="' + (i < idx ? 'done' : i === idx ? 'cur' : '') + '"><b></b></i>';
+        ch.className = 'sc-tour-chapter' + (instant ? ' instant' : '');
+        ch.innerHTML =
+            '<div class="sc-tour-chapter-icon" aria-hidden="true">' + icon(stop.icon, 26) + '</div>' +
+            '<div class="sc-tour-chapter-eyebrow">' + esc(eyebrow) + '</div>' +
+            '<div class="sc-tour-chapter-title">' + esc(stop.label) + '</div>' +
+            '<p class="sc-tour-chapter-blurb">' + esc(stop.blurb) + '</p>' +
+            '<div class="sc-tour-chapter-bar" aria-hidden="true">' + bar + '</div>' +
+            '<button type="button" class="sc-tour-chapter-skip">Skip tour</button>';
+        ch.querySelector('.sc-tour-chapter-skip').addEventListener('click', function () {
+            detachTour();
+            removeLayer(layer);
+            tourSkipped();
+        });
+        var spot = layer.querySelector('.sc-tour-spot');
+        var spotShown = layer.classList.contains('show') && !layer.classList.contains('is-chapter');
+        layer.classList.add('is-chapter');
+        layer.querySelector('.sc-tour-card').classList.remove('in');
+        void ch.offsetWidth;
+        ch.classList.add('in');
+        // The spotlight melts into the title card on its way out
+        if (spotShown) setSpot(spot, ch.getBoundingClientRect());
+    }
+
+    // Leave for another stop: its title card comes up here, then the page changes underneath it
+    function departTo(layer, route, idx, atEnd) {
+        setOnboardStage('tour:' + route[idx].page + (atEnd ? ':end' : ''));
+        showStopCard(layer, route, idx, atEnd ? 'Back to' : 'Up next');
+        layer.classList.add('show');
+        setTimeout(function () {
+            if (!layer._gone) global.location.href = route[idx].page;
+        }, prefersReducedMotion() ? 300 : 1000);
+    }
+
+    function moveStop(route, idx, dir) {
+        var t = detachTour();
+        if (!t) return;
+        markSeen(route[idx].page);
+        var to = idx + dir;
+        if (to >= route.length) { finishTour(t.layer, route); return; }
+        if (to < 0) return;
+        departTo(t.layer, route, to, dir < 0);
+    }
+
+    // opts.fromIntro: straight after the intro (no title card if the page is already ready)
+    // opts.arrive: just navigated here from the previous stop — the title card is already "on screen"
+    function runStop(opts) {
+        opts = opts || {};
+        var route = onboardRoute();
+        var page = currentPage();
+        var idx = routeIndex(route, page);
+        if (idx < 0 || T || doc.querySelector('.sc-tour-layer')) return false;
+        setOnboardStage('tour:' + page + (opts.atEnd ? ':end' : ''));
+        closeSearch();
+        var layer = buildTourLayer(true);
+        var titled = !opts.fromIntro || !pageSettled();
+        var shownAt = Date.now();
+        if (titled) {
+            if (opts.arrive) layer.classList.add('no-fade');
+            showStopCard(layer, route, idx, 'Stop ' + (idx + 1) + ' of ' + route.length, opts.arrive);
+        }
+        layer.classList.add('show');
+        whenSettled(function () {
+            var hold = titled ? Math.max(0, (prefersReducedMotion() ? 700 : 1500) - (Date.now() - shownAt)) : 0;
+            setTimeout(function () {
+                if (layer._gone) return;
+                var started = startTour(true, {
+                    layer: layer,
+                    atEnd: opts.atEnd,
+                    chapter: { route: route, idx: idx },
+                    onChapter: function (dir) { moveStop(route, idx, dir); },
+                    onEnd: function (finished) { if (!finished) tourSkipped(); }
+                });
+                if (started) return;
+                // Nothing to point at on this page; carry on in the direction we were going
+                markSeen(page);
+                var to = idx + (opts.atEnd ? -1 : 1);
+                if (to >= route.length) finishTour(layer, route);
+                else if (to < 0) { removeLayer(layer); setOnboardStage('done'); }
+                else departTo(layer, route, to, !!opts.atEnd);
+            }, hold);
+        });
+        return true;
+    }
+
+    function finishTour(layer, route) {
+        setOnboardStage('done');
+        var seen = toursSeen();
+        route.forEach(function (r) { seen[r.page] = 1; });
+        try { localStorage.setItem(TOUR_KEY, JSON.stringify(seen)); } catch (_) {}
+
+        var role = userRole();
+        var extra = [];
+        if (!seen['inventory.html']) extra.push('Inventory');
+        if (role === 'manager' && !seen['statistics.html']) extra.push('Statistics');
+        var onHome = currentPage() === 'index.html';
+
+        var ch = layer.querySelector('.sc-tour-chapter');
+        var spot = layer.querySelector('.sc-tour-spot');
+        var spotShown = !layer.classList.contains('is-chapter');
+        layer.classList.add('is-chapter');
+        layer.querySelector('.sc-tour-card').classList.remove('in');
+        ch.className = 'sc-tour-chapter';
+        ch.innerHTML =
+            '<div class="sc-tour-done-mark" aria-hidden="true"><svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="23"/><path d="M15 27l7 7 15-16"/></svg></div>' +
+            '<div class="sc-tour-chapter-title">You’re all set</div>' +
+            '<p class="sc-tour-chapter-blurb">' +
+            (extra.length ? esc(extra.join(' and ')) + ' will show a quick tip the first time you open ' + (extra.length > 1 ? 'them' : 'it') + '. ' : '') +
+            'Replay this tour any time from Settings.</p>' +
+            '<div class="sc-tour-done-actions">' +
+            '<button type="button" class="sc-tour-done-go">' + (onHome ? 'Start using V5' : 'Go to Dashboard') + '</button>' +
+            (onHome ? '' : '<button type="button" class="sc-tour-done-stay">Stay here</button>') +
+            '</div>';
+        void ch.offsetWidth;
+        ch.classList.add('in');
+        if (spotShown) setSpot(spot, ch.getBoundingClientRect());
+        tap('success');
+
+        function close(goHome) {
+            doc.removeEventListener('keydown', onKey, true);
+            removeLayer(layer);
+            if (goHome && !onHome) setTimeout(function () { global.location.href = 'index.html'; }, 180);
+        }
+        function onKey(e) {
+            if (e.key === 'Escape') { e.preventDefault(); close(false); }
+        }
+        doc.addEventListener('keydown', onKey, true);
+        var goBtn = ch.querySelector('.sc-tour-done-go');
+        goBtn.addEventListener('click', function () { close(true); });
+        var stay = ch.querySelector('.sc-tour-done-stay');
+        if (stay) stay.addEventListener('click', function () { close(false); });
+        setTimeout(function () { try { goBtn.focus({ preventScroll: true }); } catch (_) {} }, 500);
+    }
+
+    // Left the tour's page some other way (back button, typed address): offer to pick it up again
+    function showResumePill(route, idx, atEnd) {
+        if (doc.querySelector('.sc-tour-resume')) return;
+        var el = doc.createElement('div');
+        el.className = 'sc-tour-resume';
+        el.setAttribute('role', 'status');
+        el.innerHTML =
+            '<span class="sc-tour-resume-text"><b>Tour paused</b><span>Next stop: ' + esc(route[idx].label) + '</span></span>' +
+            '<button type="button" class="sc-tour-resume-go">Continue</button>' +
+            '<button type="button" class="sc-tour-resume-x" aria-label="End tour">' + icon('x', 16) + '</button>';
+        doc.body.appendChild(el);
+        function dismiss() {
+            el.classList.remove('show');
+            setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 300);
+        }
+        el.querySelector('.sc-tour-resume-go').addEventListener('click', function () {
+            dismiss();
+            tap('light');
+            departTo(buildTourLayer(true), route, idx, atEnd);
+        });
+        el.querySelector('.sc-tour-resume-x').addEventListener('click', function () {
+            dismiss();
+            tourSkipped();
+        });
+        void el.offsetWidth;
+        setTimeout(function () { el.classList.add('show'); }, 400);
+    }
+
+    function beginTour(fromIntro) {
+        var route = onboardRoute();
+        if (currentPage() === route[0].page) { runStop({ fromIntro: fromIntro }); return; }
+        departTo(buildTourLayer(true), route, 0, false);
+    }
+
+    function resumeTour(stage) {
+        var st = parseStage(stage);
+        var route = onboardRoute();
+        var idx = st ? routeIndex(route, st.page) : -1;
+        if (idx < 0) { setOnboardStage('done'); autoStartTour(); return; }
+        if (currentPage() === route[idx].page) runStop({ atEnd: st.atEnd, arrive: true });
+        else showResumePill(route, idx, st.atEnd);
+    }
+
+    // Runs as soon as a signed-in page boots (or the moment sign-in succeeds), so a first-time welcome
+    // covers the page before anything else can be tapped
     function startWelcome() {
         var stage = onboardStage();
         if (stage === 'done') { autoStartTour(); return; }
-        whenIdle(function () {
-            if (onboardStage() === 'done') { autoStartTour(); return; }
-            if (onboardStage() === 'tour') { runOnboardingTour(); return; }
-            playIntro(function (go) {
-                if (go) runOnboardingTour();
-                else { setOnboardStage('done'); autoStartTour(); }
-            });
+        if (stage.indexOf('tour') === 0) { resumeTour(stage); return; }
+        playIntro(function (go) {
+            if (go) beginTour(true);
+            else { setOnboardStage('done'); autoStartTour(); }
         });
     }
 
-    // Settings → "Watch the V5 intro": plays the intro, then the welcome tour on the dashboard
+    // Settings → "Watch the V5 intro": plays the intro, then the whole tour from the dashboard
     function replayIntro() {
-        playIntro(function (go) {
-            if (!go) return;
-            setOnboardStage('tour');
-            if (currentPage() === 'index.html') runOnboardingTour();
-            else global.location.href = 'index.html';
-        });
+        playIntro(function (go) { if (go) beginTour(true); });
     }
 
     // ── Boot ─────────────────────────────────────────────────────────────────────

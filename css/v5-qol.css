@@ -446,19 +446,46 @@ body:not(.sc-logged-in) .sc-ptr { display: none; }
 }
 
 .sc-tour-layer.show { opacity: 1; }
+.sc-tour-layer.no-fade { transition: none; }
 
 .sc-tour-block {
     position: absolute;
     inset: 0;
+    background: rgba(15, 23, 42, 0);
+    transition: background 0.35s ease;
 }
+
+/* Between stops the spotlight fades and the page dims evenly behind the stop card */
+.sc-tour-layer.is-chapter .sc-tour-block { background: rgba(15, 23, 42, 0.62); }
+.sc-tour-layer.no-fade .sc-tour-block { transition: none; }
 
 .sc-tour-spot {
     position: fixed;
     border-radius: 16px;
     box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.55), 0 0 0 2px rgba(var(--primary-rgb), 0.9);
     pointer-events: none;
-    transition: left 0.3s cubic-bezier(0.32, 0.72, 0, 1), top 0.3s cubic-bezier(0.32, 0.72, 0, 1),
-        width 0.3s cubic-bezier(0.32, 0.72, 0, 1), height 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+    transition: left 0.42s cubic-bezier(0.32, 0.72, 0, 1), top 0.42s cubic-bezier(0.32, 0.72, 0, 1),
+        width 0.42s cubic-bezier(0.32, 0.72, 0, 1), height 0.42s cubic-bezier(0.32, 0.72, 0, 1),
+        border-radius 0.42s ease, opacity 0.3s ease;
+}
+
+.sc-tour-layer.is-chapter .sc-tour-spot { opacity: 0; border-radius: 26px; }
+
+/* A soft ring breathes out from whatever is being pointed at */
+.sc-tour-spot::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: inherit;
+    border: 2px solid rgba(var(--primary-rgb), 0.55);
+    opacity: 0;
+    animation: sc-tour-breathe 2.4s ease-out 0.6s infinite;
+}
+.sc-tour-layer.is-chapter .sc-tour-spot::after { animation: none; }
+
+@keyframes sc-tour-breathe {
+    0% { opacity: 0.8; transform: scale(1); }
+    70%, 100% { opacity: 0; transform: scale(1.06, 1.14); }
 }
 
 .sc-tour-card {
@@ -471,11 +498,41 @@ body:not(.sc-logged-in) .sc-ptr { display: none; }
     box-shadow: 0 24px 60px rgba(15, 23, 42, 0.35);
     font-family: var(--font-family);
     opacity: 0;
-    transform: translateY(6px) scale(0.98);
-    transition: opacity 0.2s ease, transform 0.28s cubic-bezier(0.32, 0.72, 0, 1), top 0.3s cubic-bezier(0.32, 0.72, 0, 1), left 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+    transform: translateY(12px) scale(0.97);
+    pointer-events: none;
+    transition: opacity 0.22s ease, transform 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        top 0.42s cubic-bezier(0.32, 0.72, 0, 1), left 0.42s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-.sc-tour-card.in { opacity: 1; transform: none; }
+/* Slides in from the side it points from */
+.sc-tour-card[data-side="above"] { transform: translateY(-12px) scale(0.97); }
+.sc-tour-card.in { opacity: 1; transform: none; pointer-events: auto; }
+
+.sc-tour-content.fwd { animation: sc-tour-in-fwd 0.36s cubic-bezier(0.32, 0.72, 0, 1); }
+.sc-tour-content.back { animation: sc-tour-in-back 0.36s cubic-bezier(0.32, 0.72, 0, 1); }
+@keyframes sc-tour-in-fwd { from { opacity: 0; transform: translateX(18px); } }
+@keyframes sc-tour-in-back { from { opacity: 0; transform: translateX(-18px); } }
+
+.sc-tour-progress {
+    display: flex;
+    gap: 4px;
+    margin: -2px 0 12px;
+}
+.sc-tour-progress i {
+    flex: 1;
+    height: 3px;
+    border-radius: 2px;
+    background: rgba(var(--primary-rgb), 0.16);
+    overflow: hidden;
+}
+.sc-tour-progress b {
+    display: block;
+    height: 100%;
+    width: 0;
+    border-radius: inherit;
+    background: var(--primary);
+    transition: width 0.45s cubic-bezier(0.32, 0.72, 0, 1);
+}
 
 .sc-tour-count {
     font-size: 0.68rem;
@@ -514,16 +571,163 @@ body:not(.sc-logged-in) .sc-ptr { display: none; }
 .sc-tour-back { background: rgba(var(--primary-rgb), 0.08); color: var(--text-main); }
 .sc-tour-next { background: var(--primary); color: #fff; }
 .sc-tour-next:focus-visible { outline: 2px solid rgba(var(--primary-rgb), 0.45); outline-offset: 2px; }
+.sc-tour-next.is-onward { display: inline-flex; align-items: center; gap: 2px; padding: 0 10px 0 14px !important; }
+.sc-tour-next.is-onward svg { transition: transform 0.25s cubic-bezier(0.32, 0.72, 0, 1); }
+.sc-tour-next.is-onward:hover svg { transform: translateX(2px); }
 
-.sc-tour-dots { display: inline-flex; align-items: center; gap: 5px; margin-left: 2px; }
-.sc-tour-dots i {
-    width: 6px;
-    height: 6px;
-    border-radius: 3px;
-    background: rgba(var(--primary-rgb), 0.22);
-    transition: width 0.3s cubic-bezier(0.32, 0.72, 0, 1), background 0.2s ease;
+/* ── Welcome tour stop card (and the finish card) ── */
+.sc-tour-chapter {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    width: min(360px, calc(100vw - 40px));
+    padding: 26px 24px 16px;
+    border-radius: 26px;
+    background: var(--sc-v5-panel-solid);
+    color: var(--text-main);
+    border: 1px solid var(--sc-v5-glass-border);
+    box-shadow: 0 30px 80px rgba(15, 23, 42, 0.4);
+    font-family: var(--font-family);
+    text-align: center;
+    opacity: 0;
+    transform: translate(-50%, -50%) translateY(16px) scale(0.94);
+    pointer-events: none;
+    transition: opacity 0.28s ease, transform 0.5s cubic-bezier(0.32, 0.72, 0, 1);
 }
-.sc-tour-dots i.on { width: 16px; background: var(--primary); }
+.sc-tour-chapter.in { opacity: 1; transform: translate(-50%, -50%); pointer-events: auto; }
+.sc-tour-chapter.out { opacity: 0; transform: translate(-50%, -50%) scale(0.9); transition-duration: 0.22s, 0.4s; }
+.sc-tour-chapter.instant,
+.sc-tour-chapter.instant * { transition: none !important; animation: none !important; }
+
+.sc-tour-chapter.in > * { animation: sc-tour-rise 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.sc-tour-chapter.in > :nth-child(2) { animation-delay: 0.06s; }
+.sc-tour-chapter.in > :nth-child(3) { animation-delay: 0.1s; }
+.sc-tour-chapter.in > :nth-child(4) { animation-delay: 0.14s; }
+.sc-tour-chapter.in > :nth-child(5) { animation-delay: 0.18s; }
+.sc-tour-chapter.in > :nth-child(6) { animation-delay: 0.22s; }
+@keyframes sc-tour-rise { from { opacity: 0; transform: translateY(8px); } }
+
+.sc-tour-chapter-icon {
+    width: 58px;
+    height: 58px;
+    margin: 0 auto 14px;
+    border-radius: 18px;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    background: linear-gradient(140deg, var(--primary), var(--accent, var(--primary)));
+    box-shadow: 0 10px 26px rgba(var(--primary-rgb), 0.35);
+}
+.sc-tour-chapter.in > .sc-tour-chapter-icon { animation: sc-tour-pop 0.6s cubic-bezier(0.2, 1.3, 0.3, 1) both; }
+@keyframes sc-tour-pop { from { opacity: 0; transform: scale(0.5) rotate(-14deg); } }
+
+.sc-tour-chapter-eyebrow {
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--primary);
+}
+.sc-tour-chapter-title { margin: 4px 0 6px; font-size: 1.45rem; font-weight: 800; letter-spacing: -0.4px; }
+.sc-tour-chapter-blurb { margin: 0 auto; max-width: 30ch; font-size: 0.9rem; line-height: 1.5; color: var(--text-dim); }
+
+.sc-tour-chapter-bar { display: flex; gap: 5px; margin: 18px 6px 4px; }
+.sc-tour-chapter-bar i { flex: 1; height: 4px; border-radius: 2px; background: rgba(var(--primary-rgb), 0.16); overflow: hidden; }
+.sc-tour-chapter-bar b { display: block; height: 100%; width: 0; border-radius: inherit; background: var(--primary); }
+.sc-tour-chapter-bar .done b { width: 100%; }
+.sc-tour-chapter-bar .cur b { width: 100%; transform-origin: left; animation: sc-tour-fill 0.9s cubic-bezier(0.32, 0.72, 0, 1) 0.3s both; }
+@keyframes sc-tour-fill { from { transform: scaleX(0); } }
+
+.sc-tour-chapter-skip {
+    margin-top: 8px;
+    min-height: 34px;
+    padding: 0 12px;
+    border: none;
+    background: none;
+    color: var(--text-light);
+    font-family: var(--font-family);
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+.sc-tour-chapter-skip:hover { color: var(--text-dim); }
+
+.sc-tour-done-mark { width: 64px; height: 64px; margin: 0 auto 12px; }
+.sc-tour-done-mark svg { width: 100%; height: 100%; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.sc-tour-done-mark circle { stroke: rgba(var(--primary-rgb), 0.25); stroke-width: 3; }
+.sc-tour-done-mark path {
+    stroke: var(--primary);
+    stroke-width: 4;
+    stroke-dasharray: 40;
+    stroke-dashoffset: 40;
+    animation: sc-tour-draw 0.55s cubic-bezier(0.65, 0, 0.35, 1) 0.35s forwards;
+}
+.sc-tour-chapter.in > .sc-tour-done-mark { animation: sc-tour-pop 0.6s cubic-bezier(0.2, 1.3, 0.3, 1) both; }
+@keyframes sc-tour-draw { to { stroke-dashoffset: 0; } }
+
+.sc-tour-done-actions { display: flex; flex-direction: column; gap: 4px; margin-top: 20px; }
+.sc-tour-done-actions button {
+    min-height: 46px;
+    border: none;
+    border-radius: 99px;
+    font-family: var(--font-family);
+    font-size: 0.92rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+.sc-tour-done-go { background: var(--primary); color: #fff; }
+.sc-tour-done-go:focus-visible { outline: 2px solid rgba(var(--primary-rgb), 0.45); outline-offset: 2px; }
+.sc-tour-done-stay { background: none; color: var(--text-dim); }
+
+/* ── "Tour paused" pill ── */
+.sc-tour-resume {
+    position: fixed;
+    left: 50%;
+    bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+    z-index: 100001;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    max-width: calc(100vw - 24px);
+    padding: 7px 7px 7px 18px;
+    border-radius: 99px;
+    background: var(--sc-v5-panel-solid);
+    color: var(--text-main);
+    border: 1px solid var(--sc-v5-glass-border);
+    box-shadow: 0 14px 36px rgba(15, 23, 42, 0.28);
+    font-family: var(--font-family);
+    opacity: 0;
+    transform: translate(-50%, 20px);
+    transition: opacity 0.25s ease, transform 0.45s cubic-bezier(0.32, 0.72, 0, 1);
+}
+.sc-tour-resume.show { opacity: 1; transform: translate(-50%, 0); }
+body.sc-v5.sc-logged-in .sc-tour-resume { bottom: calc(var(--sc-tabbar-h, 0px) + env(safe-area-inset-bottom, 0px) + 14px); }
+@media (min-width: 901px) { body.sc-v5.sc-logged-in .sc-tour-resume { bottom: 24px; } }
+.sc-tour-resume-text { display: flex; flex-direction: column; line-height: 1.2; font-size: 0.78rem; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sc-tour-resume-text b { font-size: 0.86rem; color: var(--text-main); }
+.sc-tour-resume-go {
+    min-height: 36px;
+    padding: 0 16px;
+    border: none;
+    border-radius: 99px;
+    background: var(--primary);
+    color: #fff;
+    font-family: var(--font-family);
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+.sc-tour-resume-x {
+    width: 36px;
+    height: 36px;
+    display: grid;
+    place-items: center;
+    border: none;
+    border-radius: 50%;
+    background: rgba(var(--primary-rgb), 0.08);
+    color: var(--text-dim);
+    cursor: pointer;
+}
 
 .sc-tour-card.nudge { animation: sc-tour-nudge 0.38s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
 @keyframes sc-tour-nudge {
@@ -536,9 +740,17 @@ body:not(.sc-logged-in) .sc-ptr { display: none; }
 @media (prefers-reduced-motion: reduce) {
     .sc-tour-spot,
     .sc-tour-card,
+    .sc-tour-chapter,
+    .sc-tour-resume,
     .sc-search-panel,
     .sc-undo-toast { transition: opacity 0.15s ease; }
-    .sc-tour-card.nudge { animation: none; }
+    .sc-tour-card.nudge,
+    .sc-tour-content.fwd,
+    .sc-tour-content.back,
+    .sc-tour-spot::after,
+    .sc-tour-chapter.in > *,
+    .sc-tour-chapter-bar .cur b { animation: none; }
+    .sc-tour-done-mark path { animation: none; stroke-dashoffset: 0; }
 }
 
 /* ── App feel ──────────────────────────────────────────────────────────────── */
@@ -627,7 +839,9 @@ html.sc-scroll-locked body { overflow: hidden !important; }
     opacity: 0;
     transition: opacity 0.4s ease;
 }
-.sc-intro.play { opacity: 1; }
+.sc-intro.play,
+.sc-intro.held { opacity: 1; }
+.sc-intro.held { transition: none; }
 .sc-intro.leaving { opacity: 0; transition: opacity 0.45s ease 0.08s; }
 
 .sc-intro-glow span {
