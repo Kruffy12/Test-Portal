@@ -39,7 +39,11 @@ async function sbFetch(path, opts = {}) {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ message: res.statusText }));
-    throw new Error(`Supabase ${res.status}: ${err.message || err.hint || res.statusText}`);
+    const msg = `Supabase ${res.status}: ${err.message || err.hint || res.statusText}`;
+    if (typeof scLooksLikeLockdown === 'function' && scLooksLikeLockdown(msg) && typeof scShowMaintenance === 'function') {
+      scShowMaintenance();
+    }
+    throw new Error(msg);
   }
   // 204 No Content, or 201/200 with return=minimal (empty body)
   if (res.status === 204 || res.status === 201) return { success: true };
@@ -1041,6 +1045,9 @@ async function handleAction(action, id, data) {
   }
   } catch (err) {
     console.error(`[API] ${action} failed:`, err.message);
+    if (typeof scLooksLikeLockdown === 'function' && scLooksLikeLockdown(err) && typeof scShowMaintenance === 'function') {
+      scShowMaintenance();
+    }
     return { success: false, error: err.message || 'Request failed' };
   }
 }

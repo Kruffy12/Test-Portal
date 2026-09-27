@@ -86,6 +86,83 @@ function logOut() {
     window.location.href = 'index.html';
 }
 
+function scLooksLikeLockdown(err) {
+    const msg = String((err && err.message) || err || '').toLowerCase();
+    return /permission denied|row-level security|42501|jwt expired|not authorized|rls|supabase 401|supabase 403|session_invalid|maintenance/.test(msg);
+}
+window.scLooksLikeLockdown = scLooksLikeLockdown;
+
+function scBroadcastIsMaintenance(b) {
+    const title = String((b && b.title) || '').trim();
+    const msg = String((b && b.message) || '');
+    return /^maintenance\b/i.test(title) || /\[MAINTENANCE\]/i.test(msg);
+}
+window.scBroadcastIsMaintenance = scBroadcastIsMaintenance;
+
+// Shown when the portal is being upgraded. Checks back every 20s and reloads itself
+// once the new secure server answers "ready".
+function scShowMaintenance() {
+    if (document.getElementById('scMaintenance')) return;
+    const style = document.createElement('style');
+    style.textContent = `
+        #scMaintenance { position: fixed; inset: 0; z-index: 2147483000; display: flex; align-items: center;
+            justify-content: center; padding: 24px; background: rgba(15, 23, 42, 0.55);
+            -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4);
+            animation: scMaintIn 0.35s ease both; font-family: var(--font-family, system-ui, sans-serif); }
+        #scMaintenance .sc-maint-card { max-width: 380px; width: 100%; text-align: center; padding: 32px 28px;
+            border-radius: 24px; background: var(--glass-strong, #fff); color: var(--text-main, #0f172a);
+            border: 1px solid var(--glass-border, rgba(0,0,0,0.08)); box-shadow: 0 24px 60px rgba(0,0,0,0.25); }
+        #scMaintenance h2 { font-size: 1.2rem; font-weight: 800; letter-spacing: -0.3px; margin: 14px 0 6px; }
+        #scMaintenance p { font-size: 0.88rem; line-height: 1.5; color: var(--text-dim, #475569); margin: 0; }
+        #scMaintenance .sc-maint-spin { width: 34px; height: 34px; margin: 0 auto; border-radius: 50%;
+            border: 3px solid rgba(var(--primary-rgb, 37, 99, 235), 0.18); border-top-color: var(--primary, #2563eb);
+            animation: scMaintSpin 0.9s linear infinite; }
+        #scMaintenance .sc-maint-status { margin-top: 14px; font-size: 0.78rem; color: var(--text-light, #94a3b8); }
+        @keyframes scMaintIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes scMaintSpin { to { transform: rotate(360deg); } }
+        @media (prefers-reduced-motion: reduce) { #scMaintenance, #scMaintenance .sc-maint-spin { animation: none; } }`;
+    document.head.appendChild(style);
+
+    const wrap = document.createElement('div');
+    wrap.id = 'scMaintenance';
+    wrap.setAttribute('role', 'alertdialog');
+    wrap.setAttribute('aria-modal', 'true');
+    wrap.setAttribute('aria-labelledby', 'scMaintTitle');
+    wrap.innerHTML = `
+        <div class="sc-maint-card">
+            <div class="sc-maint-spin" aria-hidden="true"></div>
+            <h2 id="scMaintTitle">ServiCell is being upgraded</h2>
+            <p>The portal is getting a security upgrade and will be back shortly. This page will reload by itself when it’s ready. You’ll need to sign in again afterwards — your password has not changed.</p>
+            <div class="sc-maint-status" id="scMaintStatus">Checking again in a moment…</div>
+        </div>`;
+    (document.body || document.documentElement).appendChild(wrap);
+    document.body && (document.body.style.overflow = 'hidden');
+
+    const status = wrap.querySelector('#scMaintStatus');
+    const pingUrl = (typeof SUPABASE_URL === 'string' ? SUPABASE_URL : '') + '/functions/v1/api';
+    async function check() {
+        if (document.visibilityState === 'hidden' || !navigator.onLine) return;
+        try {
+            const res = await fetch(pingUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+                body: JSON.stringify({ action: 'ping' })
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.api === 2 && !data.maintenance) {
+                sessionStorage.setItem('scSignedOutReason', 'upgrade');
+                status.textContent = 'All done — reloading…';
+                setTimeout(() => window.location.replace('index.html?signedout=upgrade'), 600);
+                return;
+            }
+        } catch (_) { }
+        status.textContent = 'Still upgrading. Last checked ' +
+            new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) + '.';
+    }
+    setInterval(check, 20000);
+}
+window.scShowMaintenance = scShowMaintenance;
+
 function toggleAccountMenu(e) {
     e.stopPropagation();
     // Close other panels first
@@ -449,9 +526,16 @@ async function checkRevoked() {
         if (data.revoked) {
             localStorage.clear();
             sessionStorage.clear();
-            window.location.replace('index.html?revoked=1');
+            window.location.replace('index.html?signedout=revoked');
         }
-    } catch (_) {}
+        if (data && data.error && typeof scLooksLikeLockdown === 'function' && scLooksLikeLockdown(data.error)) {
+            if (typeof scShowMaintenance === 'function') scShowMaintenance();
+        }
+    } catch (e) {
+        if (typeof scLooksLikeLockdown === 'function' && scLooksLikeLockdown(e) && typeof scShowMaintenance === 'function') {
+            scShowMaintenance();
+        }
+    }
 }
 setInterval(checkRevoked, 60000);
 window.addEventListener('sc-back-online', checkRevoked);

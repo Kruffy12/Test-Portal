@@ -202,6 +202,12 @@
       return;
     }
 
+    if (typeof scBroadcastIsMaintenance === 'function' && scBroadcastIsMaintenance(active)) {
+      hideCard();
+      if (typeof scShowMaintenance === 'function') scShowMaintenance();
+      return;
+    }
+
     showCard(active);
   }
 

@@ -609,6 +609,47 @@
             font-size: 0.875rem;
         }
 
+        /* Stays on the sign-in card until they sign in — not a toast that vanishes. */
+        .login-warn-pill {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin: 18px 0 -2px;
+            padding: 12px 14px;
+            border-radius: 16px;
+            background: #b91c1c;
+            color: #fff;
+            text-align: left;
+            box-shadow: 0 8px 22px rgba(185, 28, 28, 0.28);
+            animation: fadeInUp 0.35s ease both;
+        }
+        .login-warn-pill[hidden] { display: none; }
+        .login-warn-pill .pill-mark {
+            flex: 0 0 auto;
+            width: 22px;
+            height: 22px;
+            margin-top: 1px;
+            border-radius: 99px;
+            background: rgba(255,255,255,0.18);
+            font-size: 0.78rem;
+            font-weight: 800;
+            line-height: 22px;
+            text-align: center;
+        }
+        .login-warn-pill strong {
+            display: block;
+            font-size: 0.88rem;
+            font-weight: 800;
+            letter-spacing: -0.2px;
+            margin-bottom: 2px;
+        }
+        .login-warn-pill span {
+            display: block;
+            font-size: 0.8rem;
+            line-height: 1.4;
+            color: rgba(255,255,255,0.9);
+        }
+
         .input-group {
             display: flex;
             flex-direction: column;
@@ -780,6 +821,8 @@
                 <h2>ServiCell Portal</h2>
                 <p>Authentication Required</p>
             </div>
+
+            <div class="login-warn-pill" id="loginNotice" role="status" aria-live="polite" hidden></div>
 
             <div class="input-group">
                 <input type="text" id="userInput" placeholder="Username"
@@ -1350,6 +1393,48 @@
             span.textContent = text;
         }
 
+        const SC_NOTICES = {
+            upgrade: { title: 'You were signed out', body: 'ServiCell got a security upgrade. Please sign in again — your password has not changed.' },
+            expired: { title: 'Signed out after being away', body: 'This device was unused for 12 hours. Sign in again to continue.' },
+            revoked: { title: 'A manager ended your access', body: 'Your session was stopped. Contact a manager if you think this is a mistake.' },
+            invalid: { title: 'Please sign in again', body: 'Your session ended, for example after a password change.' },
+            none:    { title: 'Please sign in again', body: 'Your session ended.' }
+        };
+
+        function showLoginNotice(title, body) {
+            const el = document.getElementById('loginNotice');
+            if (!el) return;
+            if (!title) { el.hidden = true; el.innerHTML = ''; return; }
+            el.innerHTML = '';
+            const mark = document.createElement('div');
+            mark.className = 'pill-mark';
+            mark.setAttribute('aria-hidden', 'true');
+            mark.textContent = '!';
+            const copy = document.createElement('div');
+            const t = document.createElement('strong');
+            t.textContent = title;
+            const b = document.createElement('span');
+            b.textContent = body || '';
+            copy.appendChild(t);
+            if (body) copy.appendChild(b);
+            el.appendChild(mark);
+            el.appendChild(copy);
+            el.hidden = false;
+        }
+
+        // Kept until they sign in so an app update can't erase the reason.
+        const SC_SIGNED_OUT_REASON = (function () {
+            const params = new URLSearchParams(window.location.search);
+            let reason = params.get('signedout') || (params.get('revoked') === '1' ? 'revoked' : '') || params.get('timeout');
+            if (reason === '1') reason = 'expired';
+            if (params.has('signedout') || params.has('revoked') || params.has('timeout')) {
+                history.replaceState({}, '', window.location.pathname);
+            }
+            if (reason) sessionStorage.setItem('scSignedOutReason', reason);
+            else reason = sessionStorage.getItem('scSignedOutReason') || '';
+            return reason;
+        })();
+
         let _appInitialized = false;
         function initOriginalApp() {
             if (_appInitialized) return;
@@ -1363,15 +1448,8 @@
             const loader = typeof ComponentLoader !== 'undefined' ? ComponentLoader.state : null;
             const duration = loader ? Math.max(0, (loader.splashHold || 0) - (Date.now() - loader.loadStartTime)) : 0;
 
-            // Show suspended notice if redirected from force-logout
-            if (new URLSearchParams(window.location.search).get('revoked') === '1') {
-                const notice = document.createElement('div');
-                notice.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#b91c1c;color:#fff;padding:12px 22px;border-radius:99px;font-size:0.88rem;font-weight:700;z-index:99999;box-shadow:0 8px 24px rgba(0,0,0,0.3);';
-                notice.textContent = 'Your session was ended by a manager. Please log back in.';
-                document.body.appendChild(notice);
-                setTimeout(() => notice.remove(), 6000);
-                history.replaceState({}, '', window.location.pathname);
-            }
+            const notice = SC_NOTICES[SC_SIGNED_OUT_REASON];
+            if (notice && !isLoggedIn) showLoginNotice(notice.title, notice.body);
 
             setTimeout(() => {
                 if (splash) splash.classList.add('exiting');
@@ -1451,6 +1529,8 @@
                 const data = await apiPost({ action: 'login', username: user, password: pass });
 
                 if (data.success) {
+                    sessionStorage.removeItem('scSignedOutReason');
+                    showLoginNotice('');
                     const storage = remember ? localStorage : sessionStorage;
                     storage.setItem('isLoggedIn', 'true');
                     storage.setItem('scUser', user);
@@ -1496,6 +1576,12 @@
                         }
                     }, 400);
                 } else {
+                    if (typeof scLooksLikeLockdown === 'function' && scLooksLikeLockdown(data && data.error)) {
+                        if (typeof scShowMaintenance === 'function') scShowMaintenance();
+                        btn.textContent = "Unlock System";
+                        btn.disabled = false;
+                        return;
+                    }
                     // Track failed attempts
                     let attempts = parseInt(localStorage.getItem(attemptsKey) || '0') + 1;
                     localStorage.setItem(attemptsKey, attempts);
@@ -1513,7 +1599,11 @@
                 }
             } catch (e) {
                 console.error('[LOGIN ERROR]', e);
-                alert("Connection Error: " + (e.message || e.toString()));
+                if (typeof scLooksLikeLockdown === 'function' && scLooksLikeLockdown(e)) {
+                    if (typeof scShowMaintenance === 'function') scShowMaintenance();
+                } else {
+                    showLoginNotice('Can’t reach the server', 'Check the internet connection and try again.');
+                }
                 btn.disabled = false;
                 btn.textContent = "Unlock System";
             }
