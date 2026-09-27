@@ -753,8 +753,14 @@
         ],
         'current-jobs.html': [
             { sel: '#searchInput', title: 'Search this board', body: 'Type a job number, name, phone, device or technician to narrow the list instantly.' },
-            { tour: true, sel: '#statusFilter', title: 'Filter by status', body: 'Show only pickups, jobs in progress, ones expiring soon, stale repairs or your own jobs.' },
-            { tour: true, sel: '#jobsList .job-row', title: 'Open a job', body: 'Use the eye to see full details, the pencil to update status or invoice, and the bin to delete — you’ll get a few seconds to undo.' },
+            { tour: true, sel: '.stats-row', title: 'Tap a number to filter', body: 'Tap Ready, Repairing or any card to show just those jobs; tap it again to see everything. The menu above has the rest — your own jobs, expiring soon and stale repairs.' },
+            { tour: true, sel: '#jobsBoard', maxH: 0.34, picker: 'jobsView', title: 'Make the board yours', body: 'Pick how jobs look — you can change it any time with the buttons above the board.' },
+            { tour: true, sel: '#jobsList .job-row, #jobsList .job-crow, #photoGrid .photo-card', title: 'Open a job', body: function () {
+                var layout = global.SCJobsView ? global.SCJobsView.get().layout : 'list';
+                if (layout === 'rows') return 'Tap a job to open it right here, with its details and buttons to edit or delete — you’ll get a few seconds to undo.';
+                if (layout === 'photo') return 'Tap a photo to see the job’s full details. Switch back to Cards or Rows to edit or delete.';
+                return 'Use the eye to see full details, the pencil to update status or invoice, and the bin to delete — you’ll get a few seconds to undo.';
+            } },
             { sel: '#refreshBtn', title: 'Always up to date', body: 'The board refreshes every minute. On a phone, you can also pull down from the top to refresh.' }
         ],
         'new-job.html': [
@@ -780,6 +786,42 @@
             { tour: true, sel: '#tipsRow', title: 'Tips any time', body: 'Replay the page tips — or this whole tour — whenever you like.' }
         ]
     };
+
+    // Current Jobs layout, applied to the board live behind the spotlight
+    var JOB_LAYOUTS = [
+        { id: 'list', label: 'Cards', svg: '<rect x="3" y="3" width="18" height="7" rx="2"/><rect x="3" y="14" width="18" height="7" rx="2"/>' },
+        { id: 'rows', label: 'Rows', svg: '<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>' },
+        { id: 'photo', label: 'Photos', svg: '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>' }
+    ];
+
+    function jobsViewPicker() {
+        var api = global.SCJobsView;
+        if (!api) return null;
+        var cur = api.get();
+        var el = doc.createElement('div');
+        el.className = 'sc-view-pick';
+        el.innerHTML =
+            '<div class="sc-view-pick-seg" role="radiogroup" aria-label="Layout">' + JOB_LAYOUTS.map(function (l) {
+                var on = l.id === cur.layout;
+                return '<button type="button" role="radio" aria-checked="' + on + '" data-layout="' + l.id + '"' + (on ? ' class="on"' : '') + '>' +
+                    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + l.svg + '</svg>' +
+                    '<span>' + l.label + '</span></button>';
+            }).join('') + '</div>';
+        el.querySelectorAll('[data-layout]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                if (btn.classList.contains('on')) return;
+                el.querySelectorAll('[data-layout]').forEach(function (b) {
+                    var on = b === btn;
+                    b.classList.toggle('on', on);
+                    b.setAttribute('aria-checked', on ? 'true' : 'false');
+                });
+                tap('light');
+                api.setLayout(btn.getAttribute('data-layout'));
+                global.requestAnimationFrame(function () { if (T) placeTour(); });
+            });
+        });
+        return el;
+    }
 
     function toursSeen() {
         try { return JSON.parse(localStorage.getItem(TOUR_KEY) || '{}') || {}; } catch (_) { return {}; }
@@ -891,8 +933,12 @@
 
     function placeTour() {
         if (!T) return;
-        var target = T.steps[T.i].target;
-        var r = target.getBoundingClientRect();
+        var step = T.steps[T.i];
+        var r = step.target.getBoundingClientRect();
+        if (step.def.maxH) {
+            var h = Math.min(r.height, global.innerHeight * step.def.maxH);
+            r = { left: r.left, top: r.top, width: r.width, height: h, right: r.right, bottom: r.top + h };
+        }
         var pad = 6;
         var spot = T.layer.querySelector('.sc-tour-spot');
         setSpot(spot, { left: r.left - pad, top: r.top - pad, width: r.width + pad * 2, height: r.height + pad * 2 });
@@ -936,8 +982,20 @@
             ? chap.route[chap.idx].label + ' · ' + (i + 1) + ' of ' + n
             : (i + 1) + ' of ' + n;
         if (chap) renderProgress(card.querySelector('.sc-tour-progress'), chap.route.length, chap.idx, (i + 1) / n);
+        // An earlier step can re-render the page (the view picker does), so find the target again if it's gone
+        if (!step.target.isConnected || !step.target.getClientRects().length) {
+            var fresh = findTarget(step.def);
+            if (fresh) step.target = fresh;
+        }
+        var def = step.def;
+        var body = (isMobile() && def.mbody) || def.body;
         card.querySelector('.sc-tour-title').textContent = step.title;
-        card.querySelector('.sc-tour-body').textContent = step.body;
+        var bodyEl = card.querySelector('.sc-tour-body');
+        bodyEl.textContent = typeof body === 'function' ? body() : body;
+        if (def.picker === 'jobsView') {
+            var picker = jobsViewPicker();
+            if (picker) bodyEl.appendChild(picker);
+        }
         card.querySelector('.sc-tour-back').style.visibility = i > 0 || (chap && chap.idx > 0) ? 'visible' : 'hidden';
         var next = card.querySelector('.sc-tour-next');
         if (last && nextStop) next.innerHTML = '<span>' + esc(nextStop.label) + '</span>' + icon('chevronRight', 15);
@@ -946,7 +1004,10 @@
         next.setAttribute('aria-label', last && nextStop ? 'Next stop: ' + nextStop.label : next.textContent);
 
         var r = step.target.getBoundingClientRect();
-        if (r.top < 70 || r.bottom > global.innerHeight - 90) {
+        if (def.maxH) {
+            // Tall targets: bring the top in just under the top bar and light only the top part
+            if (r.top < 70 || r.top > global.innerHeight * 0.3) global.scrollBy(0, r.top - 84);
+        } else if (r.top < 70 || r.bottom > global.innerHeight - 90) {
             step.target.scrollIntoView({ block: 'center', behavior: 'auto' });
         }
         var content = card.querySelector('.sc-tour-content');
@@ -976,7 +1037,7 @@
         var picked = opts.chapter ? defs.filter(function (d) { return d.tour; }) : defs;
         (picked.length ? picked : defs).forEach(function (d) {
             var target = findTarget(d);
-            if (target) steps.push({ title: d.title, body: (isMobile() && d.mbody) || d.body, target: target });
+            if (target) steps.push({ def: d, title: d.title, target: target });
         });
         if (!steps.length) {
             if (force && !opts.chapter) toast('No tips for this page yet.', 'info');

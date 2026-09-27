@@ -1375,6 +1375,8 @@
                         <div class="changelog-date">September 26, 2026</div>
                         <ul class="changelog-changes">
                             <li>Welcome to V5 — a short animated intro the moment each person first signs in, then a guided tour that walks through the pages they use</li>
+                            <li>Current Jobs, your way — choose Cards, Rows (tap a job to open it in place) or Photos. Each person’s choice is remembered on their device</li>
+                            <li>Tap a number on Current Jobs (Received, Repairing, Ready…) to filter the board; tap it again to see everything</li>
                             <li>Quick search keeps up when you scroll or arrow through results</li>
                             <li>The page behind a pop-up no longer scrolls or jumps</li>
                             <li>Feels like an app: no accidental text highlighting, long-press menus or image dragging (form fields and customer details can still be copied)</li>
@@ -2061,7 +2063,7 @@
 
         function clearCache() {
             if (!confirm('Clear all cached data? You will stay logged in.')) return;
-            const keep = ['isLoggedIn', 'scUser', 'scTheme', 'scCompact', 'scNotif', 'appVersion', 'scToursSeen', 'scV5Welcome', 'scSidebarCollapsed',
+            const keep = ['isLoggedIn', 'scUser', 'scTheme', 'scCompact', 'scNotif', 'appVersion', 'scToursSeen', 'scV5Welcome', 'scJobsView', 'scSidebarCollapsed',
                 'scNotif_received', 'scNotif_ready', 'scNotif_abandoned',
                 'scNotif_specialorder', 'scNotif_update', 'scNotif_jobstatus'];
             const user = localStorage.getItem('scUser');
