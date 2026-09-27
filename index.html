@@ -1360,7 +1360,8 @@
             const loginOverlay = document.getElementById('loginOverlay');
             const mainContent = document.querySelector('main');
             const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true' || sessionStorage.getItem('isLoggedIn') === 'true';
-            const duration = splash && splash.classList.contains('is-cold') ? 1200 : 0;
+            const loader = typeof ComponentLoader !== 'undefined' ? ComponentLoader.state : null;
+            const duration = loader ? Math.max(0, (loader.splashHold || 0) - (Date.now() - loader.loadStartTime)) : 0;
 
             // Show suspended notice if redirected from force-logout
             if (new URLSearchParams(window.location.search).get('revoked') === '1') {

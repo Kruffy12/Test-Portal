@@ -1326,6 +1326,20 @@
                     </div>
                 </div>
 
+                <div class="setting-row">
+                    <div class="setting-info">
+                        <div class="setting-label">Splash Screen</div>
+                        <div class="setting-desc">Plays the ServiCell loading animation for a few seconds every time a page opens. Off keeps pages instant. Saved for your account on this device.</div>
+                    </div>
+                    <div class="toggle-wrap">
+                        <label class="toggle">
+                            <input type="checkbox" id="splashToggle" onchange="saveSplashPref()">
+                            <div class="toggle-track"></div>
+                            <div class="toggle-thumb"></div>
+                        </label>
+                    </div>
+                </div>
+
                 <div class="setting-row" id="tipsRow">
                     <div class="setting-info">
                         <div class="setting-label">Page Tips</div>
@@ -1856,6 +1870,12 @@
  ? 'Compact mode is active across all pages.' : '';
         }
 
+        function saveSplashPref() {
+            const on = document.getElementById('splashToggle').checked;
+            if (typeof scSetSplashPref === 'function') scSetSplashPref(on);
+            if (window.SCQol) SCQol.toast(on ? 'Splash screen on — you’ll see it next time a page opens.' : 'Splash screen off — pages open instantly.', 'ok');
+        }
+
         function saveHapticsPref() {
             const on = document.getElementById('hapticsToggle').checked;
             localStorage.setItem('scHaptics', on 
@@ -2038,7 +2058,7 @@
 
         function clearCache() {
             if (!confirm('Clear all cached data? You will stay logged in.')) return;
-            const keep = ['isLoggedIn', 'scUser', 'scTheme', 'scCompact', 'scNotif', 'appVersion', 'scToursSeen', 'scV5Welcome', 'scJobsView', 'scSidebarCollapsed',
+            const keep = ['isLoggedIn', 'scUser', 'scTheme', 'scCompact', 'scNotif', 'appVersion', 'scToursSeen', 'scV5Welcome', 'scJobsView', 'scSplash', 'scSidebarCollapsed',
                 'scNotif_received', 'scNotif_ready', 'scNotif_abandoned',
                 'scNotif_specialorder', 'scNotif_update', 'scNotif_jobstatus'];
             const user = localStorage.getItem('scUser');
@@ -2337,6 +2357,8 @@
 
             const compact = localStorage.getItem('scCompact') === '1';
             document.getElementById('compactToggle').checked = compact;
+            document.getElementById('splashToggle').checked =
+                typeof scSplashPrefOn === 'function' && scSplashPrefOn();
             if (compact) {
                 document.getElementById('compactNote').textContent =
                     'Compact mode is active across all pages.';

@@ -34,8 +34,25 @@ window.getUserRole = getUserRole;
 const SC_PREF_KEYS = [
     'scTheme', 'scCompact', 'scHaptics', 'scNotif', 'scNotifSound',
     'scNotifSoundType', 'scAutoPrintReceipt', 'appVersion', 'scSidebarCollapsed', 'scToursSeen', 'scV5Welcome',
-    'scJobsView'
+    'scJobsView', 'scSplash'
 ];
+
+// "Splash screen" setting: off by default, saved per person on this device.
+function scSplashPrefOn() {
+    const user = getLoggedInUser().toLowerCase();
+    if (!user) return false;
+    try { return !!(JSON.parse(localStorage.getItem('scSplash') || '{}') || {})[user]; } catch (_) { return false; }
+}
+function scSetSplashPref(on) {
+    const user = getLoggedInUser().toLowerCase();
+    if (!user) return;
+    let all = {};
+    try { all = JSON.parse(localStorage.getItem('scSplash') || '{}') || {}; } catch (_) {}
+    if (on) all[user] = true; else delete all[user];
+    try { localStorage.setItem('scSplash', JSON.stringify(all)); } catch (_) {}
+}
+window.scSplashPrefOn = scSplashPrefOn;
+window.scSetSplashPref = scSetSplashPref;
 
 function escH(s) {
     const d = document.createElement('div');
@@ -93,7 +110,6 @@ const ComponentLoader = {
     },
 
     async init() {
-        this.state.loadStartTime = Date.now();
         this.createSplash();
 
         await Promise.all([
@@ -101,7 +117,7 @@ const ComponentLoader = {
             this.loadFooter()
         ]);
 
-        const min = this.splashIsCold() ? this.config.minSplashTime : 0;
+        const min = this.state.splashHold || 0;
         const remaining = Math.max(0, min - (Date.now() - this.state.loadStartTime));
         setTimeout(() => this.hideSplash(), remaining);
     },
@@ -114,11 +130,16 @@ const ComponentLoader = {
     createSplash() {
         // Don't create a second splash if one already exists
         if (document.getElementById('splash-screen')) return;
+        this.state.loadStartTime = Date.now();
         let cold = true;
         try {
             cold = !sessionStorage.getItem('scBooted');
             sessionStorage.setItem('scBooted', '1');
         } catch (_) {}
+        const showcase = scSplashPrefOn();
+        if (showcase) cold = true;
+        this.state.splashHold = showcase ? 2000 + Math.round(Math.random() * 2000)
+            : cold ? this.config.minSplashTime : 0;
         const splash = document.createElement('div');
         splash.id = 'splash-screen';
         splash.className = 'splash-screen ' + (cold ? 'is-cold' : 'is-warm');
