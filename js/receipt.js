@@ -130,11 +130,6 @@ function buildJobReceiptHTML(j, opts) {
         return c.length === 7 ? '+501 ' + c.slice(0,3) + '-' + c.slice(3) : p;
     }
 
-    function fmtStatus(s) {
-        return ({ ordered:'Parts Ordered', received:'Received', inqueue:'In Queue',
-                  fixing:'Being Repaired', testing:'Testing', ready:'Ready for Pickup' })[s] || s || '—';
-    }
-
     const priorityLabel = (j.priority||'low').toLowerCase() === 'high' ? 'HIGH — URGENT' : 'LOW — NORMAL';
     const receivedDate  = j.dateReceived ? bzDate(j.dateReceived) : today;
     const estimatedDate = j.estimatedCompletion || '—';
@@ -208,7 +203,7 @@ function buildJobReceiptHTML(j, opts) {
         <div class="pi-field-label">Issue Reported</div>
         <div class="pi-field-value">${_esc(j.issue||'—')}</div>
         <div class="pi-field-label">Status</div>
-        <div class="pi-field-value">${_esc(fmtStatus(j.status))}</div>
+        <div class="pi-field-value">${_esc(_jobFmtStatus(j.status))}</div>
         <div class="pi-field-label">${j.dateCompleted ? 'Completed On' : 'Est. Completion'}</div>
         <div class="pi-field-value">${_esc(j.dateCompleted ? bzDate(j.dateCompleted) : estimatedDate)}</div>
     </div>
@@ -441,7 +436,19 @@ window.resolveStaffDisplayName = resolveStaffDisplayName;
 window.formatProfessionalStaffName = formatProfessionalStaffName;
 
 function _jobIssuedByName(j) {
-    return resolveStaffDisplayName(j && j.technician);
+    if (!j) return '—';
+    const createdBy = String(j.createdBy || '').trim();
+    if (createdBy) return resolveStaffDisplayName(createdBy);
+    const tech = String(j.technician || '').trim();
+    const techLower = tech.toLowerCase();
+    if (tech && techLower !== 'unassigned' && techLower !== 'unknown') {
+        return resolveStaffDisplayName(tech);
+    }
+    try {
+        const sessionUser = localStorage.getItem('scUser') || sessionStorage.getItem('scUser') || '';
+        if (sessionUser) return resolveStaffDisplayName(sessionUser);
+    } catch (_) {}
+    return '—';
 }
 
 function buildPayoutSlipHTML(p, loggedByUser) {
@@ -756,11 +763,6 @@ function buildJobReceiptText(j) {
         const c = p.replace(/\D/g, '');
         return c.length === 7 ? '+501 ' + c.slice(0, 3) + '-' + c.slice(3) : p;
     }
-    function fmtStatus(s) {
-        return ({ ordered: 'Parts Ordered', received: 'Received', inqueue: 'In Queue',
-            fixing: 'Being Repaired', testing: 'Testing', ready: 'Ready for Pickup' })[s] || s || '—';
-    }
-
     let items = [];
     try { items = j.invoiceItems ? JSON.parse(j.invoiceItems) : []; } catch (_) { items = []; }
     const total = items.reduce(function(s, i) { return s + (parseFloat(i.price || 0) || 0); }, 0);
@@ -780,6 +782,7 @@ function buildJobReceiptText(j) {
         'JOB #: ' + (j.id || '—'),
         'DATE: ' + (j.dateReceived ? bzDate(j.dateReceived) : bzDate(new Date())),
         'Type: ' + (j.jobType || 'Repair') + ' · Priority: ' + priorityLabel,
+        'Issued By: ' + _jobIssuedByName(j),
         '',
         'CUSTOMER',
         'Name: ' + (j.customerName || 'Walk-in'),
@@ -788,11 +791,16 @@ function buildJobReceiptText(j) {
         'DEVICE',
         'Device: ' + (j.device || '—'),
         'Issue: ' + (j.issue || '—'),
-        'Status: ' + fmtStatus(j.status),
+        'Status: ' + _jobFmtStatus(j.status),
         (j.dateCompleted ? 'Completed: ' : 'Est. Completion: ') + (j.dateCompleted ? bzDate(j.dateCompleted) : (j.estimatedCompletion || '—')),
         '',
         'NOTES',
         j.notes || 'No additional notes.',
+    ];
+    if (j.inspection && j.inspection !== 'No damage noted') {
+        lines.push('', 'INSPECTION', j.inspection.replace(/;/g, '\n'));
+    }
+    lines.push(
         '',
         'COST BREAKDOWN'
     ];
@@ -1808,11 +1816,6 @@ function buildJobA4HTML(j, opts) {
         return c.length === 7 ? '+501 ' + c.slice(0,3) + '-' + c.slice(3) : p;
     }
 
-    function fmtStatus(s) {
-        return ({ ordered:'Parts Ordered', received:'Received', inqueue:'In Queue',
-                  fixing:'Being Repaired', testing:'Testing', ready:'Ready for Pickup' })[s] || s || '—';
-    }
-
     const priorityLabel = (j.priority||'low').toLowerCase() === 'high' ? 'HIGH — URGENT' : 'LOW — NORMAL';
     const receivedDate  = j.dateReceived ? bzDate(j.dateReceived) : today;
     const estimatedDate = j.estimatedCompletion || '—';
@@ -1887,7 +1890,7 @@ function buildJobA4HTML(j, opts) {
 <div class="pi-grid">
     <div class="pi-field"><div class="pi-field-label">Device</div><div class="pi-field-value">${_esc(j.device || '—')}</div></div>
     <div class="pi-field"><div class="pi-field-label">Issue Reported</div><div class="pi-field-value">${_esc(j.issue || '—')}</div></div>
-    <div class="pi-field"><div class="pi-field-label">Status</div><div class="pi-field-value">${_esc(fmtStatus(j.status))}</div></div>
+    <div class="pi-field"><div class="pi-field-label">Status</div><div class="pi-field-value">${_esc(_jobFmtStatus(j.status))}</div></div>
     <div class="pi-field"><div class="pi-field-label">${j.dateCompleted ? 'Completed On' : 'Est. Completion'}</div><div class="pi-field-value">${_esc(j.dateCompleted ? bzDate(j.dateCompleted) : estimatedDate)}</div></div>
 </div>
 <div class="pi-section">Work Notes</div>
