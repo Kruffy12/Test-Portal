@@ -803,7 +803,7 @@ function buildJobReceiptText(j) {
     lines.push(
         '',
         'COST BREAKDOWN'
-    ];
+    );
     if (items.length) {
         items.forEach(function(i) {
             lines.push('• ' + (i.desc || 'Service') + ' — BZ$' + (parseFloat(i.price || 0) || 0).toFixed(2));
