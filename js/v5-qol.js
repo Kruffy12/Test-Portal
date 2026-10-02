@@ -767,7 +767,7 @@
         'new-job.html': [
             { tour: true, badge: 'NEW', sel: '#njStepper', title: 'Five quick steps', body: 'Customer, device, condition, pricing, then review. Your progress is saved if you leave the page.' },
             { badge: 'NEW', sel: '.nj-mode-bar', title: 'Quote only', body: 'Choose Quote only when the customer just needs a price. The device can stay with them until they say yes to the repair.' },
-            { badge: 'NEW', sel: '.nj-panel[data-step="3"]', title: 'Pricing step', body: 'Leave Quote TBD for most intakes. Switch to Add quote for itemized or lump-sum pricing.' },
+            { badge: 'NEW', sel: '.nj-panel[data-step="3"]', title: 'Pricing step', body: 'Leave Price later if you do not know the cost yet. Switch to Add price for itemized or lump-sum quotes.' },
             { sel: '#customerName', title: 'Start with the customer', body: 'Name and phone are all you need here — errors show right next to the field.' }
         ],
         'sales.html': [

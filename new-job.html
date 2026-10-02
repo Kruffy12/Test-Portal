@@ -421,8 +421,15 @@
         }
 
         .nj-hint {
+            display: block;
             font-size: 0.75rem;
             color: var(--text-light);
+            line-height: 1.45;
+            margin-top: 6px;
+        }
+
+        .nj-chips + .nj-hint {
+            margin-top: 14px;
         }
 
         .nj-error {
@@ -1194,7 +1201,7 @@
                 <label>
                     <input type="radio" name="intakeMode" value="estimate">
                     <span class="nj-mode-title">Quote only</span>
-                    <span class="nj-mode-sub">Customer just needs a price — device may not be in yet</span>
+                    <span class="nj-mode-sub">Customer needs a price before dropping off the device</span>
                 </label>
             </div>
 
@@ -1284,11 +1291,11 @@
                 </div>
                 <div class="nj-group" id="deviceInShopGroup" style="display:none;">
                     <div class="nj-group-title">Device location</div>
-                    <div class="nj-chips" role="radiogroup" aria-label="Device in shop">
-                        <label class="nj-choice"><input type="radio" name="deviceInShop" value="yes" checked><span class="nj-chip">In the shop</span></label>
-                        <label class="nj-choice"><input type="radio" name="deviceInShop" value="no"><span class="nj-chip">Not here yet</span></label>
+                    <div class="nj-chips" role="radiogroup" aria-label="Device location">
+                        <label class="nj-choice"><input type="radio" name="deviceInShop" value="yes" checked><span class="nj-chip">In shop</span></label>
+                        <label class="nj-choice"><input type="radio" name="deviceInShop" value="no"><span class="nj-chip">With customer</span></label>
                     </div>
-                    <div class="nj-hint">If the device is not in the shop, photos are optional until approval.</div>
+                    <div class="nj-hint" id="deviceLocationHint">Photos of the front and back are required when the device is in the shop.</div>
                 </div>
                 <div class="nj-group">
                     <div class="nj-group-title">Accessories &amp; SIM</div>
@@ -1371,12 +1378,12 @@
             <section class="nj-panel" data-step="3" aria-labelledby="h-step-3">
                 <div class="nj-panel-head">
                     <h2 id="h-step-3" tabindex="-1">Pricing</h2>
-                    <p>Leave as quote TBD unless you already know the price.</p>
+                    <p>Skip this if the price is still unknown.</p>
                 </div>
                 <div class="nj-group">
                     <div class="nj-chips nj-pricing-mode" role="radiogroup" aria-label="Quote status">
-                        <label class="nj-choice"><input type="radio" name="quoteMode" value="tbd" checked><span class="nj-chip">Quote TBD</span></label>
-                        <label class="nj-choice"><input type="radio" name="quoteMode" value="quote"><span class="nj-chip">Add quote</span></label>
+                        <label class="nj-choice"><input type="radio" name="quoteMode" value="tbd" checked><span class="nj-chip">Price later</span></label>
+                        <label class="nj-choice"><input type="radio" name="quoteMode" value="quote"><span class="nj-chip">Add price</span></label>
                     </div>
                     <div class="nj-pricing-body" id="pricingBody">
                         <div class="nj-chips" role="radiogroup" aria-label="Quote entry style" style="margin-bottom:12px;">
@@ -1613,8 +1620,21 @@
             return checkedValue('deviceInShop') !== 'no';
         }
 
+        function syncPhotoRequirement() {
+            const needPhotos = deviceInShopYes();
+            ['front', 'back'].forEach(name => {
+                const slot = $('slot-' + name);
+                if (!slot) return;
+                slot.classList.toggle('required', needPhotos);
+                const small = slot.querySelector('small');
+                if (small) small.textContent = needPhotos ? 'Required' : 'Optional';
+                slot.setAttribute('aria-label', (name === 'front' ? 'Front' : 'Back') + ' of device photo (' + (needPhotos ? 'required' : 'optional') + ')');
+            });
+        }
+
         function syncIntakeModeUI() {
             const est = isEstimateMode();
+            const inShop = deviceInShopYes();
             $('deviceInShopGroup').style.display = est ? '' : 'none';
             const sub = $('njPageSubtitle');
             if (sub) {
@@ -1622,9 +1642,15 @@
                     ? 'Five steps — saves as a pending quote on Current Jobs until you approve it.'
                     : 'Five quick steps. If the page reloads, your progress is kept.';
             }
-            $('conditionStepHint').textContent = est && !deviceInShopYes()
-                ? 'Record accessories if known — photos optional until the device arrives.'
+            $('conditionStepHint').textContent = est && !inShop
+                ? 'Note accessories if you know them. Photos can wait until the device is dropped off.'
                 : 'Record what came in with it and take photos.';
+            const locHint = $('deviceLocationHint');
+            if (locHint) {
+                locHint.textContent = inShop
+                    ? 'Photos of the front and back are required when the device is in the shop.'
+                    : 'The device is still with the customer. Photos are optional until drop-off.';
+            }
             $('reviewStepHint').textContent = est
                 ? 'Check the quote, then save. Find it under Current Jobs → Quotes (pending).'
                 : 'Check the details, then log the job.';
@@ -1632,8 +1658,9 @@
             if (st) st.style.display = est ? 'none' : '';
             const primary = $('njPrimaryText');
             if (currentStep === STEP_COUNT - 1) {
-                primary.textContent = est ? 'Save quote' : 'Log Repair Job';
+                primary.textContent = est ? 'Save quote' : 'Log job';
             }
+            syncPhotoRequirement();
         }
 
         function syncQuotePricingUI() {
@@ -1699,7 +1726,7 @@
         }
 
         function pricingSummaryText() {
-            if (checkedValue('quoteMode') !== 'quote') return 'Quote TBD';
+            if (checkedValue('quoteMode') !== 'quote') return 'Price later';
             const items = collectInvoiceItems();
             if (items === null) return '<span class="warn">Incomplete quote</span>';
             if (!items.length) return '<span class="warn">Incomplete quote</span>';
@@ -2049,7 +2076,7 @@
             $('njBack').style.display = target === 0 ? 'none' : '';
             $('njCount').style.display = '';
             $('njCount').textContent = `Step ${target + 1} of ${STEP_COUNT}`;
-            $('njPrimaryText').textContent = isLast ? (isEstimateMode() ? 'Save quote' : 'Log Repair Job') : 'Continue';
+            $('njPrimaryText').textContent = isLast ? (isEstimateMode() ? 'Save quote' : 'Log job') : 'Continue';
             syncIntakeModeUI();
 
             if (isLast) renderReview();
@@ -2115,7 +2142,7 @@
                 <div class="nj-sum">
                     <div class="nj-sum-head"><h3>Condition</h3><button type="button" class="nj-link" data-goto="2">Edit</button></div>
                     <dl>
-                        ${isEstimateMode() ? row('Device in shop', deviceInShopYes() ? 'Yes' : 'Not yet') : ''}
+                        ${isEstimateMode() ? row('Device location', deviceInShopYes() ? 'In shop' : 'With customer') : ''}
                         ${row('Accessories', accessories)}
                         ${row('Other', escapeHtml(val('inspectionOther')))}
                         ${row('Photos', photos.length
@@ -2340,6 +2367,7 @@
                 slot.classList.remove('filled');
             });
             $('slot-extra-grid').innerHTML = '';
+            syncPhotoRequirement();
         }
 
         function resetForm() {
