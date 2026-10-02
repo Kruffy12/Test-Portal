@@ -164,7 +164,7 @@ function buildJobReceiptHTML(j, opts) {
                 <tr class="pi-total-row"><td><strong>TOTAL</strong></td><td><strong>${total.toFixed(2)}</strong></td></tr>
             </tbody>
         </table>` :
-        `<div class="pi-notes" style="text-align:center;"><strong>${isEstimate ? 'Quote pending inspection' : 'Price To Be Determined'}</strong><br><span style="font-size:7px;">${isEstimate ? 'Subject to physical inspection.' : 'Final cost after diagnostic.'}</span></div>`;
+        `<div class="pi-notes" style="text-align:center;"><strong>${isEstimate ? 'Quotation only. Final price finalized upon device inspection.' : 'Price To Be Determined'}</strong>${isEstimate ? '' : '<br><span style="font-size:7px;">Final cost after diagnostic.</span>'}</div>`;
 
     const inspectionHTML = (j.inspection && j.inspection !== 'No damage noted')
         ? `<div class="pi-section">Inspection</div><div class="pi-notes">${_esc(j.inspection).replace(/;/g, '<br>')}</div>`
@@ -188,7 +188,7 @@ function buildJobReceiptHTML(j, opts) {
     </div>
     <hr class="pi-rule">
     <div class="pi-title">${isEstimate ? 'Repair Estimate' : 'Job Receipt &amp; Intake Form'}</div>
-    ${isEstimate ? '<div class="pi-notes" style="text-align:center;font-size:8px;margin-bottom:4px;">Quotation only — not a tax invoice. Final price may change after inspection.</div>' : ''}
+    ${isEstimate ? '<div class="pi-notes" style="text-align:center;font-size:8px;margin-bottom:4px;">Quotation only. Final price finalized upon device inspection.</div>' : ''}
     <div class="pi-meta">
         <div><strong>${isEstimate ? 'ESTIMATE #' : 'JOB #:'}</strong> ${_esc(j.id)}</div>
         <div><strong>DATE:</strong> ${_esc(receivedDate)}</div>
@@ -1881,7 +1881,7 @@ function buildJobA4HTML(j, opts) {
             </tbody>
         </table>`;
     })() :
-        `<div class="pi-pending"><strong>${isEstimate ? 'Quote pending inspection' : 'Price To Be Determined'}</strong><br><span style="font-size:10px;">${isEstimate ? 'Subject to physical inspection — not a final invoice.' : 'Final cost will be provided after diagnostic assessment.'}</span></div>`;
+        `<div class="pi-pending"><strong>${isEstimate ? 'Quotation only. Final price finalized upon device inspection.' : 'Price To Be Determined'}</strong>${isEstimate ? '' : '<br><span style="font-size:10px;">Final cost will be provided after diagnostic assessment.</span>'}</div>`;
 
     const inspectionHTML = (j.inspection && j.inspection !== 'No damage noted')
         ? `<div class="pi-section">Device Inspection</div>
@@ -1910,7 +1910,7 @@ function buildJobA4HTML(j, opts) {
 </div>
 <hr class="pi-rule">
 <div class="pi-title">${isEstimate ? 'Repair Estimate / Quotation' : 'Job Invoice &amp; Intake Form'}</div>
-${isEstimate ? '<div class="pi-pending" style="margin-bottom:12px;font-size:11px;"><strong>Quotation only</strong> — not a tax invoice. Prices may change after device inspection.</div>' : ''}
+${isEstimate ? '<div class="pi-pending" style="margin-bottom:12px;font-size:11px;">Quotation only. Final price finalized upon device inspection.</div>' : ''}
 <div class="pi-meta-bar">
     <div><strong>${isEstimate ? 'ESTIMATE #' : 'JOB #:'}</strong> ${_esc(j.id)}</div>
     <div><strong>DATE RECEIVED:</strong> ${_esc(receivedDate)}</div>
