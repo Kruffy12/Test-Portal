@@ -105,9 +105,9 @@ const audit = (event: string, actor: string) =>
 // ─── Notifications + Web Push ─────────────────────────────────────────────────────────────────
 
 const ROLE_TYPES: Record<Role, string[]> = {
-  manager: ['received', 'ready', 'abandoned', 'jobstatus', 'specialorder', 'update', 'manageronly'],
-  cashier: ['received', 'ready', 'abandoned', 'jobstatus', 'specialorder', 'update'],
-  technician: ['received', 'ready', 'abandoned', 'jobstatus', 'specialorder', 'update'],
+  manager: ['received', 'ready', 'abandoned', 'jobstatus', 'specialorder', 'update', 'manageronly', 'estimate'],
+  cashier: ['received', 'ready', 'abandoned', 'jobstatus', 'specialorder', 'update', 'estimate'],
+  technician: ['received', 'ready', 'abandoned', 'jobstatus', 'specialorder', 'update', 'estimate'],
 };
 
 async function pushToSubscribers(type: string, title: string, body: string) {
@@ -277,7 +277,7 @@ const Jobs = {
 
     later(Customers.save(customerName, str(data.customerPhone, 60)));
     later(audit('JOB_CREATE', `${me.username} | Job #${id} | ${device} | ${customerName}`));
-    notify('received', '📦 New Job Received', `Job #${id} — ${device} for ${customerName}`);
+    notify('received', 'New Job Received', `Job #${id} — ${device} for ${customerName}`);
     return { success: true };
   },
 
@@ -306,11 +306,11 @@ const Jobs = {
     if (patch.payment !== undefined) later(audit('JOB_PAYMENT', `${me.username} | Job #${id} | ${str(patch.payment, 40)}`));
 
     if (updates.status === 'ready') {
-      notify('ready', '✅ Device Ready for Pickup', `Job #${id} is ready for pickup.`);
+      notify('ready', 'Device Ready for Pickup', `Job #${id} is ready for pickup.`);
     } else if (updates.status === 'abandoned') {
-      notify('abandoned', '⚠️ Abandoned Device', `Job #${id} has been marked abandoned.`);
+      notify('abandoned', 'Abandoned Device', `Job #${id} has been marked abandoned.`);
     } else if (updates.status) {
-      notify('jobstatus', '🔧 Job Status Updated', `Job #${id} is now: ${str(updates.status, 40)}.`);
+      notify('jobstatus', 'Job Status Updated', `Job #${id} is now: ${str(updates.status, 40)}.`);
     }
     return { success: true };
   },
@@ -591,7 +591,7 @@ const Estimates = {
     const snapshot = mapEstimate(est);
     await sbDelete('job_estimates', `id=eq.${id}`);
     later(audit('ESTIMATE_APPROVE', `${me.username} | Estimate #${id} → Job #${jobId}${remapped ? ' (renumbered)' : ''}`));
-    notify('received', '📋 Estimate approved', `Job #${jobId} — ${est.device} for ${est.customer_name}`);
+    notify('estimate', 'Estimate approved', `Job #${jobId} — ${est.device} for ${est.customer_name}`);
     return { success: true, jobId, originalId: id, idRemapped: remapped, estimate: snapshot };
   },
 
@@ -678,7 +678,7 @@ const SpecialOrders = {
       p_phone: str(data.phone, 60),
       p_requested_by: me.username,
     });
-    notify('specialorder', '🛒 New Special Order', `${me.username} requested: ${item}`);
+    notify('specialorder', 'New Special Order', `${me.username} requested: ${item}`);
     return { success: true, orderNumber, status: 'Pending', dateRequested: new Date().toISOString() };
   },
 
@@ -803,9 +803,9 @@ const Inventory = {
     });
     if (!res?.success) return res || { success: false, error: 'Stock adjustment failed' };
     if (res.newQty <= 0) {
-      notify('manageronly', `🔴 Out of Stock: ${res.name}`, `${res.name} is now out of stock.`);
+      notify('manageronly', `Out of Stock: ${res.name}`, `${res.name} is now out of stock.`);
     } else if (res.newQty <= res.minQty) {
-      notify('manageronly', `🟡 Low Stock: ${res.name}`, `${res.name} has only ${res.newQty} units left (min: ${res.minQty}).`);
+      notify('manageronly', `Low Stock: ${res.name}`, `${res.name} has only ${res.newQty} units left (min: ${res.minQty}).`);
     }
     return { success: true, sku, newQty: res.newQty, qtyBefore: res.qtyBefore };
   },
@@ -990,7 +990,7 @@ const Payouts = {
       reason,
     });
     await audit('PAYOUT_CREATE', `${me.username} | ${payoutId} | BZ$${amount.toFixed(2)}`);
-    notify('manageronly', '💸 Payout Logged', `${me.username} logged a BZ$${amount.toFixed(2)} payout: ${reason}`);
+    notify('manageronly', 'Payout Logged', `${me.username} logged a BZ$${amount.toFixed(2)} payout: ${reason}`);
     return { success: true, payoutId };
   },
 };
@@ -1122,7 +1122,7 @@ const DayCloses = {
     });
     await audit('DAY_CLOSE', `${me.username} | ${closeId} | drawer BZ$${num(data.actualDrawer).toFixed(2)} | variance BZ$${variance.toFixed(2)}`);
     if (variance < -0.01) {
-      notify('manageronly', '⚠️ Cashier Short',
+      notify('manageronly', 'Cashier Short',
         `${me.username} is short BZ$${Math.abs(variance).toFixed(2)} on ${str(data.shiftDate, 20) || 'today'}.`);
     }
     return { success: true, closeId };

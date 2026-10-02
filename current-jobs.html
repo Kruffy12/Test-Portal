@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-sc-build="20261002j">
+<html lang="en" data-sc-build="20261002k">
 
 <head>
     <script src="js/theme-init.js"></script>
@@ -4477,7 +4477,7 @@
                 const key = String(j.id);
                 if (checked[key] === todayKey) return; // already fired today
 
-                sendNotification('jobstatus', '⏰ Job #' + j.id + ' needs attention',
+                sendNotification('jobstatus', 'Job #' + j.id + ' needs attention',
                     j.device + ' for ' + j.customerName + ' hasn\'t been updated in 3 days.');
                 checked[key] = todayKey;
             });
@@ -5393,15 +5393,15 @@
                 // ── Push notifications on key status changes ──
                 if (status === 'ready') {
                     const j = allJobs.find(j => String(j.id) === String(currentEditId));
-                    sendNotification('ready', '✅ Device Ready for Pickup',
+                    sendNotification('ready', 'Device Ready for Pickup',
                         `#${currentEditId} — ${j?.device || 'Device'} (${j?.customerName || 'Customer'}) is ready.`);
                 } else if (status === 'abandoned') {
                     const j = allJobs.find(j => String(j.id) === String(currentEditId));
-                    sendNotification('abandoned', '⚠️ Abandoned Device',
+                    sendNotification('abandoned', 'Abandoned Device',
                         `#${currentEditId} — ${j?.device || 'Device'} has been marked as abandoned.`);
                 } else {
                     const j = allJobs.find(j => String(j.id) === String(currentEditId));
-                    sendNotification('jobstatus', '🔧 Job Status Updated',
+                    sendNotification('jobstatus', 'Job Status Updated',
                         `#${currentEditId} — ${j?.device || 'Device'} is now: ${status}.`);
                 }
 

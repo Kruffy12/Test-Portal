@@ -7,7 +7,7 @@
 // GitHub Pages caches HTML for ~10 minutes. If this script is newer than the page,
 // reload once onto a cache-busting URL so staff actually see the latest UI.
 (function () {
-    var BUILD = '20261002j';
+    var BUILD = '20261002k';
     var onPage = document.documentElement.getAttribute('data-sc-build') || '';
     if (onPage === BUILD) return;
     try {
@@ -484,9 +484,9 @@ function renderNotifPanel() {
     }
     list.innerHTML = notifs.map((n, idx) => `
         <div class="notif-item ${n.read ? '' : 'unread'}">
-            <div class="notif-icon">${InAppNotif.typeIcon(n.type)}</div>
+            <div class="notif-icon">${InAppNotif.typeIcon(n.type, n.title)}</div>
             <div class="notif-content">
-                <div class="notif-title">${escH(n.title)}</div>
+                <div class="notif-title">${escH(scPlainNotifTitle(n.title))}</div>
                 <div class="notif-body">${escH(n.body)}</div>
                 <div class="notif-time">${InAppNotif.timeAgo(n.time)}</div>
             </div>
@@ -539,7 +539,7 @@ const InAppNotif = {
         const list = this.get();
         list.unshift({
             id:    Date.now() + Math.random().toString(36).slice(2),
-            type, title, body,
+            type, title: scPlainNotifTitle(title), body,
             time:  Date.now(),
             read:  false
         });
@@ -584,9 +584,9 @@ const InAppNotif = {
             const existingIds = new Set(existing.map(n => n.serverId).filter(Boolean));
             // Filter by role before adding — manageronly must not reach non-managers
             const ROLE_TYPES = {
-                manager:    ['received','ready','abandoned','jobstatus','specialorder','update','manageronly'],
-                cashier:    ['received','ready','abandoned','specialorder','update','jobstatus'],
-                technician: ['received','ready','abandoned','specialorder','update','jobstatus']
+                manager:    ['received','ready','abandoned','jobstatus','specialorder','update','manageronly','estimate'],
+                cashier:    ['received','ready','abandoned','specialorder','update','jobstatus','estimate'],
+                technician: ['received','ready','abandoned','specialorder','update','jobstatus','estimate']
             };
             const allowed = ROLE_TYPES[role] || ROLE_TYPES.technician;
             const toAdd = notifs.filter(n => !existingIds.has(n.id) && allowed.includes(n.type));
@@ -596,7 +596,7 @@ const InAppNotif = {
                     id:       Date.now() + Math.random().toString(36).slice(2),
                     serverId: n.id,   // track server ID to avoid re-adding
                     type:     n.type,
-                    title:    n.title,
+                    title:    scPlainNotifTitle(n.title),
                     body:     n.body,
                     time:     n.timestamp ? new Date(n.timestamp).getTime() : Date.now(),
                     read:     false
@@ -650,9 +650,10 @@ const InAppNotif = {
         return Math.floor(s / 86400) + 'd ago';
     },
 
-    typeIcon(type) {
+    typeIcon(type, title) {
         const icons = {
             received:     'package',
+            estimate:     'clipboard',
             ready:        'success',
             abandoned:    'warning',
             specialorder: 'cart',
@@ -661,7 +662,8 @@ const InAppNotif = {
             manageronly:  'lock',
             general:      'bell'
         };
-        const name = icons[type] || 'bell';
+        let name = icons[type] || 'bell';
+        if (type === 'received' && /estimate/i.test(String(title || ''))) name = 'clipboard';
         return typeof scIcon === 'function' ? scIcon(name, 18) : '';
     },
 
@@ -1032,10 +1034,17 @@ window.scDismissUpdateNotice = function () {
     }
 };
 
+function scPlainNotifTitle(title) {
+    return String(title == null ? '' : title)
+        .replace(/^\s*(?:\p{Extended_Pictographic}\uFE0F?\s*)+/u, '')
+        .trim();
+}
+
 // ── sendNotification — role-aware in-app bell ────────────────────────────────
 // type: 'received'|'ready'|'abandoned'|'jobstatus'|'specialorder'|'update'
 const NOTIF_ROLES = {
     received:     ['technician', 'cashier', 'manager'],
+    estimate:     ['technician', 'cashier', 'manager'],
     ready:        ['technician', 'cashier', 'manager'],
     abandoned:    ['technician', 'cashier', 'manager'],
     jobstatus:    ['technician', 'cashier', 'manager'],
