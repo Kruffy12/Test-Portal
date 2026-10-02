@@ -4,6 +4,21 @@
  * No external nav.html fetch needed.
  */
 
+// GitHub Pages caches HTML for ~10 minutes. If this script is newer than the page,
+// reload once onto a cache-busting URL so staff actually see the latest UI.
+(function () {
+    var BUILD = '20261002d';
+    var onPage = document.documentElement.getAttribute('data-sc-build') || '';
+    if (onPage === BUILD) return;
+    try {
+        if (sessionStorage.getItem('sc_html_bust') === BUILD) return;
+        sessionStorage.setItem('sc_html_bust', BUILD);
+    } catch (_) { return; }
+    var u = new URL(location.href);
+    u.searchParams.set('v', BUILD);
+    location.replace(u.toString());
+})();
+
 // ── Role helpers (global so other scripts can use them) ───────────────────────
 function getLoggedInUser() {
     return localStorage.getItem('scUser') || sessionStorage.getItem('scUser') || '';
@@ -961,11 +976,13 @@ window.isOffline = () => !navigator.onLine;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
         if (!navigator.serviceWorker.controller) return;
         if (!hadController) { hadController = true; return; }
-        const card = document.getElementById('sc-app-update-card');
-        if (!card || !card.classList.contains('is-visible')) {
-            showUpdateNotice(null);
-        }
+        try {
+            if (sessionStorage.getItem('sc_sw_reload') === '1') return;
+            sessionStorage.setItem('sc_sw_reload', '1');
+        } catch (_) { return; }
+        location.reload();
     });
+    setTimeout(() => { try { sessionStorage.removeItem('sc_sw_reload'); } catch (_) {} }, 4000);
 
     let lastSwUpdateCheck = 0;
     document.addEventListener('visibilitychange', () => {

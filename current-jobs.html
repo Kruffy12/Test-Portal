@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-sc-build="20261002d">
 
 <head>
     <script src="js/theme-init.js"></script>
@@ -3988,7 +3988,7 @@
                 await loadEstimates();
                 await loadJobs();
                 if (typeof SCQol !== 'undefined' && SCQol.undoToast) {
-                    SCQol.undoToast('Estimate #' + id + ' approved — now in Current Jobs', {
+                    SCQol.undoToast('Quote #' + id + ' approved — now in Current Jobs', {
                         duration: 30000,
                         onUndo: async () => {
                             const u = await apiPost({ action: 'underestimateapprove', id, estimate: snap });
@@ -4000,7 +4000,7 @@
                         },
                     });
                 } else {
-                    showToast('✅ Estimate #' + id + ' approved', 'ok');
+                    showToast('✅ Quote #' + id + ' approved', 'ok');
                 }
                 if (est.deviceInShop === false && !(est.inspectionImages && est.inspectionImages.length)) {
                     showToast('Device not in shop — add photos when it arrives (Edit job).', 'info');
@@ -4015,7 +4015,7 @@
         function rejectEstimate(id) {
             const est = allEstimates.find(x => String(x.id) === String(id));
             if (!est) return;
-            if (!confirm('Remove estimate #' + id + ' for ' + (est.customerName || 'this customer') + '?')) return;
+            if (!confirm('Remove quote #' + id + ' for ' + (est.customerName || 'this customer') + '?')) return;
             (async () => {
                 try {
                     const data = await apiPost({ action: 'rejectestimate', id });
@@ -4026,7 +4026,7 @@
                     updateEstimatesBadge();
                     filterAndRender();
                     if (typeof SCQol !== 'undefined' && SCQol.undoToast) {
-                        SCQol.undoToast('Estimate #' + id + ' removed', {
+                        SCQol.undoToast('Quote #' + id + ' removed', {
                             duration: 30000,
                             onUndo: async () => {
                                 _pendingEstimateDeletes.delete(String(id));

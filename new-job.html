@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-sc-build="20261002d">
 
 <head>
     <script src="js/theme-init.js"></script>
@@ -1463,7 +1463,7 @@
             </section>
 
             <div class="nj-actions">
-                <button type="button" class="nj-btn nj-btn-secondary" id="njBack" onclick="goBack()">
+                <button type="button" class="nj-btn nj-btn-secondary" id="njBack" onclick="goBack()" style="display:none;">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
                     Back
                 </button>
@@ -1632,7 +1632,7 @@
             if (st) st.style.display = est ? 'none' : '';
             const primary = $('njPrimaryText');
             if (currentStep === STEP_COUNT - 1) {
-                primary.textContent = est ? 'Save Estimate' : 'Log Repair Job';
+                primary.textContent = est ? 'Save quote' : 'Log Repair Job';
             }
         }
 
@@ -1685,12 +1685,17 @@
                 return [{ desc, price }];
             }
             const lines = [];
+            let incomplete = false;
             document.querySelectorAll('#njPriceLines .nj-price-line').forEach(row => {
-                const desc = row.querySelector('.nj-line-desc')?.value.trim();
-                const price = parseFloat(row.querySelector('.nj-line-price')?.value);
-                if (desc && price > 0) lines.push({ desc, price });
+                const desc = row.querySelector('.nj-line-desc')?.value.trim() || '';
+                const raw = (row.querySelector('.nj-line-price')?.value || '').trim();
+                const price = parseFloat(raw);
+                if (!desc && !raw) return;
+                if (!desc || !(price > 0)) incomplete = true;
+                else lines.push({ desc, price });
             });
-            return lines.length ? lines : null;
+            if (incomplete || !lines.length) return null;
+            return lines;
         }
 
         function pricingSummaryText() {
@@ -2044,7 +2049,7 @@
             $('njBack').style.display = target === 0 ? 'none' : '';
             $('njCount').style.display = '';
             $('njCount').textContent = `Step ${target + 1} of ${STEP_COUNT}`;
-            $('njPrimaryText').textContent = isLast ? (isEstimateMode() ? 'Save Estimate' : 'Log Repair Job') : 'Continue';
+            $('njPrimaryText').textContent = isLast ? (isEstimateMode() ? 'Save quote' : 'Log Repair Job') : 'Continue';
             syncIntakeModeUI();
 
             if (isLast) renderReview();
@@ -2315,7 +2320,7 @@
             $('formWrapper').style.display = 'none';
             $('successBanner').classList.add('show');
             $('repairIdDisplay').textContent = '#' + id;
-            $('successTitle').textContent = estimate ? 'Estimate Saved!' : 'Job Logged!';
+            $('successTitle').textContent = estimate ? 'Quote saved' : 'Job Logged!';
             $('successSubtitle').textContent = estimate
                 ? 'Find it on Current Jobs → Quotes (pending). Approve when they want the repair.'
                 : 'Job saved to the database. Customer record updated.';
