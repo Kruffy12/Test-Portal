@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-sc-build="20261002f">
+<html lang="en" data-sc-build="20261002g">
 
 <head>
     <script src="js/theme-init.js"></script>
@@ -2490,41 +2490,16 @@
         .estimate-row-body { flex: 1 1 180px; min-width: 0; }
         .estimate-row-title { font-weight: 800; font-size: 0.92rem; }
         .estimate-row-meta { font-size: 0.75rem; color: var(--text-dim); margin-top: 4px; }
-        .estimate-actions { display: flex; gap: 8px; flex-shrink: 0; flex-wrap: wrap; }
-        .estimate-btn {
-            min-width: 44px;
-            min-height: 44px;
-            padding: 0 14px;
-            border-radius: 12px;
-            border: none;
-            font-family: inherit;
-            font-size: 0.8rem;
-            font-weight: 800;
-            cursor: pointer;
-            touch-action: manipulation;
-            transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease, background 0.15s ease;
+        .estimate-actions { display: flex; gap: 8px; flex-shrink: 0; }
+        .estimate-actions .action-btn {
+            width: 44px;
+            height: 44px;
         }
-        .estimate-btn:active { transform: translateY(0) scale(0.97); }
-        .estimate-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
-        .estimate-btn.approve { background: var(--success); color: #fff; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.28); }
-        .estimate-btn.deny { background: rgba(239, 68, 68, 0.12); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.35); }
-        .estimate-btn.print { background: #7c3aed; color: #fff; box-shadow: 0 2px 8px rgba(124, 58, 237, 0.28); }
-        @media (hover: hover) and (pointer: fine) {
-            .estimate-btn.approve:hover {
-                filter: brightness(1.08);
-                transform: translateY(-2px);
-                box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
-            }
-            .estimate-btn.deny:hover {
-                background: rgba(239, 68, 68, 0.22);
-                transform: translateY(-2px);
-                box-shadow: 0 8px 18px rgba(239, 68, 68, 0.22);
-            }
-            .estimate-btn.print:hover {
-                background: #6d28d9;
-                transform: translateY(-2px);
-                box-shadow: 0 8px 20px rgba(124, 58, 237, 0.4);
-            }
+        .estimate-actions .action-btn.approve:hover {
+            background: var(--success);
+            border-color: var(--success);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
         }
 
         /* ── Photo Grid ── */
@@ -3951,6 +3926,19 @@
             };
         }
 
+        function estimateIcon(name) {
+            if (typeof scIcon === 'function') {
+                const svg = scIcon(name, 16);
+                if (svg) return svg;
+            }
+            const fallback = {
+                print: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>',
+                check: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>',
+                x: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
+            };
+            return fallback[name] || '';
+        }
+
         function renderEstimates(filtered) {
             const list = document.getElementById('jobsList');
             const pg = document.getElementById('jobsPagination');
@@ -3974,9 +3962,9 @@
                     + '<div class="estimate-row-meta">' + sub + (e.deviceInShop === false ? ' · With customer' : '') + '</div>'
                     + '</div>'
                     + '<div class="estimate-actions">'
-                    + '<button type="button" class="estimate-btn print" onclick="printEstimate(' + e.id + ')">Print</button>'
-                    + '<button type="button" class="estimate-btn approve" onclick="approveEstimate(' + e.id + ')">Approve</button>'
-                    + '<button type="button" class="estimate-btn deny" onclick="rejectEstimate(' + e.id + ')">Deny</button>'
+                    + '<button type="button" class="action-btn" title="Print quote" aria-label="Print quote" onclick="printEstimate(' + e.id + ')">' + estimateIcon('print') + '</button>'
+                    + '<button type="button" class="action-btn approve" title="Approve quote" aria-label="Approve quote" onclick="approveEstimate(' + e.id + ')">' + estimateIcon('check') + '</button>'
+                    + '<button type="button" class="action-btn btn-delete" title="Deny quote" aria-label="Deny quote" onclick="rejectEstimate(' + e.id + ')">' + estimateIcon('x') + '</button>'
                     + '</div></div>';
             }).join('');
         }

@@ -3,7 +3,7 @@
 // Requires: js/qz-drawer.js loaded before this file
 
 const RECEIPT_STYLES = `
-@media print { @page { size: 72mm auto; margin: 0; } * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; color: #000 !important; background: transparent !important; -webkit-font-smoothing: none !important; -moz-osx-font-smoothing: unset !important; text-rendering: geometricPrecision !important; } body, #printInvoice, .po-slip, .po-report { background: white !important; color: #000 !important; } body:has(.po-slip) { text-align: left; } img { display: block !important; } }
+@media print { @page { size: 72mm auto; margin: 0; } * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; color: #000 !important; background: transparent !important; -webkit-font-smoothing: none !important; -moz-osx-font-smoothing: unset !important; text-rendering: geometricPrecision !important; } body, #printInvoice, .po-slip, .po-report { background: white !important; color: #000 !important; } body:has(.po-slip) { text-align: left; } img { display: block !important; } thead { display: table-row-group !important; } }
 #printInvoice { font-family: 'Courier New', Courier, monospace; color: #000; background: white; width: 100%; max-width: 100%; margin: 0 auto; padding: 3mm 3mm 12mm 3mm; font-size: 11px; font-weight: 700; line-height: 1.4; letter-spacing: 0; box-sizing: border-box; -webkit-font-smoothing: none; text-rendering: geometricPrecision; }
 #printInvoice * { font-weight: 700; box-sizing: border-box; color: #000; }
 .pi-shop { text-align: center; margin-bottom: 4px; }
@@ -23,8 +23,9 @@ const RECEIPT_STYLES = `
 .pi-field-value { font-size: 11px; padding: 1px 0; border-bottom: 1px solid #000; min-height: 12px; margin-bottom: 2px; }
 .pi-notes { border: 1px solid #000; padding: 3px 4px; min-height: 18px; font-size: 10px; line-height: 1.4; margin: 2px 0 4px; }
 .pi-cost-table { width: 100%; border-collapse: collapse; margin: 2px 0 4px; font-size: 10px; }
-.pi-cost-table th { text-align: left; font-size: 9px; font-weight: 900; letter-spacing: 0.3px; text-transform: uppercase; padding: 2px 0; border-bottom: 2px solid #000; }
-.pi-cost-table th:last-child { text-align: right; }
+.pi-cost-table thead { display: table-row-group; }
+.pi-cost-table th, .pi-cost-table .pi-cost-head td { text-align: left; font-size: 9px; font-weight: 900; letter-spacing: 0.3px; text-transform: uppercase; padding: 2px 0; border-bottom: 2px solid #000; }
+.pi-cost-table th:last-child, .pi-cost-table .pi-cost-head td:last-child { text-align: right; }
 .pi-cost-table td { padding: 2px 0; border-bottom: 1px solid #000; }
 .pi-cost-table td:last-child { text-align: right; }
 .pi-cost-table .pi-total-row td { border-top: 2px solid #000; border-bottom: none; font-size: 12px; font-weight: 900; padding-top: 3px; }
@@ -64,6 +65,7 @@ const RECEIPT_STYLES = `
 .po-report-date { font-size: 11px; font-weight: 700; margin: 0 0 2px; }
 .po-report-rule { height: 0; border: none; border-top: 2px solid #000; margin: 5px 0; }
 .po-report-table { width: 100%; border-collapse: collapse; font-size: 11px; font-weight: 700; line-height: 1.5; letter-spacing: 0.2px; }
+.po-report-table thead { display: table-row-group; }
 .po-report-table th { text-align: left; font-size: 10px; font-weight: 900; padding: 3px 2px; border-bottom: 2px solid #000; }
 .po-report-table th.col-amt { text-align: right; }
 .po-report-table td { padding: 3px 2px; border-bottom: 1px solid #000; vertical-align: top; word-break: break-word; }
@@ -158,8 +160,8 @@ function buildJobReceiptHTML(j, opts) {
 
     const costTableHTML = items.length ? `
         <table class="pi-cost-table">
-            <thead><tr><th>Service</th><th>BZD</th></tr></thead>
             <tbody>
+                <tr class="pi-cost-head"><td>Service</td><td>BZD</td></tr>
                 ${items.map(i => `<tr><td>${_esc(i.desc||'')}</td><td>${(parseFloat(i.price||0)||0).toFixed(2)}</td></tr>`).join('')}
                 <tr class="pi-total-row"><td><strong>TOTAL</strong></td><td><strong>${total.toFixed(2)}</strong></td></tr>
             </tbody>
@@ -297,7 +299,7 @@ function buildSaleReceiptHTML(items, total, amountPaid, method, saleId, customer
         : '';
 
     return `<style>
-@media print { @page { size: 72mm auto; margin: 0; } * { -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color:#000!important; background:transparent!important; -webkit-font-smoothing:none!important; text-rendering:geometricPrecision!important; } body { background:white!important; } }
+@media print { @page { size: 72mm auto; margin: 0; } * { -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color:#000!important; background:transparent!important; -webkit-font-smoothing:none!important; text-rendering:geometricPrecision!important; } body { background:white!important; } thead { display:table-row-group!important; } }
 #printInvoice { font-family:'Courier New',Courier,monospace; font-size:12px; font-weight:700; width:100%; max-width:100%; margin:0 auto; padding:3mm 3mm 12mm 3mm; line-height:1.4; letter-spacing:0; box-sizing:border-box; background:white; color:#000; -webkit-font-smoothing:none; text-rendering:geometricPrecision; }
 #printInvoice * { box-sizing:border-box; font-weight:700; color:#000; }
 #printInvoice h2 { text-align:center; font-size:16px; font-weight:900; letter-spacing:0.5px; margin:0 0 2px; }
@@ -306,6 +308,7 @@ function buildSaleReceiptHTML(items, total, amountPaid, method, saleId, customer
 #printInvoice hr { border:none; border-top:1px solid #000; margin:4px 0 3px; }
 #printInvoice hr.solid { border-top:2px solid #000; margin:4px 0 3px; }
 #printInvoice table { width:100%; border-collapse:collapse; font-size:11px; }
+#printInvoice thead { display:table-row-group; }
 #printInvoice th { border-bottom:2px solid #000; padding:3px 0; font-size:10px; text-align:left; font-weight:900; letter-spacing:0.3px; text-transform:uppercase; }
 #printInvoice th:nth-child(2),#printInvoice th:nth-child(3),#printInvoice th:nth-child(4) { text-align:right; }
 #printInvoice td { padding:3px 0; border-bottom:1px solid #000; }
@@ -557,15 +560,13 @@ function buildPayoutsReportHTML(payouts, displayDate) {
     </div>
     <div class="po-report-rule" aria-hidden="true"></div>
     <table class="po-report-table">
-        <thead>
+        <tbody>
             <tr>
                 <th>Time</th>
                 <th>Reason</th>
                 <th>Taken By</th>
                 <th class="col-amt">Amount</th>
             </tr>
-        </thead>
-        <tbody>
             ${rows}
             <tr class="total">
                 <td colspan="3">Total Payouts</td>
@@ -1788,6 +1789,7 @@ const A4_STYLES = `
     html, body { background: white !important; }
     img { display: block !important; max-width: 100%; }
     .a4-invoice { box-shadow: none !important; }
+    thead { display: table-row-group !important; }
 }
 html, body { margin: 0; padding: 0; background: #fff; color: #000; }
 body { font-family: 'Courier New', Courier, monospace; font-size: 12px; line-height: 1.45; }
@@ -1813,8 +1815,9 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 12px; line-hei
 .pi-field-value { font-size: 13px; font-weight: 700; padding: 4px 0 6px; border-bottom: 1px solid #000; min-height: 28px; word-break: break-word; }
 .pi-notes { border: 1px solid #000; padding: 10px 12px; min-height: 64px; font-size: 12px; line-height: 1.55; margin: 4px 0 12px; white-space: pre-wrap; word-break: break-word; }
 .pi-cost-table { width: 100%; border-collapse: collapse; margin-top: 4px; font-size: 12px; }
-.pi-cost-table th { text-align: left; font-size: 9px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; padding: 6px 0; border-bottom: 2px solid #000; }
-.pi-cost-table th.col-amt { text-align: right; width: 120px; }
+.pi-cost-table thead { display: table-row-group; }
+.pi-cost-table th, .pi-cost-table .pi-cost-head td { text-align: left; font-size: 9px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; padding: 6px 0; border-bottom: 2px solid #000; }
+.pi-cost-table th.col-amt, .pi-cost-table .pi-cost-head td.col-amt { text-align: right; width: 120px; }
 .pi-cost-table td { padding: 7px 0; border-bottom: 1px dashed #ccc; vertical-align: top; word-break: break-word; }
 .pi-cost-table td.col-amt { text-align: right; font-weight: 700; white-space: nowrap; padding-left: 12px; }
 .pi-cost-table tr.pi-subtotal td { border-bottom: 1px solid #000; font-size: 11px; padding-top: 10px; }
@@ -1872,8 +1875,8 @@ function buildJobA4HTML(j, opts) {
         function bz(n) { return 'BZ$' + (parseFloat(n) || 0).toFixed(2); }
         return `
         <table class="pi-cost-table">
-            <thead><tr><th>Service / Item</th><th class="col-amt">Amount</th></tr></thead>
             <tbody>
+                <tr class="pi-cost-head"><td>Service / Item</td><td class="col-amt">Amount</td></tr>
                 ${items.map(i => `<tr><td>${_esc(i.desc || '')}</td><td class="col-amt">${bz(i.price || 0)}</td></tr>`).join('')}
                 <tr class="pi-subtotal"><td>Subtotal (excl. GST)</td><td class="col-amt">${bz(preTax)}</td></tr>
                 <tr class="pi-gst"><td>GST (12.5%)</td><td class="col-amt">${bz(gst)}</td></tr>
