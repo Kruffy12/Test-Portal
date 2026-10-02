@@ -138,6 +138,18 @@ function normalizeImageUrl(item: unknown): string | null {
   return PHOTO_URL_PREFIX + enc(trimmed);
 }
 
+function loggedAtBelize(d = new Date()) {
+  return d.toLocaleString('en-US', {
+    timeZone: 'America/Belize',
+    month: 'numeric',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+}
+
 function mapJob(j: any) {
   return {
     id: j.id,
@@ -236,8 +248,7 @@ const Jobs = {
 
     // The ticket's technician is whoever will do the repair, not whoever logged it at the desk.
     const technician = me.role === 'technician' || me.role === 'manager' ? me.username : 'Unassigned';
-    const dateReceived = str(data.dateReceived, 40) ||
-      new Date().toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' });
+    const dateReceived = str(data.dateReceived, 60) || loggedAtBelize();
 
     try {
       await sbPost('jobs', {
@@ -459,8 +470,7 @@ function mapEstimate(e: any) {
 }
 
 function estimateRowFromData(me: Me, id: number, data: any) {
-  const dateReceived = str(data.dateReceived, 40) ||
-    new Date().toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' });
+  const dateReceived = str(data.dateReceived, 60) || loggedAtBelize();
   return {
     id,
     customer_name: str(data.customerName, 200),

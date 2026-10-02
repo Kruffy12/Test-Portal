@@ -113,6 +113,14 @@ function _esc(str) {
     return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
+/** Logged-at stamps already include 12-hour time. Older rows are date-only. */
+function _receivedLabel(raw, dateOnly) {
+    const s = String(raw || '').trim();
+    if (!s) return '';
+    if (/\b(?:AM|PM)\b/i.test(s)) return s;
+    return dateOnly(s);
+}
+
 // ── Job Receipt (current-jobs.html + new-job.html) ────────────────────────────
 function buildJobReceiptHTML(j, opts) {
     opts = opts || {};
@@ -132,7 +140,7 @@ function buildJobReceiptHTML(j, opts) {
     }
 
     const priorityLabel = (j.priority||'low').toLowerCase() === 'high' ? 'HIGH — URGENT' : 'LOW — NORMAL';
-    const receivedDate  = j.dateReceived ? bzDate(j.dateReceived) : today;
+    const receivedDate  = j.dateReceived ? _receivedLabel(j.dateReceived, bzDate) : today;
     const estimatedDate = j.estimatedCompletion || '—';
 
     // Cost table
@@ -791,7 +799,7 @@ function buildJobReceiptText(j) {
         '',
         'JOB RECEIPT & INTAKE FORM',
         'JOB #: ' + (j.id || '—'),
-        'DATE: ' + (j.dateReceived ? bzDate(j.dateReceived) : bzDate(new Date())),
+        'DATE: ' + (j.dateReceived ? _receivedLabel(j.dateReceived, bzDate) : bzDate(new Date())),
         'Type: ' + (j.jobType || 'Repair') + ' · Priority: ' + priorityLabel,
         'Issued By: ' + _jobIssuedByName(j),
         '',
@@ -874,7 +882,7 @@ function buildJobA4Text(j) {
     const items = _jobParseInvoiceItems(j);
     const total = items.reduce(function(s, i) { return s + (parseFloat(i.price || 0) || 0); }, 0);
     const priorityLabel = (j.priority || 'low').toLowerCase() === 'high' ? 'HIGH — URGENT' : 'LOW — NORMAL';
-    const receivedDate = j.dateReceived ? _jobFmtDate(j.dateReceived) : _jobFmtDate(new Date());
+    const receivedDate = j.dateReceived ? _receivedLabel(j.dateReceived, _jobFmtDate) : _jobFmtDate(new Date());
     const estimatedDate = j.estimatedCompletion || '—';
     let paymentStatus = 'N/A — Invoice Pending';
     if (items.length && total > 0) {
@@ -1843,7 +1851,7 @@ function buildJobA4HTML(j, opts) {
     }
 
     const priorityLabel = (j.priority||'low').toLowerCase() === 'high' ? 'HIGH — URGENT' : 'LOW — NORMAL';
-    const receivedDate  = j.dateReceived ? bzDate(j.dateReceived) : today;
+    const receivedDate  = j.dateReceived ? _receivedLabel(j.dateReceived, bzDate) : today;
     const estimatedDate = j.estimatedCompletion || '—';
 
     const items = (() => {

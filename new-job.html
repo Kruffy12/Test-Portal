@@ -2238,8 +2238,9 @@
             btn.disabled = true;
             isSubmitting = true;
 
-            const dateReceived = new Date().toLocaleDateString('en-US', {
-                month: 'numeric', day: 'numeric', year: 'numeric'
+            const dateReceived = new Date().toLocaleString('en-US', {
+                month: 'numeric', day: 'numeric', year: 'numeric',
+                hour: 'numeric', minute: '2-digit', hour12: true
             });
 
             // Technician on ticket = who will do the repair (not who logged it at the desk)

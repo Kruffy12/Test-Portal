@@ -58,6 +58,9 @@ function parsePortalDate(str) {
     if (!str) return null;
     const s = String(str).trim();
     if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+    // Shop stamps are M/D/YYYY or "M/D/YYYY, h:mm AM" — keep that calendar day (not UTC).
+    const mdy = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if (mdy) return mdy[3] + '-' + mdy[1].padStart(2, '0') + '-' + mdy[2].padStart(2, '0');
     const ms = Date.parse(s);
     if (!Number.isNaN(ms)) return new Date(ms).toISOString().slice(0, 10);
     return null;

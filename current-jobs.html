@@ -3655,6 +3655,13 @@
             });
         }
 
+        function formatDateReceived(raw) {
+            const s = String(raw || '').trim();
+            if (!s) return '—';
+            if (/\b(?:AM|PM)\b/i.test(s)) return s;
+            return bzDate(s) || s;
+        }
+
         async function refreshViewJobPaymentBadge(jobId, invoiceTotal, el) {
             if (!el || !jobId || invoiceTotal <= 0) return;
             try {
@@ -4932,7 +4939,7 @@
             const stat = classifyStatus(j);
             document.getElementById('view-status').innerHTML = `<span class="status-badge ${stat.class}">${stat.label}</span>`;
 
-            document.getElementById('view-date-received').textContent = bzDate(j.dateReceived) || '—';
+            document.getElementById('view-date-received').textContent = formatDateReceived(j.dateReceived);
             document.getElementById('view-estimated-completion').textContent = j.estimatedCompletion || '—';
 
             // Completion info based on status
