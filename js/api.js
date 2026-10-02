@@ -150,13 +150,19 @@ const INSPECTION_PHOTO_STAGES = ['front', 'back', 'accessories'];
  * and records who uploaded it.
  * @returns {Promise<string>} Public object URL
  */
-async function uploadAndAttachJobImage(repairId, dataUrl, imageIndex) {
+async function uploadAndAttachJobImage(repairId, dataUrl, imageIndex, estimateOnly) {
     const compressed = await compressDataUrl(dataUrl, 1200, 0.8);
     const stage = INSPECTION_PHOTO_STAGES[imageIndex - 1] || `additional-${imageIndex}`;
     let lastError = 'Photo upload failed';
     for (let attempt = 1; attempt <= 3; attempt++) {
         try {
-            const res = await apiPost({ action: 'uploadphoto', repairId, stage, image: compressed });
+            const res = await apiPost({
+                action: 'uploadphoto',
+                repairId,
+                stage,
+                image: compressed,
+                estimateOnly: estimateOnly ? '1' : undefined,
+            });
             if (res && res.success !== false && res.url) return res.url;
             lastError = (res && res.error) || lastError;
             if (res && (res.forbidden || res.signedOut)) break;

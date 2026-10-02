@@ -39,6 +39,13 @@
     text-decoration: none;
     color: var(--primary);
     font-weight: 600;
+    font-size: inherit;
+    font-family: inherit;
+}
+
+button.util-link {
+    padding: 0;
+    line-height: inherit;
 }
 
 .util-link:hover {

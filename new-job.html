@@ -167,6 +167,64 @@
             white-space: nowrap;
         }
 
+        .nj-mode-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
+            padding: 10px 12px;
+            border-radius: 14px;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+        }
+        .nj-mode-bar label {
+            flex: 1 1 140px;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 12px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: 1.5px solid transparent;
+            color: var(--text-dim);
+        }
+        .nj-mode-bar input { accent-color: var(--primary); }
+        .nj-mode-bar label:has(input:checked) {
+            background: rgba(var(--primary-rgb), 0.12);
+            border-color: rgba(var(--primary-rgb), 0.35);
+            color: var(--text-main);
+        }
+        .nj-pricing-mode { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+        .nj-pricing-body { display: none; margin-top: 12px; }
+        .nj-pricing-body.open { display: block; }
+        .nj-price-lines { display: flex; flex-direction: column; gap: 8px; margin: 10px 0; }
+        .nj-price-line {
+            display: grid;
+            grid-template-columns: 1fr 88px 36px;
+            gap: 8px;
+            align-items: center;
+        }
+        @media (max-width: 480px) {
+            .nj-price-line { grid-template-columns: 1fr 72px 32px; }
+        }
+        .nj-price-line input { width: 100%; }
+        .nj-price-tpl-wrap { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 12px; }
+        .nj-price-tpl {
+            padding: 6px 10px;
+            border-radius: 99px;
+            border: 1px solid var(--glass-border);
+            background: var(--glass);
+            font-size: 0.72rem;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .nj-lump-row { display: flex; flex-direction: column; gap: 10px; max-width: 420px; }
+
         /* ── Panels ── */
         .nj-panel { display: none; }
         .nj-panel.active { display: block; animation: njIn 0.34s cubic-bezier(0.32, 0.72, 0, 1) both; }
@@ -1083,9 +1141,9 @@
             <div class="success-icon">
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="20 6 9 17 4 12" stroke-width="2.5"/></svg>
             </div>
-            <h2>Job Logged!</h2>
+            <h2 id="successTitle">Job Logged!</h2>
             <div class="repair-id-tag" id="repairIdDisplay">—</div>
-            <p>Job saved to the database. Customer record updated.</p>
+            <p id="successSubtitle">Job saved to the database. Customer record updated.</p>
             <div id="uploadProgress" style="display:none;margin:16px auto 0;max-width:360px;text-align:left;">
                 <div id="uploadProgressText" style="font-size:0.82rem;font-weight:700;color:var(--text-dim);margin-bottom:8px;">Uploading photos…</div>
                 <div style="height:8px;border-radius:99px;background:rgba(148,163,184,0.25);overflow:hidden;">
@@ -1107,11 +1165,17 @@
         <!-- Form -->
         <form id="formWrapper" novalidate autocomplete="off">
 
+            <div class="nj-mode-bar" role="radiogroup" aria-label="Intake type">
+                <label><input type="radio" name="intakeMode" value="repair" checked> Repair intake</label>
+                <label><input type="radio" name="intakeMode" value="estimate"> Estimate mode</label>
+            </div>
+
             <ol class="nj-stepper" id="njStepper" aria-label="New job steps">
                 <li><button type="button" class="nj-step-btn" data-goto="0"><span class="nj-step-num"><span class="n">1</span><svg class="chk" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="nj-step-label">Customer</span></button></li>
                 <li><button type="button" class="nj-step-btn" data-goto="1"><span class="nj-step-num"><span class="n">2</span><svg class="chk" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="nj-step-label">Device</span></button></li>
                 <li><button type="button" class="nj-step-btn" data-goto="2"><span class="nj-step-num"><span class="n">3</span><svg class="chk" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="nj-step-label">Condition</span></button></li>
-                <li><button type="button" class="nj-step-btn" data-goto="3"><span class="nj-step-num"><span class="n">4</span><svg class="chk" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="nj-step-label">Review</span></button></li>
+                <li><button type="button" class="nj-step-btn" data-goto="3"><span class="nj-step-num"><span class="n">4</span><svg class="chk" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="nj-step-label">Pricing</span></button></li>
+                <li><button type="button" class="nj-step-btn" data-goto="4"><span class="nj-step-num"><span class="n">5</span><svg class="chk" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="nj-step-label">Review</span></button></li>
             </ol>
 
             <!-- Step 1: Customer -->
@@ -1188,7 +1252,15 @@
             <section class="nj-panel" data-step="2" aria-labelledby="h-step-2">
                 <div class="nj-panel-head">
                     <h2 id="h-step-2" tabindex="-1">Check the device</h2>
-                    <p>Record what came in with it and take photos.</p>
+                    <p id="conditionStepHint">Record what came in with it and take photos.</p>
+                </div>
+                <div class="nj-group" id="deviceInShopGroup" style="display:none;">
+                    <div class="nj-group-title">Device location</div>
+                    <div class="nj-chips" role="radiogroup" aria-label="Device in shop">
+                        <label class="nj-choice"><input type="radio" name="deviceInShop" value="yes" checked><span class="nj-chip">In the shop</span></label>
+                        <label class="nj-choice"><input type="radio" name="deviceInShop" value="no"><span class="nj-chip">Not here yet</span></label>
+                    </div>
+                    <div class="nj-hint">If the device is not in the shop, photos are optional until approval.</div>
                 </div>
                 <div class="nj-group">
                     <div class="nj-group-title">Accessories &amp; SIM</div>
@@ -1267,11 +1339,49 @@
                 </div>
             </section>
 
-            <!-- Step 4: Review -->
+            <!-- Step 4: Pricing -->
             <section class="nj-panel" data-step="3" aria-labelledby="h-step-3">
                 <div class="nj-panel-head">
-                    <h2 id="h-step-3" tabindex="-1">Review &amp; log</h2>
-                    <p>Check the details, then log the job.</p>
+                    <h2 id="h-step-3" tabindex="-1">Pricing</h2>
+                    <p>Leave as quote TBD unless you already know the price.</p>
+                </div>
+                <div class="nj-group">
+                    <div class="nj-chips nj-pricing-mode" role="radiogroup" aria-label="Quote status">
+                        <label class="nj-choice"><input type="radio" name="quoteMode" value="tbd" checked><span class="nj-chip">Quote TBD</span></label>
+                        <label class="nj-choice"><input type="radio" name="quoteMode" value="quote"><span class="nj-chip">Add quote</span></label>
+                    </div>
+                    <div class="nj-pricing-body" id="pricingBody">
+                        <div class="nj-chips" role="radiogroup" aria-label="Quote entry style" style="margin-bottom:12px;">
+                            <label class="nj-choice"><input type="radio" name="priceEntryMode" value="itemized" checked><span class="nj-chip">Itemized</span></label>
+                            <label class="nj-choice"><input type="radio" name="priceEntryMode" value="lump"><span class="nj-chip">Lump sum</span></label>
+                        </div>
+                        <div id="priceItemizedBlock">
+                            <div class="nj-price-tpl-wrap" id="njPriceTemplates"></div>
+                            <div class="nj-price-lines" id="njPriceLines"></div>
+                            <button type="button" class="nj-btn nj-btn-secondary" style="min-height:40px;padding:8px 14px;font-size:0.8rem;" onclick="addNjPriceLine()">+ Add line</button>
+                        </div>
+                        <div id="priceLumpBlock" style="display:none;" class="nj-lump-row">
+                            <div class="nj-field" data-field="lumpDesc">
+                                <label class="nj-label" for="lumpDesc">Description</label>
+                                <input type="text" id="lumpDesc" class="nj-input" placeholder="e.g. Screen replacement (quoted)">
+                            </div>
+                            <div class="nj-field" data-field="lumpAmount">
+                                <label class="nj-label" for="lumpAmount">Amount (BZD)</label>
+                                <input type="number" id="lumpAmount" class="nj-input" min="0" step="0.01" inputmode="decimal" placeholder="0.00">
+                            </div>
+                        </div>
+                        <div class="nj-field" data-field="pricing">
+                            <div class="nj-error" id="err-pricing" role="alert"><span></span></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Step 5: Review -->
+            <section class="nj-panel" data-step="4" aria-labelledby="h-step-4">
+                <div class="nj-panel-head">
+                    <h2 id="h-step-4" tabindex="-1">Review &amp; log</h2>
+                    <p id="reviewStepHint">Check the details, then log the job.</p>
                 </div>
                 <div class="nj-group">
                     <div class="nj-group-title">Ticket</div>
@@ -1295,7 +1405,7 @@
                             <div class="nj-error" id="err-priority" role="alert"><span></span></div>
                         </div>
                     </div>
-                    <div class="nj-field" data-field="status">
+                    <div class="nj-field" data-field="status" id="reviewStatusField">
                         <span class="nj-label" id="lbl-status">Initial status</span>
                         <div class="nj-chips" role="radiogroup" aria-labelledby="lbl-status">
                             <label class="nj-choice"><input type="radio" name="status" value="received" checked><span class="nj-chip">Received</span></label>
@@ -1440,16 +1550,26 @@
             { name: 'acc-charger',  label: 'Charger / cable',   values: { present: 'Charger: Present',  missing: 'Charger: Not Brought' } }
         ];
 
-        const STEP_COUNT = 4;
+        const STEP_COUNT = 5;
         const STEP_FIELDS = [
             ['customerName', 'customerPhone'],
             ['device', 'jobType'],
             ['photos'],
+            ['pricing'],
             ['repairId', 'priority', 'status', 'completion']
         ];
+        const NJ_PRICE_TEMPLATES = [
+            { label: 'Screen Replacement', price: 120 },
+            { label: 'Back-Glass Repair', price: 80 },
+            { label: 'Battery Replacement', price: 60 },
+            { label: 'Charging Port Repair', price: 70 },
+            { label: 'Diagnostic Fee', price: 25 },
+            { label: 'Labour', price: 40 },
+        ];
+        let _njPriceLineId = 0;
         const DRAFT_KEY = 'scNewJobDraft';
-        const DRAFT_TEXT_IDS = ['customerName', 'customerPhone', 'notes', 'device', 'issue', 'jobTypeOther', 'inspectionOther', 'estimatedCompletion'];
-        const DRAFT_RADIO_NAMES = ['jobType', 'priority', 'status', 'completionPreset', 'acc-simTray', 'acc-simCard', 'acc-case', 'acc-charger'];
+        const DRAFT_TEXT_IDS = ['customerName', 'customerPhone', 'notes', 'device', 'issue', 'jobTypeOther', 'inspectionOther', 'estimatedCompletion', 'lumpDesc', 'lumpAmount'];
+        const DRAFT_RADIO_NAMES = ['jobType', 'priority', 'status', 'completionPreset', 'acc-simTray', 'acc-simCard', 'acc-case', 'acc-charger', 'intakeMode', 'deviceInShop', 'quoteMode', 'priceEntryMode'];
         const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         const hasFinePointer = window.matchMedia('(pointer: fine)').matches;
 
@@ -1457,6 +1577,96 @@
         let maxReachedStep = 0;
         let activeBrand = '';
         let isSubmitting = false;
+        let _lastSubmitWasEstimate = false;
+
+        function isEstimateMode() { return checkedValue('intakeMode') === 'estimate'; }
+        function deviceInShopYes() {
+            if (!isEstimateMode()) return true;
+            return checkedValue('deviceInShop') !== 'no';
+        }
+
+        function syncIntakeModeUI() {
+            const est = isEstimateMode();
+            $('deviceInShopGroup').style.display = est ? '' : 'none';
+            $('conditionStepHint').textContent = est && !deviceInShopYes()
+                ? 'Record accessories if known — photos optional until the device arrives.'
+                : 'Record what came in with it and take photos.';
+            $('reviewStepHint').textContent = est
+                ? 'Check the estimate, then save it for approval on Current Jobs.'
+                : 'Check the details, then log the job.';
+            const st = $('reviewStatusField');
+            if (st) st.style.display = est ? 'none' : '';
+            const primary = $('njPrimaryText');
+            if (currentStep === STEP_COUNT - 1) {
+                primary.textContent = est ? 'Save Estimate' : 'Log Repair Job';
+            }
+        }
+
+        function syncQuotePricingUI() {
+            const addQuote = checkedValue('quoteMode') === 'quote';
+            $('pricingBody').classList.toggle('open', addQuote);
+            const lump = checkedValue('priceEntryMode') === 'lump';
+            $('priceItemizedBlock').style.display = lump ? 'none' : '';
+            $('priceLumpBlock').style.display = lump ? '' : 'none';
+            if (addQuote && !lump && !$('njPriceLines').children.length) addNjPriceLine();
+        }
+
+        function initNjPricing() {
+            const wrap = $('njPriceTemplates');
+            if (!wrap || wrap.dataset.ready) return;
+            wrap.dataset.ready = '1';
+            wrap.innerHTML = NJ_PRICE_TEMPLATES.map(t =>
+                `<button type="button" class="nj-price-tpl" onclick="applyNjTemplate('${t.label.replace(/'/g, "\\'")}', ${t.price})">${escapeHtml(t.label)}</button>`
+            ).join('');
+        }
+
+        function addNjPriceLine(desc, price) {
+            const id = ++_njPriceLineId;
+            const row = document.createElement('div');
+            row.className = 'nj-price-line';
+            row.dataset.lineId = String(id);
+            row.innerHTML = `
+                <input type="text" class="nj-input nj-line-desc" placeholder="Description" value="${desc ? escapeHtml(desc) : ''}">
+                <input type="number" class="nj-input nj-line-price" min="0" step="0.01" inputmode="decimal" placeholder="0.00" value="${price != null && price !== '' ? Number(price) : ''}">
+                <button type="button" class="nj-btn nj-btn-secondary" style="min-height:36px;padding:0;" aria-label="Remove line" onclick="this.closest('.nj-price-line').remove()">✕</button>`;
+            $('njPriceLines').appendChild(row);
+        }
+
+        function applyNjTemplate(label, price) {
+            if (checkedValue('priceEntryMode') === 'lump') {
+                $('lumpDesc').value = label;
+                $('lumpAmount').value = price;
+            } else {
+                addNjPriceLine(label, price);
+            }
+            haptic('light');
+        }
+
+        function collectInvoiceItems() {
+            if (checkedValue('quoteMode') !== 'quote') return [];
+            if (checkedValue('priceEntryMode') === 'lump') {
+                const desc = val('lumpDesc').trim();
+                const price = parseFloat(val('lumpAmount'));
+                if (!desc || !(price > 0)) return null;
+                return [{ desc, price }];
+            }
+            const lines = [];
+            document.querySelectorAll('#njPriceLines .nj-price-line').forEach(row => {
+                const desc = row.querySelector('.nj-line-desc')?.value.trim();
+                const price = parseFloat(row.querySelector('.nj-line-price')?.value);
+                if (desc && price > 0) lines.push({ desc, price });
+            });
+            return lines.length ? lines : null;
+        }
+
+        function pricingSummaryText() {
+            if (checkedValue('quoteMode') !== 'quote') return 'Quote TBD';
+            const items = collectInvoiceItems();
+            if (items === null) return '<span class="warn">Incomplete quote</span>';
+            if (!items.length) return '<span class="warn">Incomplete quote</span>';
+            const total = items.reduce((s, i) => s + i.price, 0);
+            return items.map(i => escapeHtml(i.desc) + ' — BZ$' + i.price.toFixed(2)).join('<br>') + `<br><strong>Total BZ$${total.toFixed(2)}</strong>`;
+        }
         let lastJobData = {};
         let currentJobData = lastJobData;
 
@@ -1724,14 +1934,21 @@
                 if (!jobType) errors.push(['jobType', 'Choose the type of repair.']);
                 else if (jobType === 'other' && !val('jobTypeOther')) errors.push(['jobType', 'Describe the repair type.']);
             } else if (idx === 2) {
-                const missing = ['front', 'back'].filter(s => !_slots[s]);
-                if (missing.length === 2) errors.push(['photos', 'Add photos of the front and back of the device.']);
-                else if (missing.length === 1) errors.push(['photos', `Add a photo of the ${missing[0]} of the device.`]);
+                if (deviceInShopYes()) {
+                    const missing = ['front', 'back'].filter(s => !_slots[s]);
+                    if (missing.length === 2) errors.push(['photos', 'Add photos of the front and back of the device.']);
+                    else if (missing.length === 1) errors.push(['photos', `Add a photo of the ${missing[0]} of the device.`]);
+                }
             } else if (idx === 3) {
+                if (checkedValue('quoteMode') === 'quote') {
+                    const items = collectInvoiceItems();
+                    if (items === null) errors.push(['pricing', 'Enter a description and amount for the quote.']);
+                }
+            } else if (idx === 4) {
                 const id = Number(val('repairId'));
                 if (!Number.isInteger(id) || id < 1) errors.push(['repairId', 'Enter a ticket number.']);
                 if (!checkedValue('priority')) errors.push(['priority', 'Choose a priority.']);
-                if (!checkedValue('status')) errors.push(['status', 'Choose a status.']);
+                if (!isEstimateMode() && !checkedValue('status')) errors.push(['status', 'Choose a status.']);
                 const preset = checkedValue('completionPreset');
                 if ((preset === 'date' || preset === 'datetime') && !$('estimatedCompletion').value) {
                     errors.push(['completion', 'Pick a date, or choose Not sure.']);
@@ -1793,9 +2010,11 @@
             $('njBack').style.display = target === 0 ? 'none' : '';
             $('njCount').style.display = target === 0 ? '' : 'none';
             $('njCount').textContent = `Step ${target + 1} of ${STEP_COUNT}`;
-            $('njPrimaryText').textContent = isLast ? 'Log Repair Job' : 'Continue';
+            $('njPrimaryText').textContent = isLast ? (isEstimateMode() ? 'Save Estimate' : 'Log Repair Job') : 'Continue';
+            syncIntakeModeUI();
 
             if (isLast) renderReview();
+            if (target === 3) syncQuotePricingUI();
 
             if (opts.focus !== false) {
                 window.scrollTo({ top: 0, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
@@ -1857,12 +2076,17 @@
                 <div class="nj-sum">
                     <div class="nj-sum-head"><h3>Condition</h3><button type="button" class="nj-link" data-goto="2">Edit</button></div>
                     <dl>
+                        ${isEstimateMode() ? row('Device in shop', deviceInShopYes() ? 'Yes' : 'Not yet') : ''}
                         ${row('Accessories', accessories)}
                         ${row('Other', escapeHtml(val('inspectionOther')))}
                         ${row('Photos', photos.length
                             ? `<div class="nj-sum-thumbs">${photos.map(src => `<img src="${src}" alt="">`).join('')}</div>`
-                            : '<span class="warn">None yet</span>')}
+                            : (deviceInShopYes() ? '<span class="warn">None yet</span>' : 'Skipped — device not in shop')}
                     </dl>
+                </div>
+                <div class="nj-sum">
+                    <div class="nj-sum-head"><h3>Pricing</h3><button type="button" class="nj-link" data-goto="3">Edit</button></div>
+                    <dl>${row('Quote', pricingSummaryText())}</dl>
                 </div>`;
         }
 
@@ -1983,15 +2207,19 @@
             const loggedIn = localStorage.getItem('scUser') || sessionStorage.getItem('scUser') || 'Unknown';
             const role = typeof getUserRole === 'function' ? getUserRole() : '';
             const technician = (role === 'technician' || role === 'manager') ? loggedIn : 'Unassigned';
+            const estMode = isEstimateMode();
+            _lastSubmitWasEstimate = estMode;
+            const quoteItems = collectInvoiceItems();
+            const invoiceJson = quoteItems && quoteItems.length ? JSON.stringify(quoteItems) : '';
 
             const sheetData = {
-                action: 'create',
+                action: estMode ? 'createestimate' : 'create',
                 repairId: Number(repairId),
                 device,
                 issue,
                 jobType,
                 priority,
-                status,
+                status: estMode ? 'received' : status,
                 customerName,
                 customerPhone,
                 notes,
@@ -1999,7 +2227,9 @@
                 estimatedCompletion,
                 payment: 'pending',
                 technician: technician,
-                inspection
+                inspection,
+                invoiceItems: invoiceJson,
+                deviceInShop: deviceInShopYes() ? '1' : '0',
             };
 
             lastJobData = {
@@ -2008,7 +2238,7 @@
                 issue,
                 jobType,
                 priority,
-                status,
+                status: estMode ? 'received' : status,
                 customerName,
                 customerPhone,
                 notes,
@@ -2016,7 +2246,9 @@
                 estimatedCompletion,
                 technician,
                 createdBy: loggedIn,
-                inspection
+                inspection,
+                invoiceItems: invoiceJson,
+                isEstimate: estMode,
             };
             currentJobData = lastJobData;
 
@@ -2032,9 +2264,8 @@
                     }
                     throw new Error(result.error || 'Server rejected the job');
                 }
-                showSuccess(repairId);
-                // Upload inspection images in the background
-                uploadInspectionImages(repairId);
+                showSuccess(repairId, estMode);
+                uploadInspectionImages(repairId, estMode);
             } catch (err) {
                 console.error(err);
                 const msg = err.message || 'Something went wrong.';
@@ -2045,11 +2276,15 @@
             }
         }
 
-        function showSuccess(id) {
+        function showSuccess(id, estimate) {
             clearDraft();
             $('formWrapper').style.display = 'none';
             $('successBanner').classList.add('show');
             $('repairIdDisplay').textContent = '#' + id;
+            $('successTitle').textContent = estimate ? 'Estimate Saved!' : 'Job Logged!';
+            $('successSubtitle').textContent = estimate
+                ? 'Pending approval on Current Jobs → Estimates filter.'
+                : 'Job saved to the database. Customer record updated.';
             window.scrollTo({ top: 0, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
             haptic('success');
         }
@@ -2239,7 +2474,7 @@
             if (sub) sub.textContent = detail || '';
         }
 
-        async function uploadInspectionImages(repairId) {
+        async function uploadInspectionImages(repairId, estimateOnly) {
             const images = _inspectionImages.filter(Boolean);
             if (!images.length) return;
             _setUploadProgress(0, images.length, 'Starting upload…');
@@ -2248,7 +2483,7 @@
                 let ok = false;
                 for (let attempt = 1; attempt <= 2 && !ok; attempt++) {
                     try {
-                        await uploadAndAttachJobImage(repairId, images[i], i + 1);
+                        await uploadAndAttachJobImage(repairId, images[i], i + 1, estimateOnly);
                         ok = true;
                     } catch (e) {
                         if (attempt === 2) failed.push(i + 1);
@@ -2334,9 +2569,10 @@
                 openJobReceiptPreview(currentJobData, isReceipt ? 'receipt' : 'a4');
                 return;
             }
+            const estOpts = { imgSrc: 'img/logo.png', isEstimate: !!(currentJobData && currentJobData.isEstimate) };
             const html = isReceipt
-                ? buildJobReceiptHTML(currentJobData, { imgSrc: 'img/logo.png' })
-                : buildJobA4HTML(currentJobData, { imgSrc: 'img/logo.png' });
+                ? buildJobReceiptHTML(currentJobData, estOpts)
+                : buildJobA4HTML(currentJobData, estOpts);
             if (isReceipt) kickDrawer();
             printHTML(html);
         }
@@ -2399,6 +2635,8 @@
             if (field) clearError(field.dataset.field);
             if (e.target.name === 'jobType') onJobTypeChange();
             if (e.target.name === 'completionPreset') applyCompletionPreset();
+            if (e.target.name === 'intakeMode' || e.target.name === 'deviceInShop') syncIntakeModeUI();
+            if (e.target.name === 'quoteMode' || e.target.name === 'priceEntryMode') syncQuotePricingUI();
             saveDraft();
         });
 
@@ -2410,6 +2648,9 @@
         renderBrandChips();
         renderRepairChips();
         wireDeviceSuggest();
+        initNjPricing();
+        syncIntakeModeUI();
+        syncQuotePricingUI();
         if (!restoreDraft()) goToStep(0, { skipValidation: true, focus: false });
         fetchLastId();
     </script>

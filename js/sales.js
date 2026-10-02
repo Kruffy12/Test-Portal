@@ -517,6 +517,7 @@ function renderBills() {
             +   '<div style="margin-top:4px;"><span class="bill-balance ' + (isSettled ? 'settled' : '') + '">' + (isSettled ? '\u2713 Settled' : 'Owes ' + bz(balance)) + '</span></div>'
             + '</div>'
             + (!isSettled ? '<button class="btn-success-sm" onclick="openSettleBill(\'' + escH(b.billId) + '\')">Settle</button>' : '')
+            + '<button class="item-btn" title="Print tab slip" onclick="printBillSlip(\'' + escH(b.billId) + '\')" style="margin-left:4px;">' + (typeof scIcon === 'function' ? scIcon('print', 15) : 'Print') + '</button>'
             + (!isSettled ? '<button class="item-btn" title="Edit" onclick="openEditBill(\'' + escH(b.billId) + '\')" style="margin-left:4px;">' + (typeof scIcon === 'function' ? scIcon('edit', 15) : 'Edit') + '</button>' : '')
             + '</div>';
     }).join('');
@@ -1078,6 +1079,43 @@ function printBillsReport() {
         + (billRows || '<tr><td colspan="3" style="text-align:center;font-size:9px;padding:8px 0;">No open bills</td></tr>')
         + '<tr class="total"><td colspan="2"><strong>Total Outstanding</strong></td><td><strong>' + bz(totalOwed) + '</strong></td></tr>'
         + '<tr><td colspan="2">Open Bills</td><td>' + open.length + '</td></tr>'
+        + '</table>'
+        + '<div class="footer">Printed ' + new Date().toLocaleString() + '</div>'
+        + '</body></html>';
+    _openAndPrint(html);
+}
+
+function printBillSlip(billId) {
+    const b = allBills.find(x => x.billId === billId);
+    if (!b) { showToast('Bill not found', 'err'); return; }
+    const balance = Math.max(0, (parseFloat(b.totalOwed) || 0) - (parseFloat(b.totalPaid) || 0));
+    const items = tryParseJSON(b.items, []);
+    const rows = items.map(i => {
+        const qty = parseFloat(i.qty) || 1;
+        const line = (parseFloat(i.total) != null ? parseFloat(i.total) : (parseFloat(i.price) || 0) * qty);
+        return '<tr><td style="font-size:9px;padding:4px 3px;">' + escH(i.name || 'Item') + (qty > 1 ? ' ×' + qty : '') + '</td><td style="text-align:right;font-size:9px;padding:4px 3px;">' + bz(line) + '</td></tr>';
+    }).join('');
+    const html = '<!DOCTYPE html><html><head><title>Bill Slip</title>'
+        + '<style>'
+        + '@page{size:72mm auto;margin:0;}'
+        + '*{box-sizing:border-box;-webkit-font-smoothing:none;text-rendering:geometricPrecision;}'
+        + 'body{font-family:"Courier New",Courier,monospace;font-size:11px;font-weight:bold;width:72mm;margin:0 auto;padding:3mm 3mm 15mm 3mm;color:#000;background:#fff;}'
+        + 'h2{text-align:center;font-size:15px;font-weight:900;margin:0 0 2mm;letter-spacing:1px;}'
+        + 'p{text-align:center;margin:0 0 1mm;font-size:10px;font-weight:bold;}'
+        + 'hr{border:none;border-top:2px solid #000;margin:2mm 0;}'
+        + 'table{width:100%;border-collapse:collapse;font-size:10px;font-weight:bold;line-height:1.5;}'
+        + 'td{border-bottom:1px solid #000;padding:4px 3px;vertical-align:top;}'
+        + 'td:last-child{text-align:right;font-weight:900;white-space:nowrap;}'
+        + '.total td{border-top:3px solid #000;border-bottom:none;font-size:13px;font-weight:900;padding-top:4px;}'
+        + '.footer{text-align:center;font-size:9px;font-weight:bold;margin-top:3mm;border-top:1px dashed #000;padding-top:2mm;}'
+        + '</style></head><body>'
+        + '<h2>SERVICELL BELIZE</h2>'
+        + '<p>Customer Tab / Bill</p>'
+        + '<p>' + escH(b.personName || 'Customer') + '</p>'
+        + '<hr>'
+        + '<table>'
+        + (rows || '<tr><td colspan="2" style="text-align:center;">No line items</td></tr>')
+        + '<tr class="total"><td>Balance due</td><td>' + bz(balance) + '</td></tr>'
         + '</table>'
         + '<div class="footer">Printed ' + new Date().toLocaleString() + '</div>'
         + '</body></html>';

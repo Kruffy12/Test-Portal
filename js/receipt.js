@@ -116,6 +116,7 @@ function _esc(str) {
 // ── Job Receipt (current-jobs.html + new-job.html) ────────────────────────────
 function buildJobReceiptHTML(j, opts) {
     opts = opts || {};
+    const isEstimate = !!(opts.isEstimate || j.isEstimate);
     const today = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 
     function bzDate(d) {
@@ -155,7 +156,7 @@ function buildJobReceiptHTML(j, opts) {
                 <tr class="pi-total-row"><td><strong>TOTAL</strong></td><td><strong>${total.toFixed(2)}</strong></td></tr>
             </tbody>
         </table>` :
-        `<div class="pi-notes" style="text-align:center;"><strong>Price To Be Determined</strong><br><span style="font-size:7px;">Final cost after diagnostic.</span></div>`;
+        `<div class="pi-notes" style="text-align:center;"><strong>${isEstimate ? 'Quote pending inspection' : 'Price To Be Determined'}</strong><br><span style="font-size:7px;">${isEstimate ? 'Subject to physical inspection.' : 'Final cost after diagnostic.'}</span></div>`;
 
     const inspectionHTML = (j.inspection && j.inspection !== 'No damage noted')
         ? `<div class="pi-section">Inspection</div><div class="pi-notes">${_esc(j.inspection).replace(/;/g, '<br>')}</div>`
@@ -178,9 +179,10 @@ function buildJobReceiptHTML(j, opts) {
         <p>Tel: +501 615-3388</p>
     </div>
     <hr class="pi-rule">
-    <div class="pi-title">Job Receipt &amp; Intake Form</div>
+    <div class="pi-title">${isEstimate ? 'Repair Estimate' : 'Job Receipt &amp; Intake Form'}</div>
+    ${isEstimate ? '<div class="pi-notes" style="text-align:center;font-size:8px;margin-bottom:4px;">Quotation only — not a tax invoice. Final price may change after inspection.</div>' : ''}
     <div class="pi-meta">
-        <div><strong>JOB #:</strong> ${_esc(j.id)}</div>
+        <div><strong>${isEstimate ? 'ESTIMATE #' : 'JOB #:'}</strong> ${_esc(j.id)}</div>
         <div><strong>DATE:</strong> ${_esc(receivedDate)}</div>
     </div>
     <div class="pi-meta-row">
@@ -212,13 +214,13 @@ function buildJobReceiptHTML(j, opts) {
     ${inspectionHTML}
     <div class="pi-section">Cost Breakdown</div>
     ${costTableHTML}
-    <div class="pi-payment-status"><strong>Payment Status:</strong> ${_esc(paymentStatus)}</div>
-    <div class="pi-footer">Thank you for choosing Servicell Belize!<br>Devices not collected within <strong>90 days of completion</strong> may be considered <strong>abandoned</strong>.<br>We are not responsible for data loss. Please back up your device.</div>
-    <hr class="pi-dash">
+    ${isEstimate ? '' : `<div class="pi-payment-status"><strong>Payment Status:</strong> ${_esc(paymentStatus)}</div>`}
+    <div class="pi-footer">Thank you for choosing Servicell Belize!<br>${isEstimate ? 'Quotation only — approve in store to start repair.<br>' : 'Devices not collected within <strong>90 days of completion</strong> may be considered <strong>abandoned</strong>.<br>'}We are not responsible for data loss. Please back up your device.</div>
+    ${isEstimate ? '' : `<hr class="pi-dash">
     <div class="pi-qr">
         <img src="${qrCodeUrl}" alt="Track Your Repair">
         <div class="pi-qr-text">SCAN TO TRACK YOUR REPAIR</div>
-    </div>
+    </div>`}
 </div>`;
 }
 
@@ -434,6 +436,15 @@ function resolveStaffDisplayName(username) {
 }
 window.resolveStaffDisplayName = resolveStaffDisplayName;
 window.formatProfessionalStaffName = formatProfessionalStaffName;
+
+/** Staff-facing “Logged by” in job modals: username when known, else receipt Issued By fallback. */
+function scJobLoggedByStaff(j) {
+    if (!j) return '—';
+    const createdBy = String(j.createdBy || '').trim();
+    if (createdBy) return createdBy;
+    return _jobIssuedByName(j);
+}
+window.scJobLoggedByStaff = scJobLoggedByStaff;
 
 function _jobIssuedByName(j) {
     if (!j) return '—';
@@ -1802,6 +1813,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 12px; line-hei
 
 function buildJobA4HTML(j, opts) {
     opts = opts || {};
+    const isEstimate = !!(opts.isEstimate || j.isEstimate);
     const today = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 
     function bzDate(d) {
@@ -1847,7 +1859,7 @@ function buildJobA4HTML(j, opts) {
             </tbody>
         </table>`;
     })() :
-        `<div class="pi-pending"><strong>Price To Be Determined</strong><br><span style="font-size:10px;">Final cost will be provided after diagnostic assessment.</span></div>`;
+        `<div class="pi-pending"><strong>${isEstimate ? 'Quote pending inspection' : 'Price To Be Determined'}</strong><br><span style="font-size:10px;">${isEstimate ? 'Subject to physical inspection — not a final invoice.' : 'Final cost will be provided after diagnostic assessment.'}</span></div>`;
 
     const inspectionHTML = (j.inspection && j.inspection !== 'No damage noted')
         ? `<div class="pi-section">Device Inspection</div>
@@ -1856,13 +1868,17 @@ function buildJobA4HTML(j, opts) {
 
     const imgSrc = opts.imgSrc || _receiptLogoSrc();
     
-    // Generate QR code URL for job tracking
     const jobId = j.id;
     const trackerUrl = `https://servicellbze.github.io/ServiCell/tracker.html?job=${jobId}`;
-    // Use quickchart.io - a free, reliable QR code API
     const qrCodeUrl = `https://quickchart.io/qr?text=${encodeURIComponent(trackerUrl)}&size=200`;
+    const qrBlock = isEstimate ? '' : `
+<div class="pi-qr-a4">
+    <img src="${qrCodeUrl}" alt="Track repair QR code">
+    <div class="pi-qr-a4-title">TRACK YOUR REPAIR</div>
+    <div class="pi-qr-a4-url">${_esc(trackerUrl)}</div>
+</div>`;
 
-    return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Job Invoice #${_esc(j.id)}</title><style>${A4_STYLES}</style></head><body>
+    return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>${isEstimate ? 'Estimate' : 'Job Invoice'} #${_esc(j.id)}</title><style>${A4_STYLES}</style></head><body>
 <div id="printInvoice" class="a4-invoice">
 <div class="pi-shop">
     <img src="${imgSrc}" alt="Servicell Belize">
@@ -1871,9 +1887,10 @@ function buildJobA4HTML(j, opts) {
     <p>#7 Douglas Jones, Belize City &middot; Tel: +501 615-3388</p>
 </div>
 <hr class="pi-rule">
-<div class="pi-title">Job Invoice &amp; Intake Form</div>
+<div class="pi-title">${isEstimate ? 'Repair Estimate / Quotation' : 'Job Invoice &amp; Intake Form'}</div>
+${isEstimate ? '<div class="pi-pending" style="margin-bottom:12px;font-size:11px;"><strong>Quotation only</strong> — not a tax invoice. Prices may change after device inspection.</div>' : ''}
 <div class="pi-meta-bar">
-    <div><strong>JOB #:</strong> ${_esc(j.id)}</div>
+    <div><strong>${isEstimate ? 'ESTIMATE #' : 'JOB #:'}</strong> ${_esc(j.id)}</div>
     <div><strong>DATE RECEIVED:</strong> ${_esc(receivedDate)}</div>
 </div>
 <div class="pi-meta-row">
@@ -1898,16 +1915,12 @@ function buildJobA4HTML(j, opts) {
 ${inspectionHTML}
 <div class="pi-section">Cost Breakdown</div>
 ${costTableHTML}
-<div class="pi-payment-status"><strong>Payment Status:</strong> ${_esc(paymentStatus)}</div>
+${isEstimate ? '' : `<div class="pi-payment-status"><strong>Payment Status:</strong> ${_esc(paymentStatus)}</div>`}
 <div class="pi-sigs">
     <div class="pi-sig">Customer Signature &amp; Date</div>
     <div class="pi-sig">Staff Signature &amp; Date</div>
 </div>
-<div class="pi-qr-a4">
-    <img src="${qrCodeUrl}" alt="Track Your Repair">
-    <div class="pi-qr-a4-title">SCAN TO TRACK YOUR REPAIR</div>
-    <div class="pi-qr-a4-url">servicellbze.github.io/ServiCell/tracker.html?job=${_esc(j.id)}</div>
-</div>
-<div class="pi-footer">Thank you for choosing Servicell Belize!<br>Devices not collected within <strong>90 days of completion</strong> may be considered <strong>abandoned</strong>.<br>We are not responsible for data loss. Please back up your device.<br>Prices include GST where applicable.</div>
+${qrBlock}
+<div class="pi-footer">Thank you for choosing Servicell Belize!<br>${isEstimate ? 'This estimate is valid for discussion with your insurer only — approve repair in-store to begin work.<br>' : 'Devices not collected within <strong>90 days of completion</strong> may be considered <strong>abandoned</strong>.<br>'}We are not responsible for data loss. Please back up your device.<br>Prices include GST where applicable.</div>
 </div></body></html>`;
 }

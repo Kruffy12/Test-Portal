@@ -213,8 +213,13 @@ const Jobs = {
   },
 
   async lastId() {
-    const rows = await sbGet('jobs', 'select=id&order=id.desc&limit=1');
-    return { lastId: rows.length ? rows[0].id : 100 };
+    const [jobRows, estRows] = await Promise.all([
+      sbGet('jobs', 'select=id&order=id.desc&limit=1'),
+      sbGet('job_estimates', 'select=id&order=id.desc&limit=1').catch(() => []),
+    ]);
+    const a = jobRows.length ? jobRows[0].id : 100;
+    const b = estRows.length ? estRows[0].id : 100;
+    return { lastId: Math.max(a, b) };
   },
 
   async create(me: Me, data: any) {
@@ -222,6 +227,8 @@ const Jobs = {
     const taken = `Job #${id} already exists — refresh the page for the next available ID`;
     const existing = await sbGet('jobs', `id=eq.${id}&select=id&limit=1`);
     if (existing.length) return { success: false, error: taken };
+    const estTaken = await sbGet('job_estimates', `id=eq.${id}&select=id&limit=1`).catch(() => []);
+    if (estTaken.length) return { success: false, error: taken };
 
     const customerName = str(data.customerName, 200);
     const device = str(data.device, 200);
@@ -248,6 +255,7 @@ const Jobs = {
         inspection: str(data.inspection) || 'No damage noted',
         date_received: dateReceived,
         payment: str(data.payment, 40) || 'unpaid',
+        invoice_items: str(data.invoiceItems, 12000) || '',
         created_by: me.username,
       });
     } catch (err: any) {
@@ -412,9 +420,186 @@ const Jobs = {
       return { success: false, error: err.message || err.error || `Storage upload failed (${res.status})` };
     }
     const url = PHOTO_URL_PREFIX + fileName;
-    await rpc('sc_append_job_image', { p_job_id: id, p_url: url });
-    await audit('PHOTO_UPLOAD', `${me.username} | Job #${id} | ${fileName}`);
+    if (flag(data.estimateOnly)) {
+      const estRows = await sbGet('job_estimates', `id=eq.${id}&select=inspection_images&limit=1`);
+      if (!estRows.length) return { success: false, error: 'Estimate not found' };
+      const prev = String(estRows[0].inspection_images || '').split(',').map((s: string) => s.trim()).filter(Boolean);
+      if (!prev.includes(url)) prev.push(url);
+      await sbPatch('job_estimates', `id=eq.${id}`, { inspection_images: prev.join(',') });
+      await audit('ESTIMATE_PHOTO', `${me.username} | Estimate #${id} | ${fileName}`);
+    } else {
+      await rpc('sc_append_job_image', { p_job_id: id, p_url: url });
+      await audit('PHOTO_UPLOAD', `${me.username} | Job #${id} | ${fileName}`);
+    }
     return { success: true, url };
+  },
+};
+
+// ─── Estimates (quotations pending approval) ──────────────────────────────────────────────────
+
+function mapEstimate(e: any) {
+  return {
+    id: e.id,
+    customerName: e.customer_name,
+    device: e.device,
+    customerPhone: e.customer_phone,
+    notes: e.notes,
+    issue: e.issue,
+    jobType: e.job_type,
+    priority: e.priority,
+    invoiceItems: e.invoice_items,
+    inspection: e.inspection,
+    estimatedCompletion: e.estimated_completion,
+    dateReceived: e.date_received,
+    deviceInShop: e.device_in_shop !== false,
+    inspectionImages: String(e.inspection_images || '').split(',').map(normalizeImageUrl).filter(Boolean),
+    createdBy: e.created_by || '',
+    createdAt: e.created_at,
+  };
+}
+
+function estimateRowFromData(me: Me, id: number, data: any) {
+  const dateReceived = str(data.dateReceived, 40) ||
+    new Date().toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' });
+  return {
+    id,
+    customer_name: str(data.customerName, 200),
+    device: str(data.device, 200),
+    customer_phone: str(data.customerPhone, 60),
+    notes: str(data.notes),
+    issue: str(data.issue),
+    job_type: str(data.jobType, 80),
+    priority: str(data.priority, 20) || 'low',
+    invoice_items: str(data.invoiceItems, 12000) || '',
+    inspection: str(data.inspection) || 'No damage noted',
+    estimated_completion: data.estimatedCompletion || null,
+    date_received: dateReceived,
+    device_in_shop: flag(data.deviceInShop),
+    inspection_images: str(data.inspectionImages, 8000) || '',
+    created_by: me.username,
+  };
+}
+
+const Estimates = {
+  async list() {
+    const rows = await sbGet('job_estimates', 'order=created_at.desc');
+    return { estimates: rows.map(mapEstimate) };
+  },
+
+  async create(me: Me, data: any) {
+    const id = toJobId(data.repairId || data.id);
+    const taken = `Estimate #${id} already exists — refresh the page for the next available ID`;
+    const [jobRows, estRows] = await Promise.all([
+      sbGet('jobs', `id=eq.${id}&select=id&limit=1`),
+      sbGet('job_estimates', `id=eq.${id}&select=id&limit=1`).catch(() => []),
+    ]);
+    if (jobRows.length || estRows.length) return { success: false, error: taken };
+
+    const customerName = str(data.customerName, 200);
+    const device = str(data.device, 200);
+    if (!customerName || !device) return { success: false, error: 'Customer name and device are required' };
+
+    try {
+      await sbPost('job_estimates', estimateRowFromData(me, id, data));
+    } catch (err: any) {
+      const msg = err.message || 'Could not save estimate';
+      if (/duplicate|23505|already exists/i.test(msg)) return { success: false, error: taken };
+      if (/relation.*job_estimates|does not exist/i.test(msg)) {
+        return { success: false, error: 'Estimates are not set up on the database yet — run portal_estimates.sql in Supabase.' };
+      }
+      return { success: false, error: msg.replace(/^Database \d+: /, '') };
+    }
+
+    later(Customers.save(customerName, str(data.customerPhone, 60)));
+    later(audit('ESTIMATE_CREATE', `${me.username} | Estimate #${id} | ${device} | ${customerName}`));
+    return { success: true, estimateId: id };
+  },
+
+  async approve(me: Me, idRaw: unknown, data: any) {
+    const id = toJobId(idRaw);
+    const rows = await sbGet('job_estimates', `id=eq.${id}&select=*&limit=1`);
+    if (!rows.length) return { success: false, error: 'Estimate not found' };
+    const est = rows[0];
+    const jobExists = await sbGet('jobs', `id=eq.${id}&select=id&limit=1`);
+    if (jobExists.length) return { success: false, error: `Job #${id} already exists` };
+
+    const status = str(data.status, 40) || 'received';
+    const technician = me.role === 'technician' || me.role === 'manager' ? me.username : 'Unassigned';
+    const inspectionImages = str(data.inspectionImages, 8000) || String(est.inspection_images || '');
+
+    await sbPost('jobs', {
+      id,
+      customer_name: est.customer_name,
+      device: est.device,
+      status,
+      customer_phone: est.customer_phone,
+      notes: est.notes,
+      issue: est.issue,
+      job_type: est.job_type,
+      priority: est.priority || 'low',
+      technician,
+      estimated_completion: est.estimated_completion,
+      inspection: est.inspection,
+      date_received: est.date_received,
+      payment: 'unpaid',
+      invoice_items: est.invoice_items || '',
+      created_by: est.created_by || me.username,
+      inspection_images: inspectionImages,
+    });
+
+    const snapshot = mapEstimate(est);
+    await sbDelete('job_estimates', `id=eq.${id}`);
+    later(audit('ESTIMATE_APPROVE', `${me.username} | Estimate #${id} → Job`));
+    notify('received', '📋 Estimate approved', `Job #${id} — ${est.device} for ${est.customer_name}`);
+    return { success: true, jobId: id, estimate: snapshot };
+  },
+
+  async reject(me: Me, idRaw: unknown) {
+    const id = toJobId(idRaw);
+    const rows = await sbGet('job_estimates', `id=eq.${id}&select=*&limit=1`);
+    if (!rows.length) return { success: false, error: 'Estimate not found' };
+    const snapshot = mapEstimate(rows[0]);
+    await sbDelete('job_estimates', `id=eq.${id}`);
+    later(audit('ESTIMATE_REJECT', `${me.username} | Estimate #${id}`));
+    return { success: true, estimate: snapshot };
+  },
+
+  async restore(me: Me, data: any) {
+    const id = toJobId(data.id || data.repairId);
+    const [jobRows, estRows] = await Promise.all([
+      sbGet('jobs', `id=eq.${id}&select=id&limit=1`),
+      sbGet('job_estimates', `id=eq.${id}&select=id&limit=1`).catch(() => []),
+    ]);
+    if (estRows.length) return { success: true, estimateId: id };
+    if (jobRows.length) return { success: false, error: `Job #${id} still exists — undo approve first` };
+
+    const row = estimateRowFromData(me, id, data);
+    if (data.createdBy) row.created_by = str(data.createdBy, 120);
+    try {
+      await sbPost('job_estimates', row);
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Could not restore estimate' };
+    }
+    later(audit('ESTIMATE_RESTORE', `${me.username} | Estimate #${id}`));
+    return { success: true, estimateId: id };
+  },
+
+  async undoApprove(me: Me, data: any) {
+    const id = toJobId(data.id);
+    const snap = data.estimate && typeof data.estimate === 'object' ? data.estimate : data;
+    const jobRows = await sbGet('jobs', `id=eq.${id}&select=id,claimed_by,status,payment&limit=1`);
+    if (!jobRows.length) {
+      return Estimates.restore(me, snap);
+    }
+    const j = jobRows[0];
+    if (String(j.claimed_by || '').trim()) {
+      return { success: false, error: 'Job was claimed — cannot undo approval' };
+    }
+    if (String(j.payment || '').toLowerCase().startsWith('paid')) {
+      return { success: false, error: 'Job has a payment recorded — cannot undo approval' };
+    }
+    await sbDelete('jobs', `id=eq.${id}`);
+    return Estimates.restore(me, snap);
   },
 };
 
@@ -1031,6 +1216,9 @@ const ACCESS: Record<string, Role[]> = {
   list: ALL, listarchived: ALL, lastid: ALL, create: ALL, update: ALL, delete: ALL, archive: MGR,
   claimjob: ALL, unclaim: ALL, markcalled: ALL, addimage: ALL, removeimage: ALL, uploadphoto: ALL,
 
+  listestimates: ALL, createestimate: ALL, approveestimate: ALL, rejectestimate: ALL,
+  restoreestimate: ALL, underestimateapprove: ALL,
+
   listorders: ALL, createorder: ALL, updateorder: MGR, deleteorder: MGR,
 
   listinventory: ALL, lowstock: ALL, listmovements: ALL, adjuststock: ALL,
@@ -1077,6 +1265,13 @@ async function dispatch(ctx: Ctx, action: string, id: unknown, data: any): Promi
     case 'addimage':       return Jobs.addImage(me, data.repairId || id, data.url || data.imageUrl);
     case 'removeimage':    return Jobs.removeImage(me, data.repairId || id, data.imageUrl);
     case 'uploadphoto':    return Jobs.uploadPhoto(me, data);
+
+    case 'listestimates':       return Estimates.list();
+    case 'createestimate':      return Estimates.create(me, data);
+    case 'approveestimate':     return Estimates.approve(me, id, data);
+    case 'rejectestimate':      return Estimates.reject(me, id);
+    case 'restoreestimate':     return Estimates.restore(me, data);
+    case 'underestimateapprove': return Estimates.undoApprove(me, data);
 
     case 'listorders':     return SpecialOrders.list();
     case 'createorder':    return SpecialOrders.create(me, data);

@@ -2471,6 +2471,50 @@
 
         .photo-filter-toggle span { white-space: nowrap; }
 
+        .estimates-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 32px;
+            padding: 4px 12px;
+            border-radius: 99px;
+            font-size: 0.72rem;
+            font-weight: 800;
+            background: rgba(139, 92, 246, 0.15);
+            color: #7c3aed;
+            border: 1px solid rgba(139, 92, 246, 0.35);
+            white-space: nowrap;
+        }
+        .estimate-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 16px;
+            border-radius: 16px;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            margin-bottom: 10px;
+        }
+        .estimate-row-body { flex: 1 1 180px; min-width: 0; }
+        .estimate-row-title { font-weight: 800; font-size: 0.92rem; }
+        .estimate-row-meta { font-size: 0.75rem; color: var(--text-dim); margin-top: 4px; }
+        .estimate-actions { display: flex; gap: 8px; flex-shrink: 0; }
+        .estimate-btn {
+            min-width: 44px;
+            min-height: 44px;
+            padding: 0 14px;
+            border-radius: 12px;
+            border: none;
+            font-family: inherit;
+            font-size: 0.8rem;
+            font-weight: 800;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        .estimate-btn.approve { background: var(--success); color: #fff; }
+        .estimate-btn.deny { background: rgba(239, 68, 68, 0.12); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.35); }
+
         /* ── Photo Grid ── */
         .photo-grid {
             display: none;
@@ -2835,7 +2879,9 @@
                 <option value="abandoned">Abandoned</option>
                 <option value="expiring">Expiring Soon (7 days)</option>
                 <option value="stale">Stale (14+ days in shop)</option>
+                <option value="estimates">Estimates (pending)</option>
             </select>
+            <span id="estimatesBadge" class="estimates-badge" hidden aria-live="polite"></span>
             <button type="button" class="refresh-text" onclick="loadJobs()">Refresh</button>
             <button id="archiveToggleBtn" class="archive-btn" onclick="toggleArchiveView()"
                 title="Search archived jobs">Archives</button>
@@ -3583,8 +3629,11 @@
         // ──────────────────────────────────────────────────────────────────────────
 
         let allJobs = [];
+        let allEstimates = [];
+        let _approveEstimateInFlight = false;
         // Jobs removed from the list but not yet deleted on the server (still inside their undo window)
         const _pendingDeletes = new Set();
+        const _pendingEstimateDeletes = new Set();
 
         function escH(s) {
             const d = document.createElement('div');
@@ -3874,9 +3923,166 @@
             document.getElementById('jobsNext').onclick = () => { if (_jobsPage < totalPages) { _jobsPage++; renderJobs(_filteredJobs); } };
         }
 
+        function updateEstimatesBadge() {
+            const el = document.getElementById('estimatesBadge');
+            if (!el) return;
+            const n = allEstimates.filter(e => !_pendingEstimateDeletes.has(String(e.id))).length;
+            if (n > 0) {
+                el.hidden = false;
+                el.textContent = n + ' estimate' + (n === 1 ? '' : 's') + ' pending';
+            } else {
+                el.hidden = true;
+                el.textContent = '';
+            }
+        }
+
+        function renderEstimates(filtered) {
+            const list = document.getElementById('jobsList');
+            const pg = document.getElementById('jobsPagination');
+            if (pg) pg.style.display = 'none';
+            if (!filtered.length) {
+                list.innerHTML = '<div style="padding:40px;text-align:center;opacity:0.5;">No pending estimates.</div>';
+                return;
+            }
+            list.innerHTML = filtered.map(e => {
+                const total = (() => {
+                    try {
+                        const items = JSON.parse(e.invoiceItems || '[]');
+                        return items.reduce((s, i) => s + (parseFloat(i.price) || 0), 0);
+                    } catch (_) { return 0; }
+                })();
+                const quote = total > 0 ? 'BZ$' + total.toFixed(2) : 'Quote TBD';
+                const sub = [escH(e.device), escH(e.issue || ''), quote].filter(Boolean).join(' · ');
+                return '<div class="estimate-row">'
+                    + '<div class="estimate-row-body">'
+                    + '<div class="estimate-row-title">#' + escH(e.id) + ' · ' + escH(e.customerName || 'Customer') + '</div>'
+                    + '<div class="estimate-row-meta">' + sub + (e.deviceInShop === false ? ' · Device not in shop' : '') + '</div>'
+                    + '</div>'
+                    + '<div class="estimate-actions">'
+                    + '<button type="button" class="estimate-btn approve" onclick="approveEstimate(' + e.id + ')">Approve</button>'
+                    + '<button type="button" class="estimate-btn deny" onclick="rejectEstimate(' + e.id + ')">Deny</button>'
+                    + '</div></div>';
+            }).join('');
+        }
+
+        async function loadEstimates() {
+            try {
+                const data = await apiGet({ action: 'listestimates' });
+                allEstimates = (data.estimates || []).filter(e => !_pendingEstimateDeletes.has(String(e.id)));
+                updateEstimatesBadge();
+                if (document.getElementById('statusFilter')?.value === 'estimates') filterAndRender();
+            } catch (e) {
+                console.warn('loadEstimates:', e);
+            }
+        }
+
+        async function approveEstimate(id) {
+            if (_approveEstimateInFlight) return;
+            const est = allEstimates.find(x => String(x.id) === String(id));
+            if (!est) return;
+            _approveEstimateInFlight = true;
+            try {
+                const data = await apiPost({ action: 'approveestimate', id });
+                if (data.success === false) throw new Error(data.error || 'Could not approve');
+                const snap = data.estimate;
+                await loadEstimates();
+                await loadJobs();
+                if (typeof SCQol !== 'undefined' && SCQol.undoToast) {
+                    SCQol.undoToast('Estimate #' + id + ' approved — now in Current Jobs', {
+                        duration: 30000,
+                        onUndo: async () => {
+                            const u = await apiPost({ action: 'underestimateapprove', id, estimate: snap });
+                            if (u.success === false) showToast('❌ ' + (u.error || 'Undo failed'), 'err');
+                            await loadEstimates();
+                            await loadJobs();
+                            document.getElementById('statusFilter').value = 'estimates';
+                            filterAndRender();
+                        },
+                    });
+                } else {
+                    showToast('✅ Estimate #' + id + ' approved', 'ok');
+                }
+                if (est.deviceInShop === false && !(est.inspectionImages && est.inspectionImages.length)) {
+                    showToast('Device not in shop — add photos when it arrives (Edit job).', 'info');
+                }
+            } catch (err) {
+                showToast('❌ ' + (err.message || 'Approve failed'), 'err');
+            } finally {
+                _approveEstimateInFlight = false;
+            }
+        }
+
+        function rejectEstimate(id) {
+            const est = allEstimates.find(x => String(x.id) === String(id));
+            if (!est) return;
+            if (!confirm('Remove estimate #' + id + ' for ' + (est.customerName || 'this customer') + '?')) return;
+            (async () => {
+                try {
+                    const data = await apiPost({ action: 'rejectestimate', id });
+                    if (data.success === false) throw new Error(data.error || 'Could not remove');
+                    const snap = data.estimate;
+                    _pendingEstimateDeletes.add(String(id));
+                    allEstimates = allEstimates.filter(x => String(x.id) !== String(id));
+                    updateEstimatesBadge();
+                    filterAndRender();
+                    if (typeof SCQol !== 'undefined' && SCQol.undoToast) {
+                        SCQol.undoToast('Estimate #' + id + ' removed', {
+                            duration: 30000,
+                            onUndo: async () => {
+                                _pendingEstimateDeletes.delete(String(id));
+                                const r = await apiPost({
+                                    action: 'restoreestimate',
+                                    id: snap.id,
+                                    customerName: snap.customerName,
+                                    device: snap.device,
+                                    customerPhone: snap.customerPhone,
+                                    notes: snap.notes,
+                                    issue: snap.issue,
+                                    jobType: snap.jobType,
+                                    priority: snap.priority,
+                                    invoiceItems: snap.invoiceItems,
+                                    inspection: snap.inspection,
+                                    estimatedCompletion: snap.estimatedCompletion,
+                                    dateReceived: snap.dateReceived,
+                                    deviceInShop: snap.deviceInShop ? '1' : '0',
+                                    inspectionImages: (snap.inspectionImages || []).join(','),
+                                    createdBy: snap.createdBy,
+                                });
+                                if (r.success === false) showToast('❌ ' + (r.error || 'Restore failed'), 'err');
+                                await loadEstimates();
+                                filterAndRender();
+                            },
+                            onCommit: () => { _pendingEstimateDeletes.delete(String(id)); },
+                        });
+                    }
+                } catch (err) {
+                    showToast('❌ ' + (err.message || 'Remove failed'), 'err');
+                }
+            })();
+        }
+
         function filterAndRender() {
             const term = document.getElementById('searchInput').value.toLowerCase().trim();
             const filter = document.getElementById('statusFilter').value;
+
+            if (!_viewingArchive && filter === 'estimates') {
+                syncStatCards('all');
+                const filtered = allEstimates.filter(e => {
+                    if (!term) return true;
+                    const hay = [String(e.id), e.customerName, e.device, e.issue, e.customerPhone].join(' ').toLowerCase();
+                    return hay.includes(term);
+                });
+                _filteredJobs = [];
+                renderEstimates(filtered);
+                const pg = document.getElementById('jobsPagination');
+                if (pg) pg.style.display = 'none';
+                if (_currentView === 'photo') {
+                    const grid = document.getElementById('photoGrid');
+                    if (grid) grid.innerHTML = '';
+                }
+                return;
+            }
+
             const sourceJobs = _viewingArchive
                 ? archivedJobs.map(j => ({ ...j, _archived: true }))
                 : allJobs;
@@ -4199,7 +4405,10 @@
 
         async function loadJobs() {
             try {
-                const data = await apiGet({ action: 'list' });
+                const [data] = await Promise.all([
+                    apiGet({ action: 'list' }),
+                    loadEstimates(),
+                ]);
                 const serverJobs = data.jobs || [];
                 allJobs = serverJobs.filter(j => !_pendingDeletes.has(String(j.id)));
                 // Cache the server's list: a delete still inside its undo window hasn't happened yet
@@ -4559,7 +4768,8 @@
             document.getElementById('view-name').textContent = j.customerName || 'Walk-in';
             document.getElementById('view-phone').textContent = j.customerPhone || '—';
             document.getElementById('view-job-type').textContent = j.jobType || '—';
-            document.getElementById('view-technician').textContent = j.technician || '—';
+            document.getElementById('view-technician').textContent =
+                typeof scJobLoggedByStaff === 'function' ? scJobLoggedByStaff(j) : (j.createdBy || j.technician || '—');
 
             // ── Claim status ──
             const scUser = localStorage.getItem('scUser') || sessionStorage.getItem('scUser') || '';

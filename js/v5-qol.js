@@ -752,6 +752,7 @@
             { sel: '[data-tour="tab-more"]', title: 'Everything else', body: 'Special orders, inventory, settings and more live under More.', mobileOnly: true }
         ],
         'current-jobs.html': [
+            { badge: 'NEW', sel: '#statusFilter', title: 'Estimates filter', body: 'Pending insurance quotes live under Estimates (pending). Approve to move them onto the board, or deny to remove.' },
             { sel: '#searchInput', title: 'Search this board', body: 'Type a job number, name, phone, device or technician to narrow the list instantly.' },
             { tour: true, sel: '.stats-row', title: 'Tap a number to filter', body: 'Tap Ready, Repairing or any card to show just those jobs; tap it again to see everything. The menu above has the rest — your own jobs, expiring soon and stale repairs.' },
             { tour: true, sel: '#jobsBoard', maxH: 0.34, picker: 'jobsView', title: 'Make the board yours', body: 'Pick how jobs look — you can change it any time with the buttons above the board.' },
@@ -764,11 +765,14 @@
             { sel: '.refresh-hint', title: 'Always up to date', body: 'The board refreshes every minute. On a phone, swipe down from the top to refresh right away.' }
         ],
         'new-job.html': [
-            { tour: true, sel: '#njStepper', title: 'Four quick steps', body: 'Customer, device, condition, then review. Your progress is saved if you leave the page.' },
+            { tour: true, badge: 'NEW', sel: '#njStepper', title: 'Five quick steps', body: 'Customer, device, condition, pricing, then review. Your progress is saved if you leave the page.' },
+            { badge: 'NEW', sel: '.nj-mode-bar', title: 'Estimate mode', body: 'Use Estimate mode for insurance quotations. The device can stay with the customer until they approve repair.' },
+            { badge: 'NEW', sel: '.nj-panel[data-step="3"]', title: 'Pricing step', body: 'Leave Quote TBD for most intakes. Switch to Add quote for itemized or lump-sum pricing.' },
             { sel: '#customerName', title: 'Start with the customer', body: 'Name and phone are all you need here — errors show right next to the field.' }
         ],
         'sales.html': [
             { tour: true, sel: '[data-tour="sales-hero"]', title: 'Start here', body: 'New Sale rings up a walk-in; Pickup collects payment for a finished repair.' },
+            { badge: 'NEW', sel: '#tab-bills', title: 'Print a tab slip', body: 'On Bills, use the print icon on any open bill for a 72mm customer slip with balance due.' },
             { sel: '[data-tour="tab-more"]', title: 'Other pages', body: 'Jobs, orders and inventory are one tap away under More.', mobileOnly: true }
         ],
         'special-orders.html': [
@@ -989,7 +993,12 @@
         }
         var def = step.def;
         var body = (isMobile() && def.mbody) || def.body;
-        card.querySelector('.sc-tour-title').textContent = step.title;
+        var titleEl = card.querySelector('.sc-tour-title');
+        if (def.badge) {
+            titleEl.innerHTML = esc(step.title) + ' <span class="sc-tip-new">' + esc(def.badge) + '</span>';
+        } else {
+            titleEl.textContent = step.title;
+        }
         var bodyEl = card.querySelector('.sc-tour-body');
         bodyEl.textContent = typeof body === 'function' ? body() : body;
         if (def.picker === 'jobsView') {
@@ -1214,7 +1223,7 @@
     var ROUTE = [
         { page: 'index.html', label: 'Dashboard', icon: 'home', blurb: 'Your shop at a glance — shortcuts, live numbers and the latest jobs.' },
         { page: 'current-jobs.html', label: 'Current Jobs', icon: 'wrench', blurb: 'The repair board. Every job, where it’s at and who has it.' },
-        { page: 'new-job.html', label: 'New Job', icon: 'plus', blurb: 'Logging a repair takes four short steps.' },
+        { page: 'new-job.html', label: 'New Job', icon: 'plus', blurb: 'Logging a repair takes five short steps (pricing optional).' },
         { page: 'sales.html', label: 'Sales', icon: 'dollar', blurb: 'Ring up walk-ins and collect payment for finished repairs.', roles: ['cashier', 'manager'] },
         { page: 'special-orders.html', label: 'Special Orders', icon: 'cart', blurb: 'Parts and accessories customers are waiting on.' },
         { page: 'settings.html', label: 'Settings', icon: 'settings', blurb: 'Make the portal yours — and replay this tour any time.' }
