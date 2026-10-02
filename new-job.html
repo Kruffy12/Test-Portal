@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-sc-build="20261002k">
+<html lang="en" data-sc-build="20261002l">
 
 <head>
     <script src="js/theme-init.js"></script>
@@ -1223,8 +1223,9 @@
                     <div class="nj-row">
                         <div class="nj-field" data-field="customerName">
                             <label class="nj-label" for="customerName">Name</label>
-                            <input type="text" id="customerName" class="nj-input" placeholder="e.g. John Doe"
-                                autocapitalize="words" enterkeyhint="next" aria-describedby="err-customerName">
+                            <input type="text" id="customerName" class="nj-input" placeholder="John Doe"
+                                autocapitalize="words" enterkeyhint="next" aria-describedby="customerName-hint err-customerName">
+                            <div class="nj-hint" id="customerName-hint">First and last name</div>
                             <div class="nj-error" id="err-customerName" role="alert"><span></span></div>
                         </div>
                         <div class="nj-field" data-field="customerPhone">
@@ -1991,7 +1992,10 @@
         function stepErrors(idx) {
             const errors = [];
             if (idx === 0) {
-                if (val('customerName').length < 2) errors.push(['customerName', "Enter the customer's name."]);
+                const name = val('customerName');
+                const nameParts = name.split(/\s+/).filter(Boolean);
+                if (!name.trim()) errors.push(['customerName', "Enter the customer's name."]);
+                else if (nameParts.length < 2) errors.push(['customerName', 'Add a last name too.']);
                 const digits = val('customerPhone').replace(/\D/g, '');
                 if (digits && digits.length !== 7) errors.push(['customerPhone', 'Belize numbers have 7 digits, like 600 - 0000.']);
             } else if (idx === 1) {
