@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-sc-build="20261002g">
+<html lang="en" data-sc-build="20261002h">
 
 <head>
     <script src="js/theme-init.js"></script>
@@ -3990,11 +3990,18 @@
                 const snap = data.estimate;
                 await loadEstimates();
                 await loadJobs();
+                const jobId = data.jobId || id;
+                let undoMsg = 'Quote #' + id + ' approved — now in Current Jobs';
+                if (data.idRemapped) {
+                    undoMsg = 'Quote #' + id + ' approved as Job #' + jobId + ' (#' + id + ' was already taken)';
+                }
                 if (typeof SCQol !== 'undefined' && SCQol.undoToast) {
-                    SCQol.undoToast('Quote #' + id + ' approved — now in Current Jobs', {
+                    SCQol.undoToast(undoMsg, {
                         duration: 30000,
+                        kind: 'estimate',
+                        undoRequest: { action: 'underestimateapprove', id: id, jobId: jobId, estimate: snap },
                         onUndo: async () => {
-                            const u = await apiPost({ action: 'underestimateapprove', id, estimate: snap });
+                            const u = await apiPost({ action: 'underestimateapprove', id: id, jobId: jobId, estimate: snap });
                             if (u.success === false) showToast('❌ ' + (u.error || 'Undo failed'), 'err');
                             await loadEstimates();
                             await loadJobs();
@@ -4034,28 +4041,31 @@
                     allEstimates = allEstimates.filter(x => String(x.id) !== String(id));
                     filterAndRender();
                     if (typeof SCQol !== 'undefined' && SCQol.undoToast) {
+                        const restoreBody = {
+                            action: 'restoreestimate',
+                            id: snap.id,
+                            customerName: snap.customerName,
+                            device: snap.device,
+                            customerPhone: snap.customerPhone,
+                            notes: snap.notes,
+                            issue: snap.issue,
+                            jobType: snap.jobType,
+                            priority: snap.priority,
+                            invoiceItems: snap.invoiceItems,
+                            inspection: snap.inspection,
+                            estimatedCompletion: snap.estimatedCompletion,
+                            dateReceived: snap.dateReceived,
+                            deviceInShop: snap.deviceInShop ? '1' : '0',
+                            inspectionImages: (snap.inspectionImages || []).join(','),
+                            createdBy: snap.createdBy,
+                        };
                         SCQol.undoToast('Quote #' + id + ' removed — Undo if that was a mistake', {
                             duration: 30000,
+                            kind: 'estimate',
+                            undoRequest: restoreBody,
                             onUndo: async () => {
                                 _pendingEstimateDeletes.delete(String(id));
-                                const r = await apiPost({
-                                    action: 'restoreestimate',
-                                    id: snap.id,
-                                    customerName: snap.customerName,
-                                    device: snap.device,
-                                    customerPhone: snap.customerPhone,
-                                    notes: snap.notes,
-                                    issue: snap.issue,
-                                    jobType: snap.jobType,
-                                    priority: snap.priority,
-                                    invoiceItems: snap.invoiceItems,
-                                    inspection: snap.inspection,
-                                    estimatedCompletion: snap.estimatedCompletion,
-                                    dateReceived: snap.dateReceived,
-                                    deviceInShop: snap.deviceInShop ? '1' : '0',
-                                    inspectionImages: (snap.inspectionImages || []).join(','),
-                                    createdBy: snap.createdBy,
-                                });
+                                const r = await apiPost(restoreBody);
                                 if (r.success === false) showToast('❌ ' + (r.error || 'Restore failed'), 'err');
                                 await loadEstimates();
                                 filterAndRender();
@@ -5354,7 +5364,21 @@
                 if (originalState && originalState.status !== status && window.SCQol) {
                     const jobId = currentEditId;
                     const prev = { ...originalState };
+                    const invoice = prev.invoiceItems == null ? '' : (typeof prev.invoiceItems === 'string' ? prev.invoiceItems : JSON.stringify(prev.invoiceItems));
                     SCQol.undoToast('Job #' + jobId + ' moved to ' + classifyStatus({ status }).label, {
+                        duration: 30000,
+                        kind: 'job-update',
+                        undoRequest: {
+                            action: 'update',
+                            id: jobId,
+                            status: prev.status || 'received',
+                            priority: prev.priority || 'low',
+                            notes: prev.notes || '',
+                            dateCompleted: prev.dateCompleted || '',
+                            estimatedCompletion: prev.estimatedCompletion || '',
+                            payment: prev.payment || 'unpaid',
+                            invoiceItems: invoice
+                        },
                         onUndo: () => revertJobEdit(jobId, prev)
                     });
                 } else {
@@ -5471,6 +5495,9 @@
 
             if (!window.SCQol) { commitDeleteJob(id, deletedJob, idx, false); return; }
             SCQol.undoToast('Job #' + id + ' deleted', {
+                duration: 30000,
+                kind: 'job-delete',
+                commitRequest: { action: 'delete', id: id },
                 onUndo: () => {
                     _pendingDeletes.delete(String(id));
                     if (!allJobs.some(j => String(j.id) === String(id))) allJobs.splice(Math.min(idx, allJobs.length), 0, deletedJob);
@@ -5478,7 +5505,10 @@
                     updateStats(allJobs);
                     showToast('Job #' + id + ' restored', 'ok');
                 },
-                onCommit: (isUnload) => commitDeleteJob(id, deletedJob, idx, isUnload)
+                onCommit: (isUnload) => {
+                    if (isUnload) return;
+                    commitDeleteJob(id, deletedJob, idx, false);
+                }
             });
         }
 
@@ -5657,6 +5687,10 @@
             });
         });
 
+        document.addEventListener('sc-qol-undo', function () {
+            if (typeof loadEstimates === 'function') loadEstimates();
+            if (typeof loadJobs === 'function') loadJobs();
+        });
         document.getElementById('searchInput').addEventListener('input', filterAndRender);
         document.getElementById('statusFilter').addEventListener('change', filterAndRender);
         (function restoreJobsView() {

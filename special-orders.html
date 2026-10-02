@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-sc-build="20261002g">
+<html lang="en" data-sc-build="20261002h">
 
 <head>
     <script src="js/theme-init.js"></script>
@@ -1048,6 +1048,9 @@
                     if (isUndo) notify(orderNumber + ' set back to ' + newStatus, 'ok');
                     else if (window.SCQol && originalStatus && originalStatus !== newStatus) {
                         SCQol.undoToast(orderNumber + ' marked ' + newStatus, {
+                            duration: 30000,
+                            kind: 'order',
+                            undoRequest: { action: 'updateorder', orderNumber: orderNumber, status: originalStatus, updatedBy: currentUser },
                             onUndo: () => updateStatus(orderNumber, originalStatus, true)
                         });
                     }

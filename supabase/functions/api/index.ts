@@ -492,6 +492,21 @@ function estimateRowFromData(me: Me, id: number, data: any) {
   };
 }
 
+async function allocateJobId(preferred: number): Promise<{ id: number; remapped: boolean }> {
+  const jobs = await sbGet('jobs', `id=eq.${preferred}&select=id&limit=1`);
+  if (!jobs.length) return { id: preferred, remapped: false };
+  const last = await Jobs.lastId();
+  let n = (last.lastId || preferred) + 1;
+  for (let i = 0; i < 25; i++, n++) {
+    const [j, e] = await Promise.all([
+      sbGet('jobs', `id=eq.${n}&select=id&limit=1`),
+      sbGet('job_estimates', `id=eq.${n}&select=id&limit=1`).catch(() => []),
+    ]);
+    if (!j.length && !e.length) return { id: n, remapped: true };
+  }
+  throw new Error(`Job #${preferred} already exists and no free number was found`);
+}
+
 const Estimates = {
   async list() {
     const rows = await sbGet('job_estimates', 'order=created_at.desc');
@@ -532,38 +547,52 @@ const Estimates = {
     const rows = await sbGet('job_estimates', `id=eq.${id}&select=*&limit=1`);
     if (!rows.length) return { success: false, error: 'Estimate not found' };
     const est = rows[0];
-    const jobExists = await sbGet('jobs', `id=eq.${id}&select=id&limit=1`);
-    if (jobExists.length) return { success: false, error: `Job #${id} already exists` };
+    let allocated: { id: number; remapped: boolean };
+    try {
+      allocated = await allocateJobId(id);
+    } catch (err: any) {
+      return { success: false, error: err.message || `Job #${id} already exists` };
+    }
+    const jobId = allocated.id;
+    const remapped = allocated.remapped;
 
     const status = str(data.status, 40) || 'received';
     const technician = me.role === 'technician' || me.role === 'manager' ? me.username : 'Unassigned';
     const inspectionImages = str(data.inspectionImages, 8000) || String(est.inspection_images || '');
 
-    await sbPost('jobs', {
-      id,
-      customer_name: est.customer_name,
-      device: est.device,
-      status,
-      customer_phone: est.customer_phone,
-      notes: est.notes,
-      issue: est.issue,
-      job_type: est.job_type,
-      priority: est.priority || 'low',
-      technician,
-      estimated_completion: est.estimated_completion,
-      inspection: est.inspection,
-      date_received: est.date_received,
-      payment: 'unpaid',
-      invoice_items: est.invoice_items || '',
-      created_by: est.created_by || me.username,
-      inspection_images: inspectionImages,
-    });
+    try {
+      await sbPost('jobs', {
+        id: jobId,
+        customer_name: est.customer_name,
+        device: est.device,
+        status,
+        customer_phone: est.customer_phone,
+        notes: est.notes,
+        issue: est.issue,
+        job_type: est.job_type,
+        priority: est.priority || 'low',
+        technician,
+        estimated_completion: est.estimated_completion,
+        inspection: est.inspection,
+        date_received: est.date_received,
+        payment: 'unpaid',
+        invoice_items: est.invoice_items || '',
+        created_by: est.created_by || me.username,
+        inspection_images: inspectionImages,
+      });
+    } catch (err: any) {
+      const msg = err.message || 'Could not approve estimate';
+      if (/duplicate|23505|already exists/i.test(msg)) {
+        return { success: false, error: `Job #${jobId} already exists — refresh and try again` };
+      }
+      return { success: false, error: msg.replace(/^Database \d+: /, '') };
+    }
 
     const snapshot = mapEstimate(est);
     await sbDelete('job_estimates', `id=eq.${id}`);
-    later(audit('ESTIMATE_APPROVE', `${me.username} | Estimate #${id} → Job`));
-    notify('received', '📋 Estimate approved', `Job #${id} — ${est.device} for ${est.customer_name}`);
-    return { success: true, jobId: id, estimate: snapshot };
+    later(audit('ESTIMATE_APPROVE', `${me.username} | Estimate #${id} → Job #${jobId}${remapped ? ' (renumbered)' : ''}`));
+    notify('received', '📋 Estimate approved', `Job #${jobId} — ${est.device} for ${est.customer_name}`);
+    return { success: true, jobId, originalId: id, idRemapped: remapped, estimate: snapshot };
   },
 
   async reject(me: Me, idRaw: unknown) {
@@ -597,11 +626,12 @@ const Estimates = {
   },
 
   async undoApprove(me: Me, data: any) {
-    const id = toJobId(data.id);
     const snap = data.estimate && typeof data.estimate === 'object' ? data.estimate : data;
-    const jobRows = await sbGet('jobs', `id=eq.${id}&select=id,claimed_by,status,payment&limit=1`);
+    const jobId = toJobId(data.jobId || data.id);
+    const estimateId = toJobId(snap.id || data.id);
+    const jobRows = await sbGet('jobs', `id=eq.${jobId}&select=id,claimed_by,status,payment&limit=1`);
     if (!jobRows.length) {
-      return Estimates.restore(me, snap);
+      return Estimates.restore(me, { ...snap, id: estimateId });
     }
     const j = jobRows[0];
     if (String(j.claimed_by || '').trim()) {
@@ -610,8 +640,8 @@ const Estimates = {
     if (String(j.payment || '').toLowerCase().startsWith('paid')) {
       return { success: false, error: 'Job has a payment recorded — cannot undo approval' };
     }
-    await sbDelete('jobs', `id=eq.${id}`);
-    return Estimates.restore(me, snap);
+    await sbDelete('jobs', `id=eq.${jobId}`);
+    return Estimates.restore(me, { ...snap, id: estimateId });
   },
 };
 

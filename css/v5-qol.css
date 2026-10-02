@@ -297,12 +297,57 @@ html.sc-search-lock body { overflow: hidden; }
     .sc-search-item { min-height: 54px; }
 }
 
-/* ── Undo toast ────────────────────────────────────────────────────────────── */
-.sc-undo-toast {
+/* ── Toast stack ─────────────────────────────────────────────────────────── */
+.sc-toast-stack {
     position: fixed;
     left: 50%;
     bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%);
     z-index: 100001;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: min(92vw, 480px);
+    pointer-events: none;
+}
+.sc-toast-stack > * { pointer-events: auto; }
+
+#toast[data-sc-toast-proxy],
+#toastEl[data-sc-toast-proxy],
+.toast[data-sc-toast-proxy] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+.sc-toast-stack .toast.sc-toast,
+.sc-toast-stack .sc-undo-toast {
+    position: relative !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    max-width: 100%;
+    transform: translateY(10px) scale(0.98);
+    opacity: 0;
+    visibility: visible;
+}
+.sc-toast-stack .toast.sc-toast.show,
+.sc-toast-stack .sc-undo-toast.show {
+    opacity: 1;
+    transform: none;
+}
+
+@media (max-width: 900px) {
+    body.sc-v5.sc-logged-in .sc-toast-stack {
+        bottom: calc(var(--sc-tabbar-h) + env(safe-area-inset-bottom, 0px) + 12px);
+    }
+}
+
+/* ── Undo toast ────────────────────────────────────────────────────────────── */
+.sc-undo-toast {
+    position: relative;
     display: inline-flex;
     align-items: center;
     gap: 14px;
@@ -320,7 +365,7 @@ html.sc-search-lock body { overflow: hidden; }
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
-    transform: translate(-50%, 16px) scale(0.96);
+    transform: translateY(10px) scale(0.98);
     transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.2s ease, visibility 0.35s;
 }
 
@@ -328,7 +373,7 @@ html.sc-search-lock body { overflow: hidden; }
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
-    transform: translate(-50%, 0) scale(1);
+    transform: none;
 }
 
 .sc-undo-msg { min-width: 0; }
@@ -358,12 +403,6 @@ html.sc-search-lock body { overflow: hidden; }
     background: var(--primary);
     opacity: 0.55;
     transform-origin: left center;
-}
-
-@media (max-width: 900px) {
-    body.sc-v5.sc-logged-in .sc-undo-toast {
-        bottom: calc(var(--sc-tabbar-h) + env(safe-area-inset-bottom, 0px) + 12px);
-    }
 }
 
 /* ── Skeletons ─────────────────────────────────────────────────────────────── */

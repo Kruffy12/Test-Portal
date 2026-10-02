@@ -47,83 +47,302 @@
         return global.matchMedia('(max-width: 900px)').matches;
     }
 
-    // ── Toast (for pages that don't ship their own) ──────────────────────────────
-    var _toastTimer = null;
-    function toast(msg, type) {
-        var el = doc.getElementById('scQolToast');
+    // ── Toast stack (plain + undo, max 4, persisted undo across pages) ───────────
+    var MAX_TOASTS = 4;
+    var UNDO_MS = 30000;
+    var PLAIN_MS = 3200;
+    var STORE_KEY = 'scUndoPersist';
+    var ALLOWED_UNDO_ACTIONS = {
+        underestimateapprove: 1, restoreestimate: 1, delete: 1, update: 1, updateorder: 1
+    };
+    var _stack = [];
+    var _persistReady = false;
+    var _origRenderToast = global.scRenderToast;
+    global.scRenderToastCore = _origRenderToast;
+
+    function stackHost() {
+        var el = doc.getElementById('scToastStack');
         if (!el) {
             el = doc.createElement('div');
-            el.id = 'scQolToast';
-            doc.body.appendChild(el);
+            el.id = 'scToastStack';
+            el.className = 'sc-toast-stack';
+            el.setAttribute('aria-live', 'polite');
+            (doc.body || doc.documentElement).appendChild(el);
         }
-        if (typeof global.scRenderToast === 'function') global.scRenderToast(el, msg, type);
-        else { el.textContent = msg; el.className = 'toast sc-toast'; }
-        void el.offsetWidth;
-        el.classList.add('show');
-        clearTimeout(_toastTimer);
-        _toastTimer = setTimeout(function () { el.classList.remove('show'); }, 3200);
-    }
-
-    // ── Undo toast ───────────────────────────────────────────────────────────────
-    var _undo = { el: null, timer: null, pending: null };
-
-    function hideOtherToasts() {
-        var shown = doc.querySelectorAll('.toast.show');
-        for (var i = 0; i < shown.length; i++) shown[i].classList.remove('show');
-    }
-
-    function buildUndoEl() {
-        var el = doc.createElement('div');
-        el.className = 'sc-undo-toast';
-        el.setAttribute('role', 'status');
-        el.setAttribute('aria-live', 'polite');
-        el.innerHTML = '<span class="sc-undo-msg"></span>' +
-            '<button type="button" class="sc-undo-btn">Undo</button>' +
-            '<span class="sc-undo-bar" aria-hidden="true"></span>';
-        el.querySelector('.sc-undo-btn').addEventListener('click', function () {
-            var p = _undo.pending;
-            if (!p) return;
-            clearTimeout(_undo.timer);
-            _undo.pending = null;
-            el.classList.remove('show');
-            tap('light');
-            if (typeof p.onUndo === 'function') p.onUndo();
-        });
-        doc.body.appendChild(el);
         return el;
     }
 
-    function commitUndo(isUnload) {
-        var p = _undo.pending;
-        if (!p) return;
-        clearTimeout(_undo.timer);
-        _undo.pending = null;
-        if (_undo.el) _undo.el.classList.remove('show');
-        if (typeof p.onCommit === 'function') p.onCommit(!!isUnload);
+    function proxyPageToast(el) {
+        if (!el || !el.classList) return;
+        el.classList.remove('show');
+        el.setAttribute('data-sc-toast-proxy', '1');
+    }
+
+    function readPersist() {
+        try {
+            var raw = global.localStorage.getItem(STORE_KEY);
+            if (!raw) return [];
+            var data = JSON.parse(raw);
+            return data && data.v === 1 && Array.isArray(data.items) ? data.items : [];
+        } catch (_) { return []; }
+    }
+
+    function writePersist() {
+        try {
+            var items = _stack.filter(function (s) {
+                return s.persist && s.expiresAt > Date.now();
+            }).map(function (s) {
+                return {
+                    id: s.id,
+                    msg: s.msg,
+                    actionLabel: s.actionLabel,
+                    expiresAt: s.expiresAt,
+                    kind: s.kind || '',
+                    undoRequest: s.undoRequest || null,
+                    commitRequest: s.commitRequest || null
+                };
+            });
+            if (!items.length) global.localStorage.removeItem(STORE_KEY);
+            else global.localStorage.setItem(STORE_KEY, JSON.stringify({ v: 1, items: items }));
+        } catch (_) {}
+    }
+
+    function safeRequest(req) {
+        if (!req || typeof req !== 'object' || Array.isArray(req)) return null;
+        var action = String(req.action || '').toLowerCase().trim();
+        if (!ALLOWED_UNDO_ACTIONS[action]) return null;
+        try { return JSON.parse(JSON.stringify(req)); } catch (_) { return null; }
+    }
+
+    function postRequest(req) {
+        var body = safeRequest(req);
+        if (!body || typeof global.apiPost !== 'function') return Promise.resolve(null);
+        return global.apiPost(body);
+    }
+
+    function fireUndoEvent(phase, item) {
+        try {
+            doc.dispatchEvent(new CustomEvent('sc-qol-undo', {
+                bubbles: true,
+                detail: { phase: phase, kind: item.kind || '', id: item.id, persist: item.persist || null }
+            }));
+        } catch (_) {}
+    }
+
+    function removeStackItem(item, animate) {
+        var idx = _stack.indexOf(item);
+        if (idx !== -1) _stack.splice(idx, 1);
+        if (item.timer) { clearTimeout(item.timer); item.timer = null; }
+        if (item.el) {
+            item.el.classList.remove('show');
+            if (animate !== false) {
+                setTimeout(function () {
+                    if (item.el && item.el.parentNode) item.el.parentNode.removeChild(item.el);
+                }, 280);
+            } else if (item.el.parentNode) {
+                item.el.parentNode.removeChild(item.el);
+            }
+        }
+        writePersist();
+    }
+
+    function expireItem(item) {
+        if (!item || item._done) return;
+        item._done = true;
+        if (typeof item.onCommit === 'function') {
+            try { item.onCommit(false); } catch (_) {}
+        } else if (item.commitRequest) {
+            postRequest(item.commitRequest).catch(function () {});
+        }
+        removeStackItem(item, true);
+        fireUndoEvent('expired', item);
+    }
+
+    function armTimer(item) {
+        if (item.timer) clearTimeout(item.timer);
+        var left = Math.max(0, item.expiresAt - Date.now());
+        item.timer = setTimeout(function () { expireItem(item); }, left);
+        if (item.bar) {
+            item.bar.style.transition = 'none';
+            item.bar.style.transform = 'scaleX(' + (item.duration ? left / item.duration : 0) + ')';
+            void item.bar.offsetWidth;
+            item.bar.style.transition = 'transform ' + left + 'ms linear';
+            item.bar.style.transform = 'scaleX(0)';
+        }
+    }
+
+    function trimStack() {
+        while (_stack.length > MAX_TOASTS) expireItem(_stack[0]);
+    }
+
+    function runUndo(item) {
+        if (!item || item._done) return;
+        item._done = true;
+        tap('light');
+        var req = item.undoRequest;
+        var custom = item.onUndo;
+        removeStackItem(item, true);
+        Promise.resolve(custom ? custom() : null).then(function () {
+            if (!custom && req) return postRequest(req);
+        }).then(function (res) {
+            if (res && res.success === false) toast(res.error || 'Undo failed', 'err');
+            else fireUndoEvent('undone', item);
+        }).catch(function (err) {
+            toast((err && err.message) || 'Undo failed', 'err');
+        });
+    }
+
+    function pushPlainToast(msg, type, duration) {
+        var host = stackHost();
+        var el = doc.createElement('div');
+        el.className = 'toast sc-toast';
+        if (typeof _origRenderToast === 'function') _origRenderToast(el, msg, type);
+        else if (typeof global.scRenderToastCore === 'function') global.scRenderToastCore(el, msg, type);
+        else {
+            el.textContent = String(msg == null ? '' : msg);
+            el.classList.add('is-info');
+        }
+        var item = {
+            id: 't' + Date.now() + Math.random().toString(36).slice(2, 7),
+            el: el,
+            persist: false,
+            duration: duration || PLAIN_MS,
+            expiresAt: Date.now() + (duration || PLAIN_MS)
+        };
+        host.appendChild(el);
+        _stack.push(item);
+        trimStack();
+        void el.offsetWidth;
+        el.classList.add('show');
+        armTimer(item);
+        return item;
+    }
+
+    function toast(msg, type) {
+        pushPlainToast(msg, type, PLAIN_MS);
+    }
+
+    function buildUndoNode(msg, actionLabel) {
+        var el = doc.createElement('div');
+        el.className = 'sc-undo-toast';
+        el.setAttribute('role', 'status');
+        el.innerHTML = '<span class="sc-undo-msg"></span>' +
+            '<button type="button" class="sc-undo-btn">Undo</button>' +
+            '<span class="sc-undo-bar" aria-hidden="true"></span>';
+        el.querySelector('.sc-undo-msg').textContent = msg;
+        el.querySelector('.sc-undo-btn').textContent = actionLabel || 'Undo';
+        return el;
+    }
+
+    function pushUndoToast(msg, opts, restored) {
+        opts = opts || {};
+        var duration = opts.duration || UNDO_MS;
+        var left = restored && opts.expiresAt ? Math.max(0, opts.expiresAt - Date.now()) : duration;
+        if (left < 400) {
+            if (!restored && typeof opts.onCommit === 'function') opts.onCommit(false);
+            else if (opts.commitRequest) postRequest(opts.commitRequest).catch(function () {});
+            return null;
+        }
+        var el = buildUndoNode(msg, opts.actionLabel);
+        var bar = el.querySelector('.sc-undo-bar');
+        var item = {
+            id: opts.id || ('u' + Date.now() + Math.random().toString(36).slice(2, 7)),
+            el: el,
+            bar: bar,
+            msg: msg,
+            actionLabel: opts.actionLabel || 'Undo',
+            kind: opts.kind || '',
+            duration: duration,
+            expiresAt: restored && opts.expiresAt ? opts.expiresAt : Date.now() + duration,
+            onUndo: opts.onUndo,
+            onCommit: restored ? null : opts.onCommit,
+            undoRequest: safeRequest(opts.undoRequest),
+            commitRequest: safeRequest(opts.commitRequest),
+            persist: !!(opts.undoRequest || opts.commitRequest || opts.persist)
+        };
+        el.querySelector('.sc-undo-btn').addEventListener('click', function () { runUndo(item); });
+        stackHost().appendChild(el);
+        _stack.push(item);
+        trimStack();
+        void el.offsetWidth;
+        el.classList.add('show');
+        armTimer(item);
+        writePersist();
+        return item;
     }
 
     function undoToast(msg, opts) {
-        opts = opts || {};
-        commitUndo(false);
-        if (!_undo.el) _undo.el = buildUndoEl();
-        var el = _undo.el;
-        var duration = opts.duration || 6000;
-        el.querySelector('.sc-undo-msg').textContent = msg;
-        el.querySelector('.sc-undo-btn').textContent = opts.actionLabel || 'Undo';
-        var bar = el.querySelector('.sc-undo-bar');
-        bar.style.transition = 'none';
-        bar.style.transform = 'scaleX(1)';
-        hideOtherToasts();
-        _undo.pending = opts;
-        void el.offsetWidth;
-        el.classList.add('show');
-        bar.style.transition = 'transform ' + duration + 'ms linear';
-        bar.style.transform = 'scaleX(0)';
-        _undo.timer = setTimeout(function () { commitUndo(false); }, duration);
+        pushUndoToast(msg, opts || {}, false);
     }
 
-    // Anything still waiting on its undo window is committed before the page goes away
-    global.addEventListener('pagehide', function () { commitUndo(true); });
+    function commitUndo(isUnload) {
+        if (isUnload) {
+            writePersist();
+            return;
+        }
+        var undos = _stack.filter(function (s) { return s.bar; });
+        if (!undos.length) return;
+        expireItem(undos[undos.length - 1]);
+    }
+
+    function restorePersistedUndos() {
+        var saved = readPersist();
+        var keep = [];
+        saved.forEach(function (row) {
+            if (!row || row.expiresAt <= Date.now()) {
+                if (row && row.commitRequest) postRequest(row.commitRequest).catch(function () {});
+                return;
+            }
+            keep.push(row);
+        });
+        keep.forEach(function (row) {
+            if (_stack.some(function (s) { return s.id === row.id; })) return;
+            pushUndoToast(row.msg, {
+                id: row.id,
+                duration: Math.max(row.expiresAt - Date.now(), 1000),
+                expiresAt: row.expiresAt,
+                actionLabel: row.actionLabel,
+                kind: row.kind,
+                undoRequest: row.undoRequest,
+                commitRequest: row.commitRequest,
+                persist: true
+            }, true);
+        });
+        _persistReady = true;
+        writePersist();
+    }
+
+    function stackedRenderToast(el, msg, type) {
+        proxyPageToast(el);
+        pushPlainToast(msg, type, PLAIN_MS);
+    }
+    stackedRenderToast._stacked = true;
+    global.scRenderToast = stackedRenderToast;
+
+    global.addEventListener('pagehide', function () { writePersist(); });
+    global.addEventListener('visibilitychange', function () {
+        if (doc.hidden) writePersist();
+        else {
+            _stack.slice().forEach(function (s) {
+                if (s.expiresAt <= Date.now()) expireItem(s);
+                else if (s.bar) armTimer(s);
+            });
+        }
+    });
+    global.addEventListener('storage', function (e) {
+        if (e.key !== STORE_KEY) return;
+        var live = {};
+        readPersist().forEach(function (row) { live[row.id] = 1; });
+        _stack.slice().forEach(function (s) {
+            if (s.persist && !live[s.id]) removeStackItem(s, true);
+        });
+    });
+    function bootToasts() {
+        stackHost();
+        restorePersistedUndos();
+    }
+    if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', bootToasts);
+    else bootToasts();
 
     // ── Skeleton rows ────────────────────────────────────────────────────────────
     function skeletonRows(n) {
