@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-sc-build="20261002i">
+<html lang="en" data-sc-build="20261002j">
 
 <head>
     <script src="js/theme-init.js"></script>
@@ -3996,9 +3996,11 @@
                     undoMsg = 'Quote #' + id + ' approved as Job #' + jobId + ' (#' + id + ' was already taken)';
                 }
                 if (typeof SCQol !== 'undefined' && SCQol.undoToast) {
+                    const needsPhotos = est.deviceInShop === false && !(est.inspectionImages && est.inspectionImages.length);
                     SCQol.undoToast(undoMsg, {
                         duration: 30000,
                         kind: 'estimate',
+                        detail: needsPhotos ? 'Device is with the customer — add photos when it arrives.' : '',
                         undoRequest: { action: 'underestimateapprove', id: id, jobId: jobId, estimate: snap },
                         onUndo: async () => {
                             const u = await apiPost({ action: 'underestimateapprove', id: id, jobId: jobId, estimate: snap });
@@ -4011,9 +4013,9 @@
                     });
                 } else {
                     showToast('✅ Quote #' + id + ' approved', 'ok');
-                }
-                if (est.deviceInShop === false && !(est.inspectionImages && est.inspectionImages.length)) {
-                    showToast('Device not in shop — add photos when it arrives (Edit job).', 'info');
+                    if (est.deviceInShop === false && !(est.inspectionImages && est.inspectionImages.length)) {
+                        showToast('Device not in shop — add photos when it arrives (Edit job).', 'info');
+                    }
                 }
             } catch (err) {
                 showToast('❌ ' + (err.message || 'Approve failed'), 'err');

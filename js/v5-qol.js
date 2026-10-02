@@ -95,9 +95,11 @@
                 return {
                     id: s.id,
                     msg: s.msg,
+                    detail: s.detail || '',
                     actionLabel: s.actionLabel,
                     expiresAt: s.expiresAt,
                     kind: s.kind || '',
+                    page: s.page || currentPage(),
                     undoRequest: s.undoRequest || null,
                     commitRequest: s.commitRequest || null
                 };
@@ -222,14 +224,17 @@
         pushPlainToast(msg, type, PLAIN_MS);
     }
 
-    function buildUndoNode(msg, actionLabel) {
+    function buildUndoNode(msg, actionLabel, detail) {
         var el = doc.createElement('div');
-        el.className = 'sc-undo-toast';
+        el.className = 'sc-undo-toast' + (detail ? ' has-detail' : '');
         el.setAttribute('role', 'status');
-        el.innerHTML = '<span class="sc-undo-msg"></span>' +
+        el.innerHTML = '<span class="sc-undo-copy"><span class="sc-undo-msg"></span>' +
+            (detail ? '<span class="sc-undo-detail"></span>' : '') +
+            '</span>' +
             '<button type="button" class="sc-undo-btn">Undo</button>' +
             '<span class="sc-undo-bar" aria-hidden="true"></span>';
         el.querySelector('.sc-undo-msg').textContent = msg;
+        if (detail) el.querySelector('.sc-undo-detail').textContent = detail;
         el.querySelector('.sc-undo-btn').textContent = actionLabel || 'Undo';
         return el;
     }
@@ -243,15 +248,18 @@
             else if (opts.commitRequest) postRequest(opts.commitRequest).catch(function () {});
             return null;
         }
-        var el = buildUndoNode(msg, opts.actionLabel);
+        var detail = String(opts.detail || '');
+        var el = buildUndoNode(msg, opts.actionLabel, detail);
         var bar = el.querySelector('.sc-undo-bar');
         var item = {
             id: opts.id || ('u' + Date.now() + Math.random().toString(36).slice(2, 7)),
             el: el,
             bar: bar,
             msg: msg,
+            detail: detail,
             actionLabel: opts.actionLabel || 'Undo',
             kind: opts.kind || '',
+            page: opts.page || currentPage(),
             duration: duration,
             expiresAt: restored && opts.expiresAt ? opts.expiresAt : Date.now() + duration,
             onUndo: opts.onUndo,
@@ -286,11 +294,14 @@
     }
 
     function restorePersistedUndos() {
+        var page = currentPage();
         var saved = readPersist();
         var keep = [];
         saved.forEach(function (row) {
-            if (!row || row.expiresAt <= Date.now()) {
-                if (row && row.commitRequest) postRequest(row.commitRequest).catch(function () {});
+            if (!row) return;
+            var leftPage = row.page && row.page !== page;
+            if (leftPage || row.expiresAt <= Date.now()) {
+                if (row.commitRequest) postRequest(row.commitRequest).catch(function () {});
                 return;
             }
             keep.push(row);
@@ -302,7 +313,9 @@
                 duration: Math.max(row.expiresAt - Date.now(), 1000),
                 expiresAt: row.expiresAt,
                 actionLabel: row.actionLabel,
+                detail: row.detail,
                 kind: row.kind,
+                page: row.page,
                 undoRequest: row.undoRequest,
                 commitRequest: row.commitRequest,
                 persist: true
