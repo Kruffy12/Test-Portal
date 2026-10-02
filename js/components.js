@@ -7,7 +7,7 @@
 // GitHub Pages caches HTML for ~10 minutes. If this script is newer than the page,
 // reload once onto a cache-busting URL so staff actually see the latest UI.
 (function () {
-    var BUILD = '20261002d';
+    var BUILD = '20261002e';
     var onPage = document.documentElement.getAttribute('data-sc-build') || '';
     if (onPage === BUILD) return;
     try {
