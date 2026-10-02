@@ -1446,7 +1446,7 @@ async function _submitCustomerSmsModal() {
 function openJobReceiptPreview(j, format, opts) {
     format = format || 'receipt';
     opts = opts || {};
-    const imgOpts = { imgSrc: 'img/logo.png' };
+    const imgOpts = { imgSrc: 'img/logo.png', isEstimate: !!(j && j.isEstimate) };
     const html = buildJobDocumentHTML(j, format, imgOpts);
     const text = format === 'a4' ? buildJobA4Text(j) : buildJobReceiptText(j);
     showReceiptPreview(html, text, {

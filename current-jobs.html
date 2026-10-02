@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-sc-build="20261002e">
+<html lang="en" data-sc-build="20261002f">
 
 <head>
     <script src="js/theme-init.js"></script>
@@ -2471,22 +2471,6 @@
 
         .photo-filter-toggle span { white-space: nowrap; }
 
-        .estimates-badge {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 32px;
-            padding: 4px 12px;
-            border-radius: 99px;
-            font-size: 0.72rem;
-            font-weight: 800;
-            background: rgba(139, 92, 246, 0.15);
-            color: #7c3aed;
-            border: 1px solid rgba(139, 92, 246, 0.35);
-            white-space: nowrap;
-            cursor: pointer;
-        }
-        .estimates-badge[hidden] { display: none; }
         .estimate-row {
             display: flex;
             flex-wrap: wrap;
@@ -2497,11 +2481,16 @@
             background: var(--glass);
             border: 1px solid var(--glass-border);
             margin-bottom: 10px;
+            transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+        }
+        .estimate-row:hover {
+            border-color: rgba(var(--primary-rgb), 0.4);
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
         }
         .estimate-row-body { flex: 1 1 180px; min-width: 0; }
         .estimate-row-title { font-weight: 800; font-size: 0.92rem; }
         .estimate-row-meta { font-size: 0.75rem; color: var(--text-dim); margin-top: 4px; }
-        .estimate-actions { display: flex; gap: 8px; flex-shrink: 0; }
+        .estimate-actions { display: flex; gap: 8px; flex-shrink: 0; flex-wrap: wrap; }
         .estimate-btn {
             min-width: 44px;
             min-height: 44px;
@@ -2513,9 +2502,30 @@
             font-weight: 800;
             cursor: pointer;
             touch-action: manipulation;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease, background 0.15s ease;
         }
-        .estimate-btn.approve { background: var(--success); color: #fff; }
+        .estimate-btn:active { transform: translateY(0) scale(0.97); }
+        .estimate-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+        .estimate-btn.approve { background: var(--success); color: #fff; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.28); }
         .estimate-btn.deny { background: rgba(239, 68, 68, 0.12); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.35); }
+        .estimate-btn.print { background: #7c3aed; color: #fff; box-shadow: 0 2px 8px rgba(124, 58, 237, 0.28); }
+        @media (hover: hover) and (pointer: fine) {
+            .estimate-btn.approve:hover {
+                filter: brightness(1.08);
+                transform: translateY(-2px);
+                box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+            }
+            .estimate-btn.deny:hover {
+                background: rgba(239, 68, 68, 0.22);
+                transform: translateY(-2px);
+                box-shadow: 0 8px 18px rgba(239, 68, 68, 0.22);
+            }
+            .estimate-btn.print:hover {
+                background: #6d28d9;
+                transform: translateY(-2px);
+                box-shadow: 0 8px 20px rgba(124, 58, 237, 0.4);
+            }
+        }
 
         /* ── Photo Grid ── */
         .photo-grid {
@@ -2883,7 +2893,6 @@
                 <option value="stale">Stale (14+ days in shop)</option>
                 <option value="estimates">Quotes (pending)</option>
             </select>
-            <span id="estimatesBadge" class="estimates-badge" hidden aria-live="polite" title="Quotes waiting for a yes or no" onclick="document.getElementById('statusFilter').value='estimates';filterAndRender();"></span>
             <button type="button" class="refresh-text" onclick="loadJobs()">Refresh</button>
             <button id="archiveToggleBtn" class="archive-btn" onclick="toggleArchiveView()"
                 title="Search archived jobs">Archives</button>
@@ -3932,17 +3941,14 @@
             document.getElementById('jobsNext').onclick = () => { if (_jobsPage < totalPages) { _jobsPage++; renderJobs(_filteredJobs); } };
         }
 
-        function updateEstimatesBadge() {
-            const el = document.getElementById('estimatesBadge');
-            if (!el) return;
-            const n = allEstimates.filter(e => !_pendingEstimateDeletes.has(String(e.id))).length;
-            if (n > 0) {
-                el.hidden = false;
-                el.textContent = n + ' quote' + (n === 1 ? '' : 's') + ' pending';
-            } else {
-                el.hidden = true;
-                el.textContent = '';
-            }
+        function quoteAsJob(e) {
+            return {
+                ...e,
+                isEstimate: true,
+                status: 'received',
+                payment: 'unpaid',
+                technician: e.createdBy || '',
+            };
         }
 
         function renderEstimates(filtered) {
@@ -3960,14 +3966,15 @@
                         return items.reduce((s, i) => s + (parseFloat(i.price) || 0), 0);
                     } catch (_) { return 0; }
                 })();
-                const quote = total > 0 ? 'BZ$' + total.toFixed(2) : 'Quote TBD';
+                const quote = total > 0 ? 'BZ$' + total.toFixed(2) : 'Price later';
                 const sub = [escH(e.device), escH(e.issue || ''), quote].filter(Boolean).join(' · ');
                 return '<div class="estimate-row">'
                     + '<div class="estimate-row-body">'
                     + '<div class="estimate-row-title">#' + escH(e.id) + ' · ' + escH(e.customerName || 'Customer') + '</div>'
-                    + '<div class="estimate-row-meta">' + sub + (e.deviceInShop === false ? ' · Device not in shop' : '') + '</div>'
+                    + '<div class="estimate-row-meta">' + sub + (e.deviceInShop === false ? ' · With customer' : '') + '</div>'
                     + '</div>'
                     + '<div class="estimate-actions">'
+                    + '<button type="button" class="estimate-btn print" onclick="printEstimate(' + e.id + ')">Print</button>'
                     + '<button type="button" class="estimate-btn approve" onclick="approveEstimate(' + e.id + ')">Approve</button>'
                     + '<button type="button" class="estimate-btn deny" onclick="rejectEstimate(' + e.id + ')">Deny</button>'
                     + '</div></div>';
@@ -3978,7 +3985,6 @@
             try {
                 const data = await apiGet({ action: 'listestimates' });
                 allEstimates = (data.estimates || []).filter(e => !_pendingEstimateDeletes.has(String(e.id)));
-                updateEstimatesBadge();
                 if (document.getElementById('statusFilter')?.value === 'estimates') filterAndRender();
             } catch (e) {
                 console.warn('loadEstimates:', e);
@@ -4021,10 +4027,16 @@
             }
         }
 
+        function printEstimate(id) {
+            const est = allEstimates.find(x => String(x.id) === String(id));
+            if (!est) return;
+            currentJobData = quoteAsJob(est);
+            document.getElementById('paperModal').classList.add('open');
+        }
+
         function rejectEstimate(id) {
             const est = allEstimates.find(x => String(x.id) === String(id));
             if (!est) return;
-            if (!confirm('Remove quote #' + id + ' for ' + (est.customerName || 'this customer') + '?')) return;
             (async () => {
                 try {
                     const data = await apiPost({ action: 'rejectestimate', id });
@@ -4032,10 +4044,9 @@
                     const snap = data.estimate;
                     _pendingEstimateDeletes.add(String(id));
                     allEstimates = allEstimates.filter(x => String(x.id) !== String(id));
-                    updateEstimatesBadge();
                     filterAndRender();
                     if (typeof SCQol !== 'undefined' && SCQol.undoToast) {
-                        SCQol.undoToast('Quote #' + id + ' removed', {
+                        SCQol.undoToast('Quote #' + id + ' removed — Undo if that was a mistake', {
                             duration: 30000,
                             onUndo: async () => {
                                 _pendingEstimateDeletes.delete(String(id));
@@ -4063,6 +4074,8 @@
                             },
                             onCommit: () => { _pendingEstimateDeletes.delete(String(id)); },
                         });
+                    } else {
+                        showToast('Quote #' + id + ' removed', 'ok');
                     }
                 } catch (err) {
                     showToast('❌ ' + (err.message || 'Remove failed'), 'err');
@@ -5629,8 +5642,8 @@
                 return;
             }
             const html = isReceipt
-                ? buildJobReceiptHTML(j, { imgSrc: 'img/logo.png' })
-                : buildJobA4HTML(j, { imgSrc: 'img/logo.png' });
+                ? buildJobReceiptHTML(j, { imgSrc: 'img/logo.png', isEstimate: !!j.isEstimate })
+                : buildJobA4HTML(j, { imgSrc: 'img/logo.png', isEstimate: !!j.isEstimate });
             if (isReceipt) kickDrawer();
             printHTML(html);
         }

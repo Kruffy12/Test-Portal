@@ -752,7 +752,7 @@
             { sel: '[data-tour="tab-more"]', title: 'Everything else', body: 'Special orders, inventory, settings and more live under More.', mobileOnly: true }
         ],
         'current-jobs.html': [
-            { badge: 'NEW', sel: '#statusFilter', title: 'Quotes (pending)', body: 'Customers who only needed a price show here until you approve or remove the quote. Approved quotes become regular jobs on the board.' },
+            { badge: 'NEW', sel: '#statusFilter', title: 'Quotes (pending)', body: 'Customers who only needed a price show here until you approve or remove the quote. Print reprints the quotation. Deny removes it with 30 seconds to undo. Approved quotes become regular jobs on the board.' },
             { sel: '#searchInput', title: 'Search this board', body: 'Type a job number, name, phone, device or technician to narrow the list instantly.' },
             { tour: true, sel: '.stats-row', title: 'Tap a number to filter', body: 'Tap Ready, Repairing or any card to show just those jobs; tap it again to see everything. The menu above has the rest — your own jobs, expiring soon and stale repairs.' },
             { tour: true, sel: '#jobsBoard', maxH: 0.34, picker: 'jobsView', title: 'Make the board yours', body: 'Pick how jobs look — you can change it any time with the buttons above the board.' },
