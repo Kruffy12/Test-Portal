@@ -7,7 +7,7 @@
 // GitHub Pages caches HTML for ~10 minutes. If this script is newer than the page,
 // reload once onto a cache-busting URL so staff actually see the latest UI.
 (function () {
-    var BUILD = '20261002m';
+    var BUILD = '20261002n';
     var onPage = document.documentElement.getAttribute('data-sc-build') || '';
     if (onPage === BUILD) return;
     try {
@@ -874,9 +874,9 @@ window.isOffline = () => !navigator.onLine;
         if (a.origin === window.location.origin) markLeaving();
     });
 
-    function showUpdateNotice(worker) {
+    function showUpdateNotice(worker, force) {
         if (worker) pendingWorker = worker;
-        if (pageIsFresh() || pageIsLeaving()) {
+        if (!force && (pageIsFresh() || pageIsLeaving())) {
             applyPendingSilently();
             return;
         }
@@ -945,12 +945,19 @@ window.isOffline = () => !navigator.onLine;
         }
     }
 
+    function takeOverIfFirstInstall(worker) {
+        if (!worker) return false;
+        if (navigator.serviceWorker.controller) return false;
+        worker.postMessage({ type: 'SKIP_WAITING' });
+        return true;
+    }
+
     function watchInstallingWorker(reg, worker) {
         if (!worker) return;
         const onState = () => {
-            if (worker.state === 'installed' && navigator.serviceWorker.controller) {
-                showUpdateNotice(worker);
-            }
+            if (worker.state !== 'installed') return;
+            if (takeOverIfFirstInstall(worker)) return;
+            showUpdateNotice(worker);
         };
         worker.addEventListener('statechange', onState);
         onState();
@@ -958,7 +965,7 @@ window.isOffline = () => !navigator.onLine;
 
     function bindRegistration(reg) {
         registrationRef = reg;
-        if (reg.waiting) showUpdateNotice(reg.waiting);
+        if (reg.waiting && !takeOverIfFirstInstall(reg.waiting)) showUpdateNotice(reg.waiting);
         if (reg.installing) watchInstallingWorker(reg, reg.installing);
         reg.addEventListener('updatefound', () => watchInstallingWorker(reg, reg.installing));
     }
@@ -987,17 +994,21 @@ window.isOffline = () => !navigator.onLine;
     setTimeout(() => { try { sessionStorage.removeItem('sc_sw_reload'); } catch (_) {} }, 4000);
 
     let lastSwUpdateCheck = 0;
+    function checkForSwUpdate() {
+        if (!registrationRef || document.visibilityState !== 'visible') return;
+        const now = Date.now();
+        if (now - lastSwUpdateCheck < 45000) return;
+        lastSwUpdateCheck = now;
+        registrationRef.update().catch(() => {});
+    }
     document.addEventListener('visibilitychange', () => {
         const card = document.getElementById('sc-app-update-card');
         if (card && card.classList.contains('is-visible')) {
             card.classList.toggle('is-paused', document.visibilityState !== 'visible');
         }
-        if (document.visibilityState !== 'visible' || !registrationRef) return;
-        const now = Date.now();
-        if (now - lastSwUpdateCheck < 45000) return;
-        lastSwUpdateCheck = now;
-        registrationRef.update().catch(() => {});
+        checkForSwUpdate();
     });
+    setInterval(checkForSwUpdate, 60000);
 
     let noticeStackRaf = 0;
     function scheduleNoticeStack() {
@@ -1023,7 +1034,7 @@ window.isOffline = () => !navigator.onLine;
 /** Dev / QA — always on window (calls live handler when components.js is current). */
 window.scTestUpdateNotice = function () {
     if (typeof window.__scShowUpdateNotice === 'function') {
-        window.__scShowUpdateNotice(null);
+        window.__scShowUpdateNotice(null, true);
         return;
     }
     console.warn('[Portal] Update preview needs a hard refresh to load the latest js/components.js (Ctrl+Shift+R).');

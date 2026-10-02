@@ -3,7 +3,7 @@
 // Network-first strategy for fast security updates
 // ─────────────────────────────────────────────────────────────────────────────
 
-const CACHE_DATE = '2026-10-02-ux12'; // ← change this on each deploy (triggers "Update ready" on open tabs)
+const CACHE_DATE = '2026-10-02-ux13'; // ← change this on each deploy (triggers "Update ready" on open tabs)
 const CACHE_NAME = 'servicell-' + CACHE_DATE;
 const BASE = (function () {
     try {
@@ -64,7 +64,8 @@ self.addEventListener('install', event => {
         caches.open(CACHE_NAME)
             // cache: 'reload' bypasses the HTTP cache so a new release never precaches stale files
             .then(cache => cache.addAll(PRECACHE_URLS.map(u => new Request(u, { cache: 'reload' }))))
-            .then(() => self.skipWaiting())
+            // Do not skipWaiting here. A tab that is already open needs time to show
+            // "Update ready"; the page asks us to take over on Reload (or a fresh load).
     );
 });
 
