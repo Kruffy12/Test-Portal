@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-sc-build="20261002h">
+<html lang="en" data-sc-build="20261002i">
 
 <head>
     <script src="js/theme-init.js"></script>
@@ -2868,7 +2868,7 @@
                 <option value="stale">Stale (14+ days in shop)</option>
                 <option value="estimates">Quotes (pending)</option>
             </select>
-            <button type="button" class="refresh-text" onclick="loadJobs()">Refresh</button>
+            <button type="button" class="refresh-text" onclick="loadJobs({ notify: true })">Refresh</button>
             <button id="archiveToggleBtn" class="archive-btn" onclick="toggleArchiveView()"
                 title="Search archived jobs">Archives</button>
             <!-- View Toggle -->
@@ -4423,7 +4423,8 @@
             filterAndRender();
         }
 
-        async function loadJobs() {
+        async function loadJobs(opts) {
+            const notify = !!(opts && opts.notify);
             try {
                 const [data] = await Promise.all([
                     apiGet({ action: 'list' }),
@@ -4437,6 +4438,7 @@
                 updateStats(allJobs);
                 checkStaleJobs(allJobs);
                 openJobFromUrl();
+                if (notify) showToast('Jobs Refreshed!', 'ok');
             } catch (error) {
                 console.error('loadJobs error:', error);
                 const cached = localStorage.getItem('sc_cache_jobs');
@@ -4936,7 +4938,7 @@
                 });
             } else if (j.inspection && j.inspection !== 'No damage noted' && _isRecentJob(j)) {
                 imgsSection.style.display = '';
-                imgsGrid.innerHTML = '<div style="display:flex;align-items:center;gap:8px;font-size:0.82rem;color:var(--warning);font-weight:700;padding:6px 0;">Photos uploading… <button type="button" onclick="loadJobs()" style="margin-left:6px;padding:4px 10px;border-radius:99px;border:1px solid var(--glass-border);background:var(--glass);cursor:pointer;font:inherit;font-size:0.72rem;">Refresh</button></div>';
+                imgsGrid.innerHTML = '<div style="display:flex;align-items:center;gap:8px;font-size:0.82rem;color:var(--warning);font-weight:700;padding:6px 0;">Photos uploading… <button type="button" onclick="loadJobs({ notify: true })" style="margin-left:6px;padding:4px 10px;border-radius:99px;border:1px solid var(--glass-border);background:var(--glass);cursor:pointer;font:inherit;font-size:0.72rem;">Refresh</button></div>';
             } else if (j.inspection && j.inspection !== 'No damage noted') {
                 imgsSection.style.display = '';
                 imgsGrid.innerHTML = '<div style="font-size:0.82rem;color:var(--text-dim);padding:6px 0;">No inspection photos on file.</div>';
@@ -5699,7 +5701,7 @@
         })();
         loadJobs();
         setInterval(loadJobs, 60000);
-        if (window.SCQol) SCQol.pullToRefresh(loadJobs);
+        if (window.SCQol) SCQol.pullToRefresh(function () { return loadJobs({ notify: true }); });
 
         // ── Photo Lightbox ────────────────────────────────────────────────────
         let _lbImages = [], _lbIndex = 0, _lbTouchX = null;
