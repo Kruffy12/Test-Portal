@@ -474,8 +474,10 @@ function estimateRowFromData(me: Me, id: number, data: any) {
     inspection: str(data.inspection) || 'No damage noted',
     estimated_completion: data.estimatedCompletion || null,
     date_received: dateReceived,
-    device_in_shop: flag(data.deviceInShop),
-    inspection_images: str(data.inspectionImages, 8000) || '',
+    device_in_shop: data.deviceInShop === true || data.deviceInShop === '1' || data.deviceInShop === 'true' || data.deviceInShop === 'yes',
+    inspection_images: (Array.isArray(data.inspectionImages)
+      ? data.inspectionImages.map((u: unknown) => String(u).trim()).filter(Boolean).join(',')
+      : str(data.inspectionImages, 8000)).slice(0, 8000),
     created_by: me.username,
   };
 }

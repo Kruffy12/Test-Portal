@@ -1073,8 +1073,22 @@ function buildJobCustomerMessage(j, opts) {
     const paidSoFar = opts.amountPaid != null ? parseFloat(opts.amountPaid) : null;
     const hasPartial = paidSoFar != null && hasTotal && paidSoFar > 0.01 && (total - paidSoFar) > 0.01;
     const trackerLine = _jobTrackerLine(j, !!opts.forSms);
-
     let body = '';
+
+    if (j.isEstimate) {
+        const quoteRef = j.id ? ('Quote #' + j.id) : 'your quote';
+        const priceLine = hasTotal
+            ? (' The quoted total is ' + _jobBz(total) + '.')
+            : ' The price will be confirmed after we see the device.';
+        const issueClause = issueText ? (' We noted: ' + issueText + '.') : '';
+        body = greeting + '\n\n'
+            + 'Thank you for asking ServiCell Belize for a quote on your ' + device + ' (' + quoteRef + ').'
+            + issueClause
+            + priceLine
+            + ' This is a quotation only — the repair has not started, and online tracking is available after you approve the work.'
+            + ' Reply here or call us at +501 615-3388 when you would like us to begin.';
+        return body + '\n\n' + _jobWarmSignOff('intake');
+    }
 
     if (isIntake) {
         const issueClause = issueText
@@ -1428,7 +1442,7 @@ function openJobReceiptPreview(j, format, opts) {
     const html = buildJobDocumentHTML(j, format, imgOpts);
     const text = format === 'a4' ? buildJobA4Text(j) : buildJobReceiptText(j);
     showReceiptPreview(html, text, {
-        title: 'Job #' + j.id + (format === 'a4' ? ' Invoice' : ' Receipt'),
+        title: (j.isEstimate ? 'Quote #' : 'Job #') + j.id + (format === 'a4' ? ' Invoice' : ' Receipt'),
         format: format,
         job: j,
         imgOpts: imgOpts
@@ -1921,6 +1935,6 @@ ${isEstimate ? '' : `<div class="pi-payment-status"><strong>Payment Status:</str
     <div class="pi-sig">Staff Signature &amp; Date</div>
 </div>
 ${qrBlock}
-<div class="pi-footer">Thank you for choosing Servicell Belize!<br>${isEstimate ? 'This estimate is valid for discussion with your insurer only — approve repair in-store to begin work.<br>' : 'Devices not collected within <strong>90 days of completion</strong> may be considered <strong>abandoned</strong>.<br>'}We are not responsible for data loss. Please back up your device.<br>Prices include GST where applicable.</div>
+<div class="pi-footer">Thank you for choosing Servicell Belize!<br>${isEstimate ? 'This is a quotation only. Approve the repair in store before work begins.<br>' : 'Devices not collected within <strong>90 days of completion</strong> may be considered <strong>abandoned</strong>.<br>'}We are not responsible for data loss. Please back up your device.<br>Prices include GST where applicable.</div>
 </div></body></html>`;
 }

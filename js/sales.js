@@ -1092,7 +1092,8 @@ function printBillSlip(billId) {
     const items = tryParseJSON(b.items, []);
     const rows = items.map(i => {
         const qty = parseFloat(i.qty) || 1;
-        const line = (parseFloat(i.total) != null ? parseFloat(i.total) : (parseFloat(i.price) || 0) * qty);
+        const lineTotal = parseFloat(i.total);
+        const line = Number.isFinite(lineTotal) ? lineTotal : (parseFloat(i.price) || 0) * qty;
         return '<tr><td style="font-size:9px;padding:4px 3px;">' + escH(i.name || 'Item') + (qty > 1 ? ' ×' + qty : '') + '</td><td style="text-align:right;font-size:9px;padding:4px 3px;">' + bz(line) + '</td></tr>';
     }).join('');
     const html = '<!DOCTYPE html><html><head><title>Bill Slip</title>'
