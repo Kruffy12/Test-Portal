@@ -2484,7 +2484,9 @@
             color: #7c3aed;
             border: 1px solid rgba(139, 92, 246, 0.35);
             white-space: nowrap;
+            cursor: pointer;
         }
+        .estimates-badge[hidden] { display: none; }
         .estimate-row {
             display: flex;
             flex-wrap: wrap;
@@ -2881,7 +2883,7 @@
                 <option value="stale">Stale (14+ days in shop)</option>
                 <option value="estimates">Quotes (pending)</option>
             </select>
-            <span id="estimatesBadge" class="estimates-badge" hidden aria-live="polite"></span>
+            <span id="estimatesBadge" class="estimates-badge" hidden aria-live="polite" title="Quotes waiting for a yes or no" onclick="document.getElementById('statusFilter').value='estimates';filterAndRender();"></span>
             <button type="button" class="refresh-text" onclick="loadJobs()">Refresh</button>
             <button id="archiveToggleBtn" class="archive-btn" onclick="toggleArchiveView()"
                 title="Search archived jobs">Archives</button>
