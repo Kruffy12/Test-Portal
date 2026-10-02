@@ -3,7 +3,7 @@
 // Network-first strategy for fast security updates
 // ─────────────────────────────────────────────────────────────────────────────
 
-const CACHE_DATE = '2026-09-29a'; // ← change this to today's date on each deploy
+const CACHE_DATE = '2026-10-02-qol'; // ← change this on each deploy (triggers "Update ready" on open tabs)
 const CACHE_NAME = 'servicell-' + CACHE_DATE;
 const BASE = (function () {
     try {
