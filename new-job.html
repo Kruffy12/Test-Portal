@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-sc-build="20261002l">
+<html lang="en" data-sc-build="20261002m">
 
 <head>
     <script src="js/theme-init.js"></script>
@@ -1766,6 +1766,8 @@
         // ── Model suggestions (themed replacement for <datalist>) ────────────
         let _suggestItems = [];
         let _suggestIndex = -1;
+        let _suggestCloseTimer = 0;
+        let _suggestPtrInside = false;
 
         function modelMatches(query) {
             const brand = BRANDS.find(b => b.id === activeBrand);
@@ -1809,6 +1811,9 @@
             _sizeFrame = requestAnimationFrame(() => {
                 const box = $('deviceSuggest');
                 if (box.hidden) return;
+                // After blur the keyboard retracts and visualViewport grows. Resizing the
+                // still-visible list against that animation is the mobile stutter.
+                if (document.activeElement !== $('device')) return;
                 const vv = window.visualViewport;
                 const viewBottom = vv ? vv.offsetTop + vv.height : window.innerHeight;
                 const top = $('device').getBoundingClientRect().bottom + 6;
@@ -1818,16 +1823,33 @@
         }
 
         function closeSuggestions() {
+            clearTimeout(_suggestCloseTimer);
+            _suggestCloseTimer = 0;
+            cancelAnimationFrame(_sizeFrame);
             const box = $('deviceSuggest');
+            const input = $('device');
             box.hidden = true;
             box.innerHTML = '';
             box.classList.remove('is-opening');
-            box.closest('.nj-group').classList.remove('has-menu');
-            $('formWrapper').classList.remove('nj-form-menu-open');
+            box.style.maxHeight = '';
+            const group = box.closest('.nj-group');
+            if (group) group.classList.remove('has-menu');
+            const form = $('formWrapper');
+            if (form) form.classList.remove('nj-form-menu-open');
             _suggestItems = [];
             _suggestIndex = -1;
-            $('device').setAttribute('aria-expanded', 'false');
-            $('device').removeAttribute('aria-activedescendant');
+            input.setAttribute('aria-expanded', 'false');
+            input.removeAttribute('aria-activedescendant');
+        }
+
+        function scheduleCloseSuggestions() {
+            clearTimeout(_suggestCloseTimer);
+            _suggestCloseTimer = setTimeout(() => {
+                _suggestCloseTimer = 0;
+                if (document.activeElement === $('device')) return;
+                if (_suggestPtrInside) return;
+                closeSuggestions();
+            }, 180);
         }
 
         function highlightSuggestion(i) {
@@ -1861,9 +1883,10 @@
         function wireDeviceSuggest() {
             const input = $('device');
             const box = $('deviceSuggest');
+            const combo = input.closest('.nj-combo');
             input.addEventListener('focus', renderSuggestions);
             input.addEventListener('input', renderSuggestions);
-            input.addEventListener('blur', () => setTimeout(closeSuggestions, 120));
+            input.addEventListener('blur', scheduleCloseSuggestions);
             input.addEventListener('keydown', e => {
                 if (box.hidden) {
                     if (e.key === 'ArrowDown') { renderSuggestions(); highlightSuggestion(0); e.preventDefault(); }
@@ -1876,11 +1899,18 @@
             });
             // Keep focus (and the phone keyboard) in the input while the menu is pressed
             box.addEventListener('mousedown', e => e.preventDefault());
-            // Pick on click, not mousedown: closing on mousedown lets the rest of a tap land on whatever is underneath
+            box.addEventListener('pointerdown', () => { _suggestPtrInside = true; });
+            // Pick on click, not pointerdown: closing on press lets the rest of a tap land underneath
             box.addEventListener('click', e => {
                 const item = e.target.closest('.nj-suggest-item');
                 if (item) chooseSuggestion(Number(item.dataset.index));
             });
+            // Close on the first press outside so the list is gone before the keyboard animates
+            document.addEventListener('pointerdown', e => {
+                _suggestPtrInside = !!(combo && combo.contains(e.target));
+                if (_suggestPtrInside || box.hidden) return;
+                closeSuggestions();
+            }, true);
             if (window.visualViewport) {
                 window.visualViewport.addEventListener('resize', sizeSuggestions);
                 window.visualViewport.addEventListener('scroll', sizeSuggestions);

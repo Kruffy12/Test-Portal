@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-sc-build="20261002k">
+<html lang="en" data-sc-build="20261002m">
 
 <head>
     <script src="js/theme-init.js"></script>
@@ -504,6 +504,100 @@
             border-color: var(--primary);
             color: var(--primary);
         }
+
+        /* Custom filter menu — same glass list as the new-job model suggestions */
+        .cj-filter {
+            position: relative;
+            z-index: 6;
+            flex: 0 0 auto;
+            min-width: 220px;
+        }
+
+        .cj-filter.is-open { z-index: 30; }
+
+        .cj-filter-native {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        .cj-filter .filter-dropdown {
+            display: inline-flex;
+            align-items: center;
+            width: 100%;
+            text-align: left;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        .cj-filter-menu {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            z-index: 20;
+            max-height: min(272px, 60vh);
+            overflow-y: auto;
+            padding: 6px;
+            background: var(--glass-strong);
+            border: 1px solid var(--glass-border);
+            border-radius: 14px;
+            backdrop-filter: blur(24px) saturate(1.4);
+            -webkit-backdrop-filter: blur(24px) saturate(1.4);
+            box-shadow: 0 16px 40px rgba(15, 23, 42, 0.22), 0 2px 8px rgba(15, 23, 42, 0.08);
+            scrollbar-width: thin;
+            scrollbar-color: rgba(var(--primary-rgb), 0.35) transparent;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .cj-filter-menu.is-opening { animation: cjFilterPop 0.16s ease both; }
+        .cj-filter-menu[hidden] { display: none; }
+
+        @keyframes cjFilterPop {
+            from { opacity: 0; transform: translateY(-4px); }
+            to { opacity: 1; transform: none; }
+        }
+
+        .cj-filter-item {
+            display: flex;
+            align-items: center;
+            min-height: 42px;
+            padding: 0 12px;
+            border-radius: 10px;
+            font-size: 0.92rem;
+            font-weight: 500;
+            color: var(--text-main);
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        .cj-filter-item.active {
+            background: rgba(var(--primary-rgb), 0.12);
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        @media (hover: hover) {
+            .cj-filter-item:hover {
+                background: rgba(var(--primary-rgb), 0.12);
+                color: var(--primary);
+            }
+        }
+
+        .cj-filter-item:active { background: rgba(var(--primary-rgb), 0.18); }
 
         /* ── Delete modal icon ── */
         .delete-icon-wrap {
@@ -1229,8 +1323,10 @@
                 flex: 1 1 200px;
             }
 
-            .filter-dropdown {
+            .filter-dropdown,
+            .cj-filter {
                 flex: 1 1 160px;
+                min-width: 160px;
             }
 
             .stats-row {
@@ -1330,10 +1426,15 @@
                 order: 1;
             }
 
-            .filter-dropdown {
+            .filter-dropdown,
+            .cj-filter {
                 flex: 1 1 100%;
                 order: 2;
+                min-width: 0;
                 font-size: 0.85rem;
+            }
+
+            .cj-filter .filter-dropdown {
                 padding: 0 36px 0 12px;
             }
 
@@ -2440,6 +2541,7 @@
 
         @media (prefers-reduced-motion: reduce) {
             .job-crow-more, .job-crow-body, .job-crow-chev { transition: none; }
+            .cj-filter-menu { animation: none; }
         }
 
         .photo-filter-toggle {
@@ -2853,21 +2955,27 @@
                 <input type="text" id="searchInput" class="search-input"
                     placeholder="Search ID, name, device, phone…" aria-label="Search jobs by ID, name, device, phone, technician or notes">
             </div>
-            <select id="statusFilter" class="filter-dropdown">
-                <option value="all">All Shop Activity</option>
-                <option value="mine">My Jobs</option>
-                <option value="inprogress">All In Progress</option>
-                <option value="received">Received / Ordered</option>
-                <option value="fixing">Repair In Progress</option>
-                <option value="testing">Finalizing / Testing</option>
-                <option value="ready">Ready for Pickup</option>
-                <option value="resolved">Picked Up</option>
-                <option value="unsuccessful">Unsuccessful</option>
-                <option value="abandoned">Abandoned</option>
-                <option value="expiring">Expiring Soon (7 days)</option>
-                <option value="stale">Stale (14+ days in shop)</option>
-                <option value="estimates">Quotes (pending)</option>
-            </select>
+            <div class="cj-filter" id="statusFilterWrap">
+                <select id="statusFilter" class="cj-filter-native" aria-hidden="true" tabindex="-1">
+                    <option value="all">All Shop Activity</option>
+                    <option value="mine">My Jobs</option>
+                    <option value="inprogress">All In Progress</option>
+                    <option value="received">Received / Ordered</option>
+                    <option value="fixing">Repair In Progress</option>
+                    <option value="testing">Finalizing / Testing</option>
+                    <option value="ready">Ready for Pickup</option>
+                    <option value="resolved">Picked Up</option>
+                    <option value="unsuccessful">Unsuccessful</option>
+                    <option value="abandoned">Abandoned</option>
+                    <option value="expiring">Expiring Soon (7 days)</option>
+                    <option value="stale">Stale (14+ days in shop)</option>
+                    <option value="estimates">Quotes (pending)</option>
+                </select>
+                <button type="button" class="filter-dropdown" id="statusFilterBtn"
+                    aria-haspopup="listbox" aria-expanded="false" aria-controls="statusFilterMenu"
+                    aria-label="Filter jobs">All Shop Activity</button>
+                <div class="cj-filter-menu" id="statusFilterMenu" role="listbox" aria-label="Job filters" hidden></div>
+            </div>
             <button type="button" class="refresh-text" onclick="loadJobs({ notify: true })">Refresh</button>
             <button id="archiveToggleBtn" class="archive-btn" onclick="toggleArchiveView()"
                 title="Search archived jobs">Archives</button>
@@ -5697,6 +5805,108 @@
         });
         document.getElementById('searchInput').addEventListener('input', filterAndRender);
         document.getElementById('statusFilter').addEventListener('change', filterAndRender);
+
+        (function wireStatusFilter() {
+            const select = document.getElementById('statusFilter');
+            const wrap = document.getElementById('statusFilterWrap');
+            const btn = document.getElementById('statusFilterBtn');
+            const menu = document.getElementById('statusFilterMenu');
+            if (!select || !wrap || !btn || !menu) return;
+
+            let highlight = -1;
+
+            function syncBtn() {
+                const opt = select.selectedOptions[0];
+                btn.textContent = opt ? opt.textContent : '';
+                btn.classList.toggle('active', select.value !== 'all');
+                menu.querySelectorAll('.cj-filter-item').forEach(el => {
+                    const on = el.dataset.value === select.value;
+                    el.classList.toggle('active', on);
+                    el.setAttribute('aria-selected', on ? 'true' : 'false');
+                });
+            }
+
+            function renderMenu() {
+                menu.innerHTML = Array.from(select.options).map(o =>
+                    '<div class="cj-filter-item" role="option" data-value="' + escH(o.value) + '" aria-selected="false">' + escH(o.textContent) + '</div>'
+                ).join('');
+                syncBtn();
+            }
+
+            function openMenu() {
+                if (!menu.hidden) return;
+                renderMenu();
+                highlight = Array.from(menu.children).findIndex(el => el.dataset.value === select.value);
+                menu.classList.remove('is-opening');
+                void menu.offsetWidth;
+                menu.classList.add('is-opening');
+                menu.hidden = false;
+                wrap.classList.add('is-open');
+                btn.setAttribute('aria-expanded', 'true');
+                const on = menu.querySelector('.cj-filter-item.active');
+                if (on) on.scrollIntoView({ block: 'nearest' });
+            }
+
+            function closeMenu() {
+                if (menu.hidden) return;
+                menu.hidden = true;
+                menu.classList.remove('is-opening');
+                wrap.classList.remove('is-open');
+                btn.setAttribute('aria-expanded', 'false');
+                highlight = -1;
+            }
+
+            function moveHighlight(dir) {
+                const items = menu.querySelectorAll('.cj-filter-item');
+                if (!items.length) return;
+                highlight = (highlight + dir + items.length) % items.length;
+                items.forEach((el, i) => el.classList.toggle('active', i === highlight));
+                items[highlight].scrollIntoView({ block: 'nearest' });
+            }
+
+            function pick(value) {
+                if (select.value !== value) {
+                    select.value = value;
+                    select.dispatchEvent(new Event('change'));
+                }
+                syncBtn();
+                closeMenu();
+            }
+
+            btn.addEventListener('click', () => {
+                if (menu.hidden) openMenu();
+                else closeMenu();
+            });
+            menu.addEventListener('mousedown', e => e.preventDefault());
+            menu.addEventListener('click', e => {
+                const item = e.target.closest('.cj-filter-item');
+                if (item) pick(item.dataset.value);
+            });
+            document.addEventListener('pointerdown', e => {
+                if (!wrap.contains(e.target)) closeMenu();
+            }, true);
+            document.addEventListener('keydown', e => {
+                if (menu.hidden) return;
+                if (e.key === 'Escape') { closeMenu(); btn.focus(); e.preventDefault(); }
+                else if (e.key === 'ArrowDown') { moveHighlight(1); e.preventDefault(); }
+                else if (e.key === 'ArrowUp') { moveHighlight(-1); e.preventDefault(); }
+                else if (e.key === 'Enter' && highlight >= 0) {
+                    const item = menu.querySelectorAll('.cj-filter-item')[highlight];
+                    if (item) pick(item.dataset.value);
+                    e.preventDefault();
+                }
+            });
+
+            const valueDesc = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
+            Object.defineProperty(select, 'value', {
+                get() { return valueDesc.get.call(this); },
+                set(v) { valueDesc.set.call(this, v); syncBtn(); },
+                configurable: true
+            });
+
+            select.addEventListener('change', syncBtn);
+            renderMenu();
+        })();
         (function restoreJobsView() {
             const saved = readJobsViews()[jobsViewUser()] || {};
             setView(saved.layout || 'list', { silent: true });
