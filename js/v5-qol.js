@@ -752,7 +752,7 @@
             { sel: '[data-tour="tab-more"]', title: 'Everything else', body: 'Special orders, inventory, settings and more live under More.', mobileOnly: true }
         ],
         'current-jobs.html': [
-            { badge: 'NEW', sel: '#statusFilter', title: 'Estimates filter', body: 'Pending insurance quotes live under Estimates (pending). Approve to move them onto the board, or deny to remove.' },
+            { badge: 'NEW', sel: '#statusFilter', title: 'Quotes (pending)', body: 'Customers who only needed a price show here until you approve or remove the quote. Approved quotes become regular jobs on the board.' },
             { sel: '#searchInput', title: 'Search this board', body: 'Type a job number, name, phone, device or technician to narrow the list instantly.' },
             { tour: true, sel: '.stats-row', title: 'Tap a number to filter', body: 'Tap Ready, Repairing or any card to show just those jobs; tap it again to see everything. The menu above has the rest — your own jobs, expiring soon and stale repairs.' },
             { tour: true, sel: '#jobsBoard', maxH: 0.34, picker: 'jobsView', title: 'Make the board yours', body: 'Pick how jobs look — you can change it any time with the buttons above the board.' },
@@ -766,7 +766,7 @@
         ],
         'new-job.html': [
             { tour: true, badge: 'NEW', sel: '#njStepper', title: 'Five quick steps', body: 'Customer, device, condition, pricing, then review. Your progress is saved if you leave the page.' },
-            { badge: 'NEW', sel: '.nj-mode-bar', title: 'Estimate mode', body: 'Use Estimate mode for insurance quotations. The device can stay with the customer until they approve repair.' },
+            { badge: 'NEW', sel: '.nj-mode-bar', title: 'Quote only', body: 'Choose Quote only when the customer just needs a price. The device can stay with them until they say yes to the repair.' },
             { badge: 'NEW', sel: '.nj-panel[data-step="3"]', title: 'Pricing step', body: 'Leave Quote TBD for most intakes. Switch to Add quote for itemized or lump-sum pricing.' },
             { sel: '#customerName', title: 'Start with the customer', body: 'Name and phone are all you need here — errors show right next to the field.' }
         ],

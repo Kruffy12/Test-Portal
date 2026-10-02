@@ -178,26 +178,42 @@
             border: 1px solid var(--glass-border);
         }
         .nj-mode-bar label {
-            flex: 1 1 140px;
-            min-height: 44px;
+            flex: 1 1 160px;
+            min-height: 52px;
             display: flex;
-            align-items: center;
+            flex-direction: column;
+            align-items: flex-start;
             justify-content: center;
-            gap: 8px;
-            padding: 8px 12px;
+            gap: 2px;
+            padding: 10px 12px 10px 36px;
             border-radius: 12px;
             font-size: 0.82rem;
             font-weight: 700;
             cursor: pointer;
             border: 1.5px solid transparent;
             color: var(--text-dim);
+            position: relative;
         }
-        .nj-mode-bar input { accent-color: var(--primary); }
+        .nj-mode-bar input {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            accent-color: var(--primary);
+        }
+        .nj-mode-bar .nj-mode-title { font-weight: 800; color: inherit; line-height: 1.25; }
+        .nj-mode-bar .nj-mode-sub {
+            font-size: 0.68rem;
+            font-weight: 600;
+            opacity: 0.85;
+            line-height: 1.35;
+        }
         .nj-mode-bar label:has(input:checked) {
             background: rgba(var(--primary-rgb), 0.12);
             border-color: rgba(var(--primary-rgb), 0.35);
             color: var(--text-main);
         }
+        .nj-mode-bar label:has(input:checked) .nj-mode-sub { opacity: 1; color: var(--text-dim); }
         .nj-pricing-mode { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
         .nj-pricing-body { display: none; margin-top: 12px; }
         .nj-pricing-body.open { display: block; }
@@ -1089,10 +1105,14 @@
             .nj-group { padding: 16px; }
             .nj-sum-row { grid-template-columns: 96px 1fr; font-size: 0.86rem; }
 
-            /* Only the current step keeps its label so four steps fit on a phone */
+            /* Only the current step keeps its label so five steps fit on a phone */
+            .nj-stepper { gap: 2px; padding: 4px; }
+            .nj-step-btn { padding: 6px 4px; gap: 4px; min-height: 40px; font-size: 0.74rem; }
+            .nj-step-num { width: 22px; height: 22px; font-size: 0.68rem; }
             .nj-step-label { display: none; }
-            .nj-stepper li:has([aria-current="step"]) { flex-grow: 2.4; }
+            .nj-stepper li:has([aria-current="step"]) { flex-grow: 2.2; }
             .nj-step-btn[aria-current="step"] .nj-step-label { display: inline; }
+            .nj-mode-bar label { flex: 1 1 100%; }
 
             .nj-acc { flex-wrap: wrap; }
             .nj-photos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -1133,7 +1153,7 @@
                 New Repair Job
                 <span class="nj-ticket" id="ticketChip">#—</span>
             </h1>
-            <p>Four quick steps. If the page reloads, your progress is kept.</p>
+            <p id="njPageSubtitle">Five quick steps. If the page reloads, your progress is kept.</p>
         </div>
 
         <!-- Success Banner -->
@@ -1165,9 +1185,17 @@
         <!-- Form -->
         <form id="formWrapper" novalidate autocomplete="off">
 
-            <div class="nj-mode-bar" role="radiogroup" aria-label="Intake type">
-                <label><input type="radio" name="intakeMode" value="repair" checked> Repair intake</label>
-                <label><input type="radio" name="intakeMode" value="estimate"> Estimate mode</label>
+            <div class="nj-mode-bar" role="radiogroup" aria-label="What are you logging?">
+                <label>
+                    <input type="radio" name="intakeMode" value="repair" checked>
+                    <span class="nj-mode-title">Log repair</span>
+                    <span class="nj-mode-sub">Customer is checking in a device for service</span>
+                </label>
+                <label>
+                    <input type="radio" name="intakeMode" value="estimate">
+                    <span class="nj-mode-title">Quote only</span>
+                    <span class="nj-mode-sub">Customer just needs a price — device may not be in yet</span>
+                </label>
             </div>
 
             <ol class="nj-stepper" id="njStepper" aria-label="New job steps">
@@ -1439,7 +1467,7 @@
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
                     Back
                 </button>
-                <span class="nj-actions-count" id="njCount">Step 1 of 4</span>
+                <span class="nj-actions-count" id="njCount">Step 1 of 5</span>
                 <button type="submit" class="nj-btn nj-btn-primary" id="submitBtn">
                     <span class="btn-text" id="njPrimaryText">Continue</span>
                     <div class="btn-spinner"></div>
@@ -1588,11 +1616,17 @@
         function syncIntakeModeUI() {
             const est = isEstimateMode();
             $('deviceInShopGroup').style.display = est ? '' : 'none';
+            const sub = $('njPageSubtitle');
+            if (sub) {
+                sub.textContent = est
+                    ? 'Five steps — saves as a pending quote on Current Jobs until you approve it.'
+                    : 'Five quick steps. If the page reloads, your progress is kept.';
+            }
             $('conditionStepHint').textContent = est && !deviceInShopYes()
                 ? 'Record accessories if known — photos optional until the device arrives.'
                 : 'Record what came in with it and take photos.';
             $('reviewStepHint').textContent = est
-                ? 'Check the estimate, then save it for approval on Current Jobs.'
+                ? 'Check the quote, then save. Find it under Current Jobs → Quotes (pending).'
                 : 'Check the details, then log the job.';
             const st = $('reviewStatusField');
             if (st) st.style.display = est ? 'none' : '';
@@ -2008,7 +2042,7 @@
 
             const isLast = target === STEP_COUNT - 1;
             $('njBack').style.display = target === 0 ? 'none' : '';
-            $('njCount').style.display = target === 0 ? '' : 'none';
+            $('njCount').style.display = '';
             $('njCount').textContent = `Step ${target + 1} of ${STEP_COUNT}`;
             $('njPrimaryText').textContent = isLast ? (isEstimateMode() ? 'Save Estimate' : 'Log Repair Job') : 'Continue';
             syncIntakeModeUI();
@@ -2283,7 +2317,7 @@
             $('repairIdDisplay').textContent = '#' + id;
             $('successTitle').textContent = estimate ? 'Estimate Saved!' : 'Job Logged!';
             $('successSubtitle').textContent = estimate
-                ? 'Pending approval on Current Jobs → Estimates filter.'
+                ? 'Find it on Current Jobs → Quotes (pending). Approve when they want the repair.'
                 : 'Job saved to the database. Customer record updated.';
             window.scrollTo({ top: 0, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
             haptic('success');

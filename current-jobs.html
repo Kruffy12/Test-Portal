@@ -2879,7 +2879,7 @@
                 <option value="abandoned">Abandoned</option>
                 <option value="expiring">Expiring Soon (7 days)</option>
                 <option value="stale">Stale (14+ days in shop)</option>
-                <option value="estimates">Estimates (pending)</option>
+                <option value="estimates">Quotes (pending)</option>
             </select>
             <span id="estimatesBadge" class="estimates-badge" hidden aria-live="polite"></span>
             <button type="button" class="refresh-text" onclick="loadJobs()">Refresh</button>
@@ -3929,7 +3929,7 @@
             const n = allEstimates.filter(e => !_pendingEstimateDeletes.has(String(e.id))).length;
             if (n > 0) {
                 el.hidden = false;
-                el.textContent = n + ' estimate' + (n === 1 ? '' : 's') + ' pending';
+                el.textContent = n + ' quote' + (n === 1 ? '' : 's') + ' pending';
             } else {
                 el.hidden = true;
                 el.textContent = '';
@@ -3941,7 +3941,7 @@
             const pg = document.getElementById('jobsPagination');
             if (pg) pg.style.display = 'none';
             if (!filtered.length) {
-                list.innerHTML = '<div style="padding:40px;text-align:center;opacity:0.5;">No pending estimates.</div>';
+                list.innerHTML = '<div style="padding:40px;text-align:center;opacity:0.5;">No pending quotes. Log one from New Job → Quote only.</div>';
                 return;
             }
             list.innerHTML = filtered.map(e => {
